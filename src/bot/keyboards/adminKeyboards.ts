@@ -10,6 +10,8 @@ import {
   AuditLogEntry,
   Language,
   TransactionRecord,
+  PricingConfig,
+  OfertaRecord,
 } from "../types";
 
 export function getAdminDashboardKeyboard(
@@ -55,10 +57,12 @@ export function getAdminDashboardKeyboard(
     .text(isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`, "admin_menu_reviews")
     .text(isUz ? `⚡ Promokodlar` : `⚡ Promo Codes`, "admin_menu_promos")
     .row()
+    .text(isUz ? `📄 Oferta & Narxlar` : `📄 Oferta & Pricing`, "admin_menu_oferta_pricing")
     .text(isUz ? `📢 Global Xabar Yuborish` : `📢 Broadcast Message`, "admin_broadcast_start")
-    .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
     .row()
+    .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
     .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Stats`, "admin_refresh")
+    .row()
     .text(isUz ? `🏠 Talaba Menyusi` : `🏠 Student Menu`, "go_main_menu");
 
   return kb;
@@ -229,7 +233,7 @@ export function getAdminPromoCodesKeyboard(
 
   pagePromos.forEach((p) => {
     const statusIcon = p.isExpired || !p.isActive ? "🔴" : p.usedCount >= p.maxUses ? "🔒" : "🟢";
-    const displayTier = p.tier === "NAWA" ? "NAWA ($15)" : p.tier === "NAWA_FULL" ? "NAWA Full ($50)" : p.tier;
+    const displayTier = p.tier === "NAWA" ? "NAWA" : "Full Application + NAWA";
     kb.text(`${statusIcon} ${p.code} (${displayTier})`, `admin_view_promo_${p.code}`).row();
   });
 
@@ -245,12 +249,23 @@ export function getAdminPromoCodesKeyboard(
   return kb;
 }
 
-export function getAdminPromoProductSelectKeyboard(lang: Language = "en"): InlineKeyboard {
+export function getAdminPromoProductSelectKeyboard(
+  lang: Language = "en",
+  pricing?: PricingConfig
+): InlineKeyboard {
   const isUz = lang === "uz";
+  const nawaPrice = pricing ? pricing.nawaPrice : 15;
+  const fullPrice = pricing ? pricing.fullApplicationNawaPrice : 50;
   return new InlineKeyboard()
-    .text(isUz ? "📦 1. NAWA — $15 (Standart)" : "📦 1. NAWA — $15 (Standard)", "admin_create_promo_tier_NAWA")
+    .text(
+      isUz ? `📦 1. NAWA — $${nawaPrice} (Standart)` : `📦 1. NAWA — $${nawaPrice} (Standard)`,
+      "admin_create_promo_tier_NAWA"
+    )
     .row()
-    .text(isUz ? "💎 2. NAWA Full — $50 (To'liq Qabul)" : "💎 2. NAWA Full — $50 (Full Admissions)", "admin_create_promo_tier_NAWA_FULL")
+    .text(
+      isUz ? `💎 2. Full Application + NAWA — $${fullPrice} (To'liq Qabul)` : `💎 2. Full Application + NAWA — $${fullPrice} (Full Admissions)`,
+      "admin_create_promo_tier_NAWA_FULL"
+    )
     .row()
     .text(isUz ? "◀️ Promokodlar Ro'yxatiga" : "◀️ Back to Promo Codes", "admin_menu_promos");
 }
@@ -587,4 +602,70 @@ export function getSuperAdminDbStatusKeyboard(lang: Language = "en"): InlineKeyb
     .text(isUz ? "⚠️ Barcha Test Ma'lumotlarni 0 ga Qaytarish (Wipe)" : "⚠️ Wipe & Reset Database to 0", "admin_super_reset_db_confirm")
     .row()
     .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
+}
+
+export function getAdminOfertaPricingKeyboard(
+  pricing: PricingConfig,
+  oferta: OfertaRecord,
+  hasDraft: boolean,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  kb.text(
+    isUz ? `💵 NAWA Narxi ($${pricing.nawaPrice})` : `💵 NAWA Price ($${pricing.nawaPrice})`,
+    "admin_edit_price_nawa"
+  )
+    .text(
+      isUz ? `💎 Full App + NAWA ($${pricing.fullApplicationNawaPrice})` : `💎 Full App + NAWA ($${pricing.fullApplicationNawaPrice})`,
+      "admin_edit_price_full"
+    )
+    .row()
+    .text(
+      isUz ? `💶 Ariza To'lovi (€${pricing.applicationFee})` : `💶 App Fee (€${pricing.applicationFee})`,
+      "admin_edit_fee"
+    )
+    .text(
+      isUz ? `✏️ Oferta Matnini Tahrirlash` : `✏️ Edit Oferta Text`,
+      "admin_edit_oferta_text"
+    )
+    .row()
+    .text(
+      isUz ? `👁️ Ofertani Ko'rish (Preview)` : `👁️ Preview Oferta`,
+      "admin_preview_oferta"
+    );
+
+  if (hasDraft) {
+    kb.text(
+      isUz ? `🚀 Ofertani E'lon Qilish (Publish)` : `🚀 Publish New Oferta`,
+      "admin_publish_oferta_confirm"
+    );
+  }
+
+  kb.row().text(isUz ? `◀️ Admin Bosh Panel` : `◀️ Admin Dashboard`, "admin_main");
+
+  return kb;
+}
+
+export function getAdminOfertaPreviewKeyboard(
+  hasDraft: boolean,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  if (hasDraft) {
+    kb.text(
+      isUz ? `🚀 Tasdiqlash & E'lon Qilish (Publish)` : `🚀 Confirm & Publish`,
+      "admin_publish_oferta_execute"
+    ).row();
+  }
+
+  kb.text(
+    isUz ? `◀️ Oferta & Narxlar Paneliga` : `◀️ Back to Oferta & Pricing`,
+    "admin_menu_oferta_pricing"
+  );
+
+  return kb;
 }

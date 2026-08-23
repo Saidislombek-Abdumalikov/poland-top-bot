@@ -252,7 +252,8 @@ export function getQuizQuestionKeyboard(
 export function getPremiumKeyboard(
   lang: Language,
   isPremium: boolean,
-  tier?: string
+  tier?: string,
+  fullPrice: number = 50
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
@@ -260,8 +261,13 @@ export function getPremiumKeyboard(
   if (!isPremium) {
     kb.text(isUz ? "🎟️ Promokod bormi?" : "🎟️ Have a promo code?", "premium_enter_code").row();
   } else if (tier === "NAWA") {
-    kb.text(isUz ? "💎 NAWA Full ($50) ga oshirish" : "💎 Upgrade to NAWA Full ($50)", "premium_enter_code").row();
+    kb.text(
+      isUz ? `💎 Full Application + NAWA ($${fullPrice}) ga oshirish` : `💎 Upgrade to Full Application + NAWA ($${fullPrice})`,
+      "premium_enter_code"
+    ).row();
   }
+
+  kb.text(isUz ? "📄 Foydalanish Shartlari & Oferta" : "📄 Terms & Oferta", "menu_oferta").row();
 
   kb.url(
     isUz ? "💬 Maslahatchi bilan bog'lanish" : "💬 Contact Admissions Consultant",
@@ -271,6 +277,14 @@ export function getPremiumKeyboard(
     .text(t(lang, "nav_main_menu"), "go_main_menu");
 
   return kb;
+}
+
+export function getOfertaKeyboard(lang: Language = "uz"): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "✅ Roziman" : "✅ I Agree", "accept_oferta")
+    .row()
+    .text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 
 export function getReviewsKeyboard(

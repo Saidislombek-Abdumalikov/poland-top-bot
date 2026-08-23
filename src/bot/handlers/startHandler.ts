@@ -5,6 +5,7 @@ import {
   getMainMenuKeyboard,
   getLanguageInlineKeyboard,
   getOnboardingLanguageKeyboard,
+  getOfertaKeyboard,
 } from "../keyboards/menuKeyboards";
 import { Language } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -239,15 +240,71 @@ export function setupStartHandler(bot: Bot) {
       `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
       `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
 
+    await ctx.reply(welcomeMsg, {
+      parse_mode: "HTML",
+      reply_markup: getMainMenuKeyboard(user.lang),
+    });
+  });
+
+  // User Oferta & Terms of Service display
+  const handleUserOferta = async (ctx: Context) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const renderedOferta = db.getRenderedOferta();
+    const isUz = user.lang === "uz";
+
+    const text =
+      `${renderedOferta}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `👇 <b>${isUz ? "Davom etish uchun shartlarni qabul qiling" : "Please accept terms to continue"}:</b>`;
+
+    const kb = getOfertaKeyboard(user.lang);
+
     if (ctx.callbackQuery?.message) {
       try {
-        await ctx.editMessageText(welcomeMsg, {
+        await ctx.editMessageText(text, {
           parse_mode: "HTML",
-          reply_markup: getMainMenuKeyboard(user.lang),
+          reply_markup: kb,
         });
         return;
       } catch {}
     }
+
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  };
+
+  bot.command("oferta", handleUserOferta);
+  bot.command("terms", handleUserOferta);
+  bot.callbackQuery("menu_oferta", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await handleUserOferta(ctx);
+  });
+
+  bot.callbackQuery("accept_oferta", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
+
+    db.acceptOferta(userId);
+
+    await ctx.answerCallbackQuery({
+      text: isUz
+        ? "✅ Siz Foydalanish shartlari va Ommaviy Ofertani muvaffaqiyatli qabul qildingiz!"
+        : "✅ You have successfully accepted the Terms of Service and Oferta!",
+      show_alert: true,
+    });
+
+    const firstName = user.fullName || user.firstName || "Student";
+    const welcomeMsg =
+      `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
+      `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
+      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
+      `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
 
     await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",

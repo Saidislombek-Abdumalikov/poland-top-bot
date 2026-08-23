@@ -20,11 +20,134 @@ import {
   TransactionRecord,
   PaymentStatus,
   PaymentSource,
+  PricingConfig,
+  OfertaRecord,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "ptu_database.json");
+
+export const defaultPricingConfig: PricingConfig = {
+  nawaPrice: 15,
+  nawaCurrency: "USD",
+  fullApplicationNawaPrice: 50,
+  fullApplicationNawaCurrency: "USD",
+  applicationFee: 30,
+  applicationFeeCurrency: "EUR",
+  lastUpdatedAt: "2026-08-23",
+  lastUpdatedByName: "System",
+};
+
+export const defaultOfertaTemplate = `📄 <b>POLAND TOP UNIVERSITIES — FOYDALANISH SHARTLARI VA OMMAVIY OFERTA</b>
+
+Oxirgi yangilanish: {{LAST_UPDATED_DATE}}
+
+Hurmatli foydalanuvchi!
+
+Poland TOP Universities boti orqali xizmatlardan foydalanish, buyurtma berish, promo-koddan foydalanish yoki to‘lovni amalga oshirish orqali Siz quyidagi Foydalanish shartlari va ommaviy oferta bilan tanishganingizni, ularni tushunganingizni va qabul qilganingizni tasdiqlaysiz.
+
+<b>1. UMUMIY QOIDALAR</b>
+
+Poland TOP Universities Polsha universitetlariga hujjat topshirish jarayonida foydalanuvchilarga hujjatlar bilan ishlash, ariza topshirish va ushbu jarayon bilan bog‘liq tashkiliy hamda texnik yordam ko‘rsatadi.
+
+Xizmatlar quyidagi paketlarga bo‘linadi:
+
+• <b>NAWA</b> — \${{NAWA_PRICE}}
+• <b>Full Application + NAWA</b> — \${{FULL_APPLICATION_NAWA_PRICE}}
+
+Ayrim ariza topshirish jarayonlarida €{{APPLICATION_FEE}} miqdorida alohida ariza to‘lovi mavjud bo‘lishi mumkin. Ushbu to‘lov xizmat narxidan alohida hisoblanadi va tegishli ariza yoki tashkilotga bog‘liq bo‘ladi.
+
+Poland TOP Universities xizmat shartlari, paketlar tarkibi va narxlariga o‘zgartirish kiritish huquqini o‘zida saqlab qoladi. Yangi shartlar e’lon qilinganidan keyingi yangi buyurtmalarga nisbatan qo‘llaniladi.
+
+<b>2. XIZMAT PAKETLARI</b>
+
+🔹 <b>NAWA — \${{NAWA_PRICE}}</b>
+NAWA paketi NAWA bilan bog‘liq hujjatlar va xizmatlarni o‘z ichiga oladi.
+
+🔹 <b>Full Application + NAWA — \${{FULL_APPLICATION_NAWA_PRICE}}</b>
+Ushbu paket NAWA xizmatlari bilan bir qatorda foydalanuvchining hujjatlarini qabul qilish va ular bilan ishlash hamda universitetga ariza topshirish jarayonida yordam ko‘rsatishni o‘z ichiga oladi.
+
+Paket tarkibi va xizmat ko‘rsatish tartibi foydalanuvchiga buyurtma berishdan oldin ko‘rsatiladi.
+
+<b>3. BUYURTMA VA TO‘LOV</b>
+
+Buyurtma foydalanuvchi tomonidan tegishli xizmat paketi tanlangan va to‘lov tasdiqlangandan so‘ng rasmiylashtiriladi.
+
+Foydalanuvchi tomonidan taqdim etilgan barcha ma’lumotlar, jumladan:
+• ism-familiya;
+• aloqa ma’lumotlari;
+• pasport va shaxsni tasdiqlovchi hujjatlar;
+• ta’limga oid ma’lumotlar;
+• sertifikatlar;
+• universitetga ariza topshirish uchun zarur bo‘lgan boshqa ma’lumot va hujjatlar
+to‘g‘ri va haqqoniy bo‘lishi kerak.
+
+Foydalanuvchi taqdim etgan ma’lumotlarning to‘g‘riligi uchun shaxsan javobgar hisoblanadi.
+
+<b>4. HUJJATLAR BILAN ISHLASH</b>
+
+Foydalanuvchi xizmatdan foydalanish uchun zarur hujjatlarni bot orqali yoki Poland TOP Universities tomonidan ko‘rsatilgan boshqa usulda taqdim etadi.
+Foydalanuvchi taqdim etayotgan hujjatlarning haqiqiyligi, to‘g‘riligi va ulardan foydalanish huquqiga ega ekanligini kafolatlaydi. Soxta yoki qalbakilashtirilgan hujjatlarni taqdim etish taqiqlanadi.
+
+<b>5. UNIVERSITETLARGA ARIZA TOPSHIRISH</b>
+
+Poland TOP Universities foydalanuvchiga Polsha universitetlariga hujjat topshirish jarayonida tashkiliy, texnik va hujjat bilan bog‘liq yordam ko‘rsatadi.
+Biroq universitet tomonidan qabul qilish yoki rad etish haqidagi yakuniy qaror Poland TOP Universities tomonidan qabul qilinmaydi.
+Shuning uchun Poland TOP Universities xizmatidan foydalanish universitetga qabul qilinishni kafolatlamaydi.
+
+<b>6. UCHINCHI TOMONLAR</b>
+
+Ariza topshirish jarayonida universitetlar, NAWA, davlat tashkilotlari, elektron platformalar yoki boshqa uchinchi tomon xizmatlaridan foydalanilishi mumkin.
+Ushbu tashkilotlarning texnik nosozliklari yoki muddatlari Poland TOP Universities tomonidan to‘liq nazorat qilinmaydi.
+
+<b>7. FOYDALANUVCHINING MAJBURIYATLARI</b>
+
+Foydalanuvchi to‘g‘ri va haqqoniy ma’lumot taqdim etishi, haqiqiy hujjatlardan foydalanishi, zarur hujjatlarni o‘z vaqtida taqdim etishi va bot ko‘rsatmalariga rioya qilishi shart.
+
+<b>8. TO‘LOV VA QAYTARISH SIYOSATI</b>
+
+Foydalanuvchi to‘lovni amalga oshirishdan oldin tanlangan xizmat paketi, uning tarkibi va narxi bilan tanishadi.
+Xizmat ko‘rsatish jarayoni boshlanganidan yoki buyurtma bo‘yicha ishlar bajarilganidan keyin to‘lovni qaytarish imkoniyati cheklanishi mumkin.
+
+<b>9. PROMO-KODLAR</b>
+
+Promo-kodlar muayyan xizmat paketiga biriktiriladi.
+NAWA promo-kodi faqat NAWA xizmatiga tegishli bo‘ladi.
+Full Application + NAWA promo-kodi esa Full Application + NAWA xizmatiga tegishli bo‘ladi.
+Foydalanuvchi promo-kod paketini mustaqil ravishda o‘zgartira olmaydi.
+
+<b>10. SHAXSIY MA’LUMOTLAR</b>
+
+Ma’lumotlar amaldagi qonunchilik va Poland TOP Universities maxfiylik siyosatiga muvofiq qayta ishlanadi.
+
+<b>11. JAVOBGARLIKNI CHEKLASH</b>
+
+Poland TOP Universities o‘z nazoratidan tashqaridagi holatlar uchun javobgar bo‘lmaydi.
+
+<b>12. XIZMAT KO‘RSATISH MUDDATI</b>
+
+Buyurtma imkon qadar qisqa muddatda bajariladi.
+
+<b>13. SHARTLARNI QABUL QILISH</b>
+
+Foydalanuvchi «✅ Roziman» tugmasini bosish orqali ushbu Foydalanish shartlari va ommaviy ofertani o‘qiganini, tushunganini va elektron shaklda qabul qilganini tasdiqlaydi.
+
+<b>14. YAKUNIY QOIDA</b>
+
+Ushbu oferta foydalanuvchi tomonidan elektron shaklda qabul qilingan paytdan boshlab xizmat ko‘rsatish shartlarining bir qismi hisoblanadi.`;
+
+export function renderOfertaText(
+  template: string,
+  pricing: PricingConfig,
+  lastUpdatedDate: string = "23.08.2026"
+): string {
+  return template
+    .replace(/\{\{NAWA_PRICE\}\}/g, String(pricing.nawaPrice))
+    .replace(/\{\{FULL_APPLICATION_NAWA_PRICE\}\}/g, String(pricing.fullApplicationNawaPrice))
+    .replace(/\{\{APPLICATION_FEE\}\}/g, String(pricing.applicationFee))
+    .replace(/\{\{LAST_UPDATED_DATE\}\}/g, lastUpdatedDate);
+}
 
 export const defaultDocumentDefinitions: Record<string, DocumentDefinition> = {
   passport: {
@@ -121,6 +244,10 @@ interface DatabaseSchema {
   nawaApplications: Record<string, NawaApplicationRecord>;
   universities: Record<string, University>;
   documentDefinitions: Record<string, DocumentDefinition>;
+  pricingConfig: PricingConfig;
+  oferta: OfertaRecord;
+  ofertaDraft?: OfertaRecord;
+  ofertaHistory: OfertaRecord[];
   reviews: StudentReview[];
   auditLogs: AuditLogEntry[];
 }
@@ -134,6 +261,16 @@ export class DatabaseService {
     nawaApplications: {},
     universities: {},
     documentDefinitions: {},
+    pricingConfig: { ...defaultPricingConfig },
+    oferta: {
+      version: 1,
+      text: defaultOfertaTemplate,
+      publishedAt: "2026-08-23",
+      publishedByName: "System",
+      status: "published",
+      pricingSnapshot: { ...defaultPricingConfig },
+    },
+    ofertaHistory: [],
     reviews: [],
     auditLogs: [],
   };
@@ -181,6 +318,17 @@ export class DatabaseService {
           nawaApplications: data.data.nawaApplications || this.data.nawaApplications || {},
           universities: data.data.universities || this.data.universities || {},
           documentDefinitions: data.data.documentDefinitions || this.data.documentDefinitions || {},
+          pricingConfig: data.data.pricingConfig || this.data.pricingConfig || { ...defaultPricingConfig },
+          oferta: data.data.oferta || this.data.oferta || {
+            version: 1,
+            text: defaultOfertaTemplate,
+            publishedAt: "2026-08-23",
+            publishedByName: "System",
+            status: "published",
+            pricingSnapshot: { ...defaultPricingConfig },
+          },
+          ofertaDraft: data.data.ofertaDraft || this.data.ofertaDraft,
+          ofertaHistory: data.data.ofertaHistory || this.data.ofertaHistory || [],
           reviews: data.data.reviews || this.data.reviews || [],
           auditLogs: data.data.auditLogs || this.data.auditLogs || [],
         };
@@ -242,6 +390,17 @@ export class DatabaseService {
           nawaApplications: parsed.nawaApplications || {},
           universities: parsed.universities || {},
           documentDefinitions: parsed.documentDefinitions || {},
+          pricingConfig: parsed.pricingConfig || { ...defaultPricingConfig },
+          oferta: parsed.oferta || {
+            version: 1,
+            text: defaultOfertaTemplate,
+            publishedAt: "2026-08-23",
+            publishedByName: "System",
+            status: "published",
+            pricingSnapshot: { ...defaultPricingConfig },
+          },
+          ofertaDraft: parsed.ofertaDraft,
+          ofertaHistory: parsed.ofertaHistory || [],
           reviews: parsed.reviews || [],
           auditLogs: parsed.auditLogs || [],
         };
@@ -261,6 +420,27 @@ export class DatabaseService {
     // Seed default document definitions if empty
     if (!this.data.documentDefinitions || Object.keys(this.data.documentDefinitions).length === 0) {
       this.data.documentDefinitions = { ...defaultDocumentDefinitions };
+    }
+
+    // Seed default pricing config if empty
+    if (!this.data.pricingConfig) {
+      this.data.pricingConfig = { ...defaultPricingConfig };
+    }
+
+    // Seed default published oferta if empty
+    if (!this.data.oferta) {
+      this.data.oferta = {
+        version: 1,
+        text: defaultOfertaTemplate,
+        publishedAt: "2026-08-23",
+        publishedByName: "System",
+        status: "published",
+        pricingSnapshot: { ...defaultPricingConfig },
+      };
+    }
+
+    if (!this.data.ofertaHistory) {
+      this.data.ofertaHistory = [];
     }
 
     // Initialize empty reviews array if not present
@@ -519,6 +699,17 @@ export class DatabaseService {
       this.data.universities[u.id] = u;
     });
     this.data.documentDefinitions = { ...defaultDocumentDefinitions };
+    this.data.pricingConfig = { ...defaultPricingConfig };
+    this.data.oferta = {
+      version: 1,
+      text: defaultOfertaTemplate,
+      publishedAt: "2026-08-23",
+      publishedByName: "System",
+      status: "published",
+      pricingSnapshot: { ...defaultPricingConfig },
+    };
+    this.data.ofertaDraft = undefined;
+    this.data.ofertaHistory = [];
 
     this.saveDatabase();
     return true;
@@ -869,7 +1060,9 @@ export class DatabaseService {
     actorId?: number;
   }): TransactionRecord {
     const id = this.generateTransactionId();
-    const defaultAmount = params.product === "NAWA" ? 15 : 50;
+    const pricing = this.getPricingConfig();
+    const defaultAmount = params.product === "NAWA" ? pricing.nawaPrice : pricing.fullApplicationNawaPrice;
+    const defaultCurrency = params.product === "NAWA" ? pricing.nawaCurrency : pricing.fullApplicationNawaCurrency;
     const user = this.getUser(params.userId);
 
     const record: TransactionRecord = {
@@ -878,7 +1071,7 @@ export class DatabaseService {
       userName: params.userName || user.fullName || user.username || `User #${params.userId}`,
       product: params.product,
       amount: params.amount !== undefined ? params.amount : defaultAmount,
-      currency: params.currency || "USD",
+      currency: params.currency || defaultCurrency,
       status: params.status || "UNVERIFIED",
       source: params.source || "EXTERNAL_TRANSFER",
       promoCode: params.promoCode,
@@ -1067,6 +1260,189 @@ export class DatabaseService {
 
     this.saveDatabase();
     return true;
+  }
+
+  // ================= DYNAMIC PRICING & OFERTA MANAGEMENT =================
+  public getPricingConfig(): PricingConfig {
+    if (!this.data.pricingConfig) {
+      this.data.pricingConfig = { ...defaultPricingConfig };
+    }
+    return this.data.pricingConfig;
+  }
+
+  public updatePricingConfig(
+    updates: Partial<PricingConfig>,
+    actorId?: number,
+    actorName?: string
+  ): PricingConfig {
+    const current = this.getPricingConfig();
+    const prevNawa = current.nawaPrice;
+    const prevFull = current.fullApplicationNawaPrice;
+    const prevFee = current.applicationFee;
+
+    if (updates.nawaPrice !== undefined && (!Number.isFinite(updates.nawaPrice) || updates.nawaPrice <= 0)) {
+      throw new Error("Invalid NAWA price: must be a positive number.");
+    }
+    if (updates.fullApplicationNawaPrice !== undefined && (!Number.isFinite(updates.fullApplicationNawaPrice) || updates.fullApplicationNawaPrice <= 0)) {
+      throw new Error("Invalid Full Application + NAWA price: must be a positive number.");
+    }
+    if (updates.applicationFee !== undefined && (!Number.isFinite(updates.applicationFee) || updates.applicationFee < 0)) {
+      throw new Error("Invalid Application Fee: must be non-negative.");
+    }
+
+    Object.assign(current, updates);
+    current.lastUpdatedAt = new Date().toISOString().split("T")[0];
+    current.lastUpdatedBy = actorId;
+    current.lastUpdatedByName = actorName || (actorId ? `Admin #${actorId}` : "System");
+
+    if (actorId) {
+      if (updates.nawaPrice !== undefined && updates.nawaPrice !== prevNawa) {
+        this.logAdminAction(
+          actorId,
+          actorName || `Admin #${actorId}`,
+          "PRICE_UPDATED",
+          `NAWA price updated from $${prevNawa} to $${updates.nawaPrice} ${current.nawaCurrency}.`,
+          "pricing:NAWA"
+        );
+      }
+      if (updates.fullApplicationNawaPrice !== undefined && updates.fullApplicationNawaPrice !== prevFull) {
+        this.logAdminAction(
+          actorId,
+          actorName || `Admin #${actorId}`,
+          "PRICE_UPDATED",
+          `Full Application + NAWA price updated from $${prevFull} to $${updates.fullApplicationNawaPrice} ${current.fullApplicationNawaCurrency}.`,
+          "pricing:NAWA_FULL"
+        );
+      }
+      if (updates.applicationFee !== undefined && updates.applicationFee !== prevFee) {
+        this.logAdminAction(
+          actorId,
+          actorName || `Admin #${actorId}`,
+          "APPLICATION_FEE_UPDATED",
+          `Application Fee updated from €${prevFee} to €${updates.applicationFee} ${current.applicationFeeCurrency}.`,
+          "pricing:fee"
+        );
+      }
+    }
+
+    this.saveDatabase();
+    return current;
+  }
+
+  public getPublishedOferta(): OfertaRecord {
+    if (!this.data.oferta) {
+      this.data.oferta = {
+        version: 1,
+        text: defaultOfertaTemplate,
+        publishedAt: "2026-08-23",
+        publishedByName: "System",
+        status: "published",
+        pricingSnapshot: { ...this.getPricingConfig() },
+      };
+    }
+    return this.data.oferta;
+  }
+
+  public getRenderedOferta(customText?: string): string {
+    const text = customText || this.getPublishedOferta().text;
+    const pricing = this.getPricingConfig();
+    const publishedAt = this.data.oferta?.publishedAt || new Date().toISOString().split("T")[0];
+    return renderOfertaText(text, pricing, publishedAt);
+  }
+
+  public getDraftOferta(): OfertaRecord {
+    if (!this.data.ofertaDraft) {
+      const published = this.getPublishedOferta();
+      this.data.ofertaDraft = {
+        version: published.version + 1,
+        text: published.text,
+        publishedAt: new Date().toISOString().split("T")[0],
+        status: "draft",
+      };
+    }
+    return this.data.ofertaDraft;
+  }
+
+  public updateDraftOferta(
+    text: string,
+    actorId?: number,
+    actorName?: string
+  ): OfertaRecord {
+    if (!text || text.trim().length === 0) {
+      throw new Error("Oferta text cannot be empty.");
+    }
+    const published = this.getPublishedOferta();
+    this.data.ofertaDraft = {
+      version: published.version + 1,
+      text: text.trim(),
+      publishedAt: new Date().toISOString().split("T")[0],
+      publishedBy: actorId,
+      publishedByName: actorName || (actorId ? `Admin #${actorId}` : "Admin"),
+      status: "draft",
+    };
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        actorName || `Admin #${actorId}`,
+        "OFFERA_UPDATED",
+        `Draft Oferta updated (Version ${this.data.ofertaDraft.version} prepared).`,
+        `oferta:v${this.data.ofertaDraft.version}`
+      );
+    }
+
+    this.saveDatabase();
+    return this.data.ofertaDraft;
+  }
+
+  public publishOferta(actorId?: number, actorName?: string): OfertaRecord {
+    const draft = this.data.ofertaDraft;
+    const textToPublish = draft ? draft.text : this.getPublishedOferta().text;
+    const currentPublished = this.getPublishedOferta();
+
+    // Archive current published to history
+    if (!this.data.ofertaHistory) this.data.ofertaHistory = [];
+    this.data.ofertaHistory.push({ ...currentPublished });
+
+    const newVersion = currentPublished.version + 1;
+    const pricing = this.getPricingConfig();
+    const publishedRecord: OfertaRecord = {
+      version: newVersion,
+      text: textToPublish,
+      publishedAt: new Date().toISOString().split("T")[0],
+      publishedBy: actorId,
+      publishedByName: actorName || (actorId ? `Admin #${actorId}` : "Admin"),
+      status: "published",
+      pricingSnapshot: { ...pricing },
+    };
+
+    this.data.oferta = publishedRecord;
+    this.data.ofertaDraft = undefined;
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        actorName || `Admin #${actorId}`,
+        "OFFERA_PUBLISHED",
+        `Oferta Version ${newVersion} published with snapshot prices (NAWA: $${pricing.nawaPrice}, Full: $${pricing.fullApplicationNawaPrice}, Fee: €${pricing.applicationFee}).`,
+        `oferta:v${newVersion}`
+      );
+    }
+
+    this.saveDatabase();
+    return publishedRecord;
+  }
+
+  public getOfertaHistory(): OfertaRecord[] {
+    return this.data.ofertaHistory || [];
+  }
+
+  public acceptOferta(userId: number): void {
+    const user = this.getUser(userId);
+    const published = this.getPublishedOferta();
+    user.acceptedOfertaVersion = published.version;
+    user.acceptedOfertaAt = new Date().toISOString();
+    this.saveDatabase();
   }
 
   // ================= DOCUMENTS SUBMISSION CRUD =================

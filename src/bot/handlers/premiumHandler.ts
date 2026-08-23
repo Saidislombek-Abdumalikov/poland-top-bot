@@ -9,10 +9,11 @@ export function setupPremiumHandler(bot: Bot) {
     if (!userId) return;
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
+    const pricing = db.getPricingConfig();
 
     const displayTier =
       user.premiumTier === "NAWA_FULL" || user.premiumTier === "Full Premium"
-        ? "NAWA Full"
+        ? "Full Application + NAWA"
         : user.premiumTier === "NAWA"
         ? "NAWA"
         : user.premiumTier || "Free";
@@ -32,46 +33,46 @@ export function setupPremiumHandler(bot: Bot) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${statusBadge}\n\n` +
         `Polsha oliygohlariga qabul va rasmiy hujjatlashtirish uchun 2 xil premium paket mavjud:\n\n` +
-        `📦 <b>1. NAWA — $15</b>\n` +
+        `📦 <b>1. NAWA — $${pricing.nawaPrice}</b>\n` +
         `• 🏛️ Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
         `• 📋 Nostrifikatsiya talablari bo'yicha to'liq qo'llanma\n` +
         `• 🔍 Universitetlar va dasturlar ma'lumotlar bazasiga kirish\n\n` +
-        `📦 <b>2. NAWA Full — $50</b>\n` +
+        `📦 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}</b>\n` +
         `• ✨ NAWA paketidagi barcha xizmatlar\n` +
         `• 📁 Kerakli hujjatlarni to'plash, to'liq tekshirish va tasdiqlash\n` +
         `• 🏛️ Universitet arizalarini to'liq yuritish va qabul nazorati\n` +
         `• 📜 Qasamyodli tarjima (Tłumacz Przysięgły) va legalizatsiya ko'magi\n` +
         `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 doimiy aloqa\n\n` +
         `💶 <b>Rasmiy Universitet To'lovi:</b>\n` +
-        `• <b>€30 Application Fee</b> (Universitet/konsullik rasmiy arizasi uchun — alohida to'lanadi)\n\n` +
+        `• <b>€${pricing.applicationFee} Application Fee</b> (Universitet/konsullik rasmiy arizasi uchun — alohida to'lanadi)\n\n` +
         (user.isPremium
           ? (user.premiumTier === "NAWA"
-              ? `💡 <i>Sizda hozir <b>NAWA ($15)</b> rejasi faol. <b>NAWA Full ($50)</b> ga oshirish uchun yangi promokod kiriting yoki maslahatchi bilan bog'laning:</i>`
+              ? `💡 <i>Sizda hozir <b>NAWA ($${pricing.nawaPrice})</b> rejasi faol. <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice})</b> ga oshirish uchun yangi promokod kiriting yoki maslahatchi bilan bog'laning:</i>`
               : `✨ <i>Sizda barcha VIP imkoniyatlar va qabul koordinatsiyasi to'liq faol!</i>`)
           : `💡 <i>Agar sizda faollashtirish promokodi bo'lsa, quyidagi <b>"🎟️ Promokod bormi?"</b> tugmasini bosing:</i>`)
       : `💎 <b>POLAND TOP UNIVERSITIES — PREMIUM PLANS</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${statusBadge}\n\n` +
         `Choose from two tailored premium packages for admission and official legalization:\n\n` +
-        `📦 <b>1. NAWA — $15</b>\n` +
+        `📦 <b>1. NAWA — $${pricing.nawaPrice}</b>\n` +
         `• 🏛️ Standard NAWA SYRENA application guidance\n` +
         `• 📋 Diploma recognition and nostrification instructions\n` +
         `• 🔍 Full access to university and program directories\n\n` +
-        `📦 <b>2. NAWA Full — $50</b>\n` +
+        `📦 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}</b>\n` +
         `• ✨ Everything in the NAWA plan\n` +
         `• 📁 Comprehensive document collection, review & verification\n` +
         `• 🏛️ End-to-end university application filing & status tracking\n` +
         `• 📜 Sworn translation (Tłumacz Przysięgły) & legalization guidance\n` +
         `• 💬 1-on-1 Dedicated Admissions Consultant Support\n\n` +
         `💶 <b>Official Administrative Fee:</b>\n` +
-        `• <b>€30 Application Fee</b> (Official university/consular dossier fee — paid separately)\n\n` +
+        `• <b>€${pricing.applicationFee} Application Fee</b> (Official university/consular dossier fee — paid separately)\n\n` +
         (user.isPremium
           ? (user.premiumTier === "NAWA"
-              ? `💡 <i>You are currently on <b>NAWA ($15)</b>. To upgrade to <b>NAWA Full ($50)</b>, enter an upgrade promo code or contact your advisor:</i>`
+              ? `💡 <i>You are currently on <b>NAWA ($${pricing.nawaPrice})</b>. To upgrade to <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice})</b>, enter an upgrade promo code or contact your advisor:</i>`
               : `✨ <i>You have full access to all priority admissions tools and document reviews!</i>`)
           : `💡 <i>If you have an activation promo code, tap <b>"🎟️ Have a promo code?"</b> below:</i>`);
 
-    const kb = getPremiumKeyboard(user.lang, user.isPremium, user.premiumTier);
+    const kb = getPremiumKeyboard(user.lang, user.isPremium, user.premiumTier, pricing.fullApplicationNawaPrice);
 
     if (ctx.callbackQuery?.message) {
       try {

@@ -233,6 +233,28 @@ export interface TransactionRecord {
   notes?: string;
 }
 
+export interface PricingConfig {
+  nawaPrice: number;
+  nawaCurrency: string;
+  fullApplicationNawaPrice: number;
+  fullApplicationNawaCurrency: string;
+  applicationFee: number;
+  applicationFeeCurrency: string;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  lastUpdatedByName?: string;
+}
+
+export interface OfertaRecord {
+  version: number;
+  text: string;
+  publishedAt: string;
+  publishedBy?: number;
+  publishedByName?: string;
+  status: "published" | "draft";
+  pricingSnapshot?: PricingConfig;
+}
+
 export interface UserSessionData {
   userId: number;
   username?: string;
@@ -259,6 +281,8 @@ export interface UserSessionData {
   premiumTransactionId?: string;
   premiumVerifiedAt?: string;
   premiumVerifiedBy?: number;
+  acceptedOfertaVersion?: number;
+  acceptedOfertaAt?: string;
   savedPrograms: string[];
   documents: Record<string, DocumentRecord>;
   activeQuiz?: {
@@ -291,6 +315,11 @@ export interface UserSessionData {
     | "admin_add_review"
     | "admin_edit_review_text"
     | "admin_super_appoint_user"
+    | "admin_super_create_txn_user"
+    | "admin_edit_price_nawa"
+    | "admin_edit_price_full"
+    | "admin_edit_fee"
+    | "admin_edit_oferta_text"
     | null;
   waitingPayload?: any;
   lastPromptMsgId?: number;

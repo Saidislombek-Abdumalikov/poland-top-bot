@@ -460,10 +460,13 @@ export function setupTextInputHandler(bot: Bot) {
           createdByName: user.fullName || user.username || `Admin #${userId}`,
         });
 
+        const pricing = db.getPricingConfig();
+        const tierName = created.tier === "NAWA" ? `NAWA ($${pricing.nawaPrice})` : `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`;
+
         await ctx.reply(
           `✅ <b>Promo Code Created!</b>\n\n` +
             `• 🔑 Code: <code>${escapeHtml(created.code)}</code>\n` +
-            `• 💎 Package: <b>${created.tier === "NAWA" ? "NAWA ($15)" : "NAWA Full ($50)"}</b>\n` +
+            `• 💎 Package: <b>${tierName}</b>\n` +
             `• 👥 Max Uses: <b>1 (Single Student Exclusive)</b>`,
           { parse_mode: "HTML" }
         );
@@ -869,10 +872,13 @@ export function setupTextInputHandler(bot: Bot) {
       db.setWaitingFor(userId, null);
       const res = db.redeemPromoCode(text, userId);
       const isUz = user.lang === "uz";
+      const pricing = db.getPricingConfig();
 
       if (res.success && res.tier) {
         const isNawaFull = res.tier === "NAWA_FULL" || res.tier === "Full Premium";
-        const tierName = isNawaFull ? "NAWA Full ($50)" : "NAWA ($15)";
+        const tierName = isNawaFull
+          ? `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`
+          : `NAWA ($${pricing.nawaPrice})`;
 
         const successMsg = isUz
           ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
@@ -887,7 +893,7 @@ export function setupTextInputHandler(bot: Bot) {
               : `• 🏛️ Standart NAWA SYRENA arizasi va nostrifikatsiya yo'riqnomasi\n` +
                 `• 📋 Polsha oliygohlari qabul talablari va dasturlar bazasi\n` +
                 `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari\n` +
-                `💡 <i>Hujjatlarni tekshirtirish va to'liq ariza topshirish uchun NAWA Full ga oshirishingiz mumkin.</i>`)
+                `💡 <i>Hujjatlarni tekshirtirish va to'liq ariza topshirish uchun Full Application + NAWA ga oshirishingiz mumkin.</i>`)
           : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
             `Your promo code <code>${escapeHtml(text.toUpperCase())}</code> has been redeemed successfully!\n` +
             `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
@@ -900,7 +906,7 @@ export function setupTextInputHandler(bot: Bot) {
               : `• 🏛️ Standard NAWA SYRENA Application & Recognition Guide\n` +
                 `• 📋 Polish University Admission Requirements Directory\n` +
                 `• ✍️ Standard Exam Preparation Materials\n` +
-                `💡 <i>You can upgrade to NAWA Full anytime for complete document review and application processing.</i>`);
+                `💡 <i>You can upgrade to Full Application + NAWA anytime for complete document review and application processing.</i>`);
 
         await ctx.reply(successMsg, {
           parse_mode: "HTML",
@@ -1026,6 +1032,160 @@ export function setupTextInputHandler(bot: Bot) {
             ? `✨ <i>Premium ${txn.product} has been automatically activated for the student.</i>`
             : `🟡 <i>Payment is UNVERIFIED. You can verify it anytime in Financial HQ.</i>`),
         { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    // 17. Admin Edit NAWA Price
+    if (user.waitingFor === "admin_edit_price_nawa") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        await ctx.reply(
+          `⚠️ <b>Xatolik / Invalid Price:</b> Narx musbat raqam bo'lishi kerak (masalan: <code>15</code> yoki <code>20</code>).`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      db.updatePricingConfig(
+        { nawaPrice: parsedPrice },
+        userId,
+        user.fullName || user.username || `Admin #${userId}`
+      );
+
+      await ctx.reply(
+        `✅ <b>NAWA narxi muvaffaqiyatli yangilandi!</b>\n\n` +
+          `• Yangi narx: <b>$${parsedPrice} USD</b>\n` +
+          `• Ushbu yangi narx barcha bo'limlar va Ofertada avtomatik aks etadi.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
+            ],
+          },
+        }
+      );
+      return;
+    }
+
+    // 18. Admin Edit Full Application + NAWA Price
+    if (user.waitingFor === "admin_edit_price_full") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        await ctx.reply(
+          `⚠️ <b>Xatolik / Invalid Price:</b> Narx musbat raqam bo'lishi kerak (masalan: <code>50</code> yoki <code>60</code>).`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      db.updatePricingConfig(
+        { fullApplicationNawaPrice: parsedPrice },
+        userId,
+        user.fullName || user.username || `Admin #${userId}`
+      );
+
+      await ctx.reply(
+        `✅ <b>Full Application + NAWA narxi muvaffaqiyatli yangilandi!</b>\n\n` +
+          `• Yangi narx: <b>$${parsedPrice} USD</b>\n` +
+          `• Ushbu yangi narx barcha bo'limlar va Ofertada avtomatik aks etadi.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
+            ],
+          },
+        }
+      );
+      return;
+    }
+
+    // 19. Admin Edit Application Fee
+    if (user.waitingFor === "admin_edit_fee") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const parsedFee = parseFloat(text.replace(/[^0-9.]/g, ""));
+      if (isNaN(parsedFee) || parsedFee < 0) {
+        await ctx.reply(
+          `⚠️ <b>Xatolik / Invalid Fee:</b> Ariza to'lovi 0 yoki undan yuqori raqam bo'lishi kerak (masalan: <code>30</code>).`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      db.updatePricingConfig(
+        { applicationFee: parsedFee },
+        userId,
+        user.fullName || user.username || `Admin #${userId}`
+      );
+
+      await ctx.reply(
+        `✅ <b>Ariza to'lovi muvaffaqiyatli yangilandi!</b>\n\n` +
+          `• Yangi to'lov miqdori: <b>€${parsedFee} EUR</b>\n` +
+          `• Ushbu to'lov barcha Ofertada va tariflarda avtomatik aks etadi.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
+            ],
+          },
+        }
+      );
+      return;
+    }
+
+    // 20. Admin Edit Oferta Text (Draft)
+    if (user.waitingFor === "admin_edit_oferta_text") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      if (!text || text.trim().length < 20) {
+        await ctx.reply(
+          `⚠️ <b>Xatolik / Too Short:</b> Oferta matni kamida 20 ta belgidan iborat bo'lishi kerak.`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      if (text.length > 4000) {
+        await ctx.reply(
+          `⚠️ <b>Xatolik / Message Too Long:</b> Telegram bitta xabar uchun matn uzunligi 4000 belgidan oshmasligi kerak (Sizda: ${text.length} belgi).`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      const draft = db.updateDraftOferta(
+        text,
+        userId,
+        user.fullName || user.username || `Admin #${userId}`
+      );
+
+      await ctx.reply(
+        `✅ <b>Yangi Oferta Qoralamasi (Draft v${draft.version}) Saqlandi!</b>\n\n` +
+          `Siz ushbu qoralamani avval <b>Ko'rib chiqishingiz (Preview)</b> va barcha narxlar to'g'riligiga ishonch hosil qilgach <b>E'lon qilishingiz (Publish)</b> mumkin.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "👁️ Ofertani Ko'rish (Preview)", callback_data: "admin_preview_oferta" },
+                { text: "🚀 E'lon Qilish (Publish)", callback_data: "admin_publish_oferta_confirm" },
+              ],
+              [{ text: "◀️ Oferta & Narxlar Paneli", callback_data: "admin_menu_oferta_pricing" }],
+            ],
+          },
+        }
       );
       return;
     }

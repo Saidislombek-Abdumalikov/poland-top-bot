@@ -38,6 +38,8 @@ import {
   getSuperAdminAdminsKeyboard,
   getSuperAdminGhostMenuKeyboard,
   getSuperAdminDbStatusKeyboard,
+  getAdminOfertaPricingKeyboard,
+  getAdminOfertaPreviewKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -946,19 +948,20 @@ export function setupAdminHandler(bot: Bot) {
     if (!userId || !checkAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
+    const pricing = db.getPricingConfig();
 
     const text = isUz
       ? `➕ <b>Yangi Promokod Yaratish</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
         `Qaysi mahsulot/paket uchun tasodifiy 8 xonali promokod yaratmoqchisiz?\n\n` +
-        `• <b>1. NAWA — $15:</b> Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
-        `• <b>2. NAWA Full — $50:</b> To'liq hujjatlar tekshiruvi va universitet arizalari`
+        `• <b>1. NAWA — $${pricing.nawaPrice}:</b> Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
+        `• <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}:</b> To'liq hujjatlar tekshiruvi va universitet arizalari`
       : `➕ <b>Create New Promo Code</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
         `Select the package to generate a secure random 8-character promo code for:\n\n` +
-        `• <b>1. NAWA — $15:</b> Standard NAWA SYRENA guidance\n` +
-        `• <b>2. NAWA Full — $50:</b> Full document verification & university admissions`;
+        `• <b>1. NAWA — $${pricing.nawaPrice}:</b> Standard NAWA SYRENA guidance\n` +
+        `• <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}:</b> Full document verification & university admissions`;
 
     await ctx.answerCallbackQuery();
-    const kb = getAdminPromoProductSelectKeyboard(adminUser.lang);
+    const kb = getAdminPromoProductSelectKeyboard(adminUser.lang, pricing);
     if (ctx.callbackQuery?.message) {
       try {
         await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
@@ -985,7 +988,8 @@ export function setupAdminHandler(bot: Bot) {
     });
 
     const isUz = adminUser.lang === "uz";
-    const tierName = tier === "NAWA" ? "NAWA ($15)" : "NAWA Full ($50)";
+    const pricing = db.getPricingConfig();
+    const tierName = tier === "NAWA" ? `NAWA ($${pricing.nawaPrice})` : `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`;
 
     await ctx.answerCallbackQuery({ text: `Code ${promo.code} created for ${tierName}!` });
 
@@ -1171,6 +1175,242 @@ export function setupAdminHandler(bot: Bot) {
       { parse_mode: "HTML" }
     );
     db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  // ================= OFERTA & PRICING MANAGEMENT =================
+  bot.callbackQuery("admin_menu_oferta_pricing", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const pricing = db.getPricingConfig();
+    const oferta = db.getPublishedOferta();
+    const draft = db.getDraftOferta();
+    const hasDraft = draft && draft.status === "draft" && draft.text !== oferta.text;
+
+    const text = isUz
+      ? `📄 <b>OFERTA VA NARXLARNI BOSHQARISH (PRICING & TERMS)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📌 <b>Amaldagi Narxlar (Yagona Manba):</b>\n` +
+        `• 📦 <b>NAWA Paketi:</b> <code>$${pricing.nawaPrice} ${pricing.nawaCurrency}</code>\n` +
+        `• 💎 <b>Full Application + NAWA:</b> <code>$${pricing.fullApplicationNawaPrice} ${pricing.fullApplicationNawaCurrency}</code>\n` +
+        `• 💶 <b>Rasmiy Ariza To'lovi:</b> <code>€${pricing.applicationFee} ${pricing.applicationFeeCurrency}</code>\n\n` +
+        `📜 <b>Amaldagi Oferta:</b> <b>v${oferta.version}</b> (E'lon qilingan: ${oferta.publishedAt} — ${escapeHtml(oferta.publishedByName || "System")})\n` +
+        (hasDraft ? `\n📝 <i>Eslatma: E'lon qilinmagan yangi qoralama (Draft v${draft.version}) mavjud.</i>\n` : "\n") +
+        `<i>Quyidagi tugmalar orqali narxlarni o'zgartirishingiz, Ofertani tahrirlashingiz, ko'rib chiqishingiz va e'lon qilishingiz mumkin:</i>`
+      : `📄 <b>OFERTA & PRICING MANAGEMENT</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📌 <b>Current Configured Pricing (Single Source of Truth):</b>\n` +
+        `• 📦 <b>NAWA Package:</b> <code>$${pricing.nawaPrice} ${pricing.nawaCurrency}</code>\n` +
+        `• 💎 <b>Full Application + NAWA:</b> <code>$${pricing.fullApplicationNawaPrice} ${pricing.fullApplicationNawaCurrency}</code>\n` +
+        `• 💶 <b>Administrative Application Fee:</b> <code>€${pricing.applicationFee} ${pricing.applicationFeeCurrency}</code>\n\n` +
+        `📜 <b>Published Oferta:</b> <b>v${oferta.version}</b> (Published: ${oferta.publishedAt} — ${escapeHtml(oferta.publishedByName || "System")})\n` +
+        (hasDraft ? `\n📝 <i>Note: There is an unpublished new draft (v${draft.version}) ready.</i>\n` : "\n") +
+        `<i>Select an option below to modify pricing, edit Oferta text, preview, or publish:</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getAdminOfertaPricingKeyboard(pricing, oferta, Boolean(hasDraft), adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery("admin_edit_price_nawa", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const pricing = db.getPricingConfig();
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_price_nawa");
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `💵 <b>NAWA Paketining Yangi Narxini Kiriting</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Amaldagi narx: <b>$${pricing.nawaPrice} USD</b>\n\n` +
+        `Yangi narxni faqat raqam shaklida yuboring (masalan: <code>15</code> yoki <code>20</code>):`
+      : `💵 <b>Enter New Price for NAWA Package</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Current Price: <b>$${pricing.nawaPrice} USD</b>\n\n` +
+        `Reply with the new price (e.g. <code>15</code> or <code>20</code>):`;
+
+    const msg = await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [[{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_menu_oferta_pricing" }]],
+      },
+    });
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery("admin_edit_price_full", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const pricing = db.getPricingConfig();
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_price_full");
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `💎 <b>Full Application + NAWA Yangi Narxini Kiriting</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Amaldagi narx: <b>$${pricing.fullApplicationNawaPrice} USD</b>\n\n` +
+        `Yangi narxni faqat raqam shaklida yuboring (masalan: <code>50</code> yoki <code>60</code>):`
+      : `💎 <b>Enter New Price for Full Application + NAWA</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Current Price: <b>$${pricing.fullApplicationNawaPrice} USD</b>\n\n` +
+        `Reply with the new price (e.g. <code>50</code> or <code>60</code>):`;
+
+    const msg = await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [[{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_menu_oferta_pricing" }]],
+      },
+    });
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery("admin_edit_fee", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const pricing = db.getPricingConfig();
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_fee");
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `💶 <b>Rasmiy Ariza To'lovining (Application Fee) Yangi Miqdorini Kiriting</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Amaldagi to'lov: <b>€${pricing.applicationFee} EUR</b>\n\n` +
+        `Yangi miqdorni raqam shaklida yuboring (masalan: <code>30</code>):`
+      : `💶 <b>Enter New Application Fee</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Current Fee: <b>€${pricing.applicationFee} EUR</b>\n\n` +
+        `Reply with the new application fee (e.g. <code>30</code>):`;
+
+    const msg = await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [[{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_menu_oferta_pricing" }]],
+      },
+    });
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery("admin_edit_oferta_text", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const draft = db.getDraftOferta();
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_oferta_text");
+    await ctx.answerCallbackQuery();
+
+    const info = isUz
+      ? `✏️ <b>OFERTA MATNINI TAHRIRLASH (DRAFT v${draft.version})</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Yangi Oferta matnini yozib yuboring. Siz dinamik o'zgaruvchilardan foydalanishingiz mumkin:\n\n` +
+        `• <code>{{NAWA_PRICE}}</code> — NAWA paketi narxini avtomatik qo'yadi\n` +
+        `• <code>{{FULL_APPLICATION_NAWA_PRICE}}</code> — Full Application + NAWA narxini qo'yadi\n` +
+        `• <code>{{APPLICATION_FEE}}</code> — Ariza to'lovini qo'yadi\n` +
+        `• <code>{{LAST_UPDATED_DATE}}</code> — Oxirgi yangilanish sanasini qo'yadi\n\n` +
+        `<i>Hozirgi matn nusxasi:</i>`
+      : `✏️ <b>EDIT OFERTA TEXT (DRAFT v${draft.version})</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Send the full new Oferta text. You can use dynamic placeholders:\n\n` +
+        `• <code>{{NAWA_PRICE}}</code> — Automatically inserts NAWA price\n` +
+        `• <code>{{FULL_APPLICATION_NAWA_PRICE}}</code> — Inserts Full Application + NAWA price\n` +
+        `• <code>{{APPLICATION_FEE}}</code> — Inserts Application Fee\n` +
+        `• <code>{{LAST_UPDATED_DATE}}</code> — Inserts last updated date\n\n` +
+        `<i>Current draft copy below:</i>`;
+
+    await ctx.reply(info, { parse_mode: "HTML" });
+    await ctx.reply(`<code>${escapeHtml(draft.text.slice(0, 3900))}</code>`, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [[{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_menu_oferta_pricing" }]],
+      },
+    });
+  });
+
+  bot.callbackQuery("admin_preview_oferta", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const draft = db.getDraftOferta();
+    const published = db.getPublishedOferta();
+    const hasDraft = draft && draft.status === "draft" && draft.text !== published.text;
+    const isUz = adminUser.lang === "uz";
+
+    const textToRender = hasDraft ? draft.text : published.text;
+    const rendered = db.getRenderedOferta(textToRender);
+
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      `👁️ <b>${isUz ? "OFERTA PREVIEW (FOYDALANUVCHI KO'RINISHI)" : "OFERTA TELEGRAM PREVIEW"}</b>\n` +
+        `<i>(Versiya: v${hasDraft ? draft.version + " [Draft]" : published.version + " [Published]"})</i>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        rendered,
+      {
+        parse_mode: "HTML",
+        reply_markup: getAdminOfertaPreviewKeyboard(Boolean(hasDraft), adminUser.lang),
+      }
+    );
+  });
+
+  bot.callbackQuery("admin_publish_oferta_confirm", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const draft = db.getDraftOferta();
+    const isUz = adminUser.lang === "uz";
+
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      `🚀 <b>Ofertani E'lon Qilishni Tasdiqlaysizmi?</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Yangi versiya: <b>v${draft.version}</b>\n` +
+        `Bu versiya barcha foydalanuvchilar uchun rasmiy kuchga kiradi va amaldagi narxlar biriktiriladi.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "🚀 HA, E'LON QILISH (PUBLISH)" : "🚀 YES, PUBLISH NOW", callback_data: "admin_publish_oferta_execute" }],
+            [{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_menu_oferta_pricing" }],
+          ],
+        },
+      }
+    );
+  });
+
+  bot.callbackQuery("admin_publish_oferta_execute", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+
+    const published = db.publishOferta(
+      userId,
+      adminUser.fullName || adminUser.username || `Admin #${userId}`
+    );
+
+    await ctx.answerCallbackQuery({ text: `Oferta v${published.version} published!` });
+    await ctx.reply(
+      `✅ <b>OFERTA v${published.version} MUAFFAQIYATLI E'LON QILINDI!</b>\n\n` +
+        `• Rasmiy nashr sanasi: <b>${published.publishedAt}</b>\n` +
+        `• E'lon qilgan admin: <b>${escapeHtml(published.publishedByName || "Admin")}</b>\n` +
+        `• Botdagi barcha foydalanuvchilar endi ushbu yangilangan Ofertani ko'radi.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "◀️ Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }]],
+        },
+      }
+    );
   });
 
   // ================= 5. UNIVERSITIES MANAGEMENT =================
@@ -2154,8 +2394,8 @@ export function setupAdminHandler(bot: Bot) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `💵 <b>Jami Tasdiqlangan Tushum:</b> <code>$${fin.totalVerifiedRevenue.toLocaleString()}</code>\n` +
         `💳 <b>Tasdiqlangan To'lovlar Soni:</b> <b>${fin.verifiedPaymentsCount} ta</b>\n\n` +
-        `📦 <b>NAWA ($15) Savdolari:</b> <b>${fin.nawaCount} ta</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
-        `💎 <b>NAWA Full ($50) Savdolari:</b> <b>${fin.nawaFullCount} ta</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
+        `📦 <b>NAWA Savdolari:</b> <b>${fin.nawaCount} ta</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
+        `💎 <b>Full Application + NAWA Savdolari:</b> <b>${fin.nawaFullCount} ta</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
         `🟡 <b>Kutilayotgan (Tasdiqlanmagan):</b> <b>${fin.unverifiedCount} ta</b>\n` +
         `🔴 <b>Qaytarilgan / Bekor qilingan:</b> <b>${fin.refundedCount + fin.cancelledCount} ta</b>\n\n` +
         `🔒 <i>Ushbu ma'lumotlar faqat Super Admin uchun maxfiy. Oddiy adminlar bu bo'lim mavjudligini ko'ra olmaydi.</i>`
@@ -2163,8 +2403,8 @@ export function setupAdminHandler(bot: Bot) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `💵 <b>Total Verified Revenue:</b> <code>$${fin.totalVerifiedRevenue.toLocaleString()}</code>\n` +
         `💳 <b>Verified Payments Count:</b> <b>${fin.verifiedPaymentsCount}</b>\n\n` +
-        `📦 <b>NAWA ($15) Purchases:</b> <b>${fin.nawaCount}</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
-        `💎 <b>NAWA Full ($50) Purchases:</b> <b>${fin.nawaFullCount}</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
+        `📦 <b>NAWA Purchases:</b> <b>${fin.nawaCount}</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
+        `💎 <b>Full Application + NAWA Purchases:</b> <b>${fin.nawaFullCount}</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
         `🟡 <b>Unverified / Pending Queue:</b> <b>${fin.unverifiedCount}</b>\n` +
         `🔴 <b>Refunded / Cancelled:</b> <b>${fin.refundedCount + fin.cancelledCount}</b>\n\n` +
         `🔒 <i>This financial system operates strictly in private. Normal administrators have zero financial visibility or access.</i>`;
