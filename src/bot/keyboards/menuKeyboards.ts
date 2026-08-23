@@ -249,14 +249,24 @@ export function getQuizQuestionKeyboard(
 
 
 
-export function getPremiumKeyboard(lang: Language, isPremium: boolean): InlineKeyboard {
+export function getPremiumKeyboard(
+  lang: Language,
+  isPremium: boolean,
+  tier?: string
+): InlineKeyboard {
+  const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
   if (!isPremium) {
-    kb.text(t(lang, "premium_btn_activate_code"), "premium_enter_code").row();
+    kb.text(isUz ? "🎟️ Promokod bormi?" : "🎟️ Have a promo code?", "premium_enter_code").row();
+  } else if (tier === "NAWA") {
+    kb.text(isUz ? "💎 NAWA Full ($50) ga oshirish" : "💎 Upgrade to NAWA Full ($50)", "premium_enter_code").row();
   }
 
-  kb.url(t(lang, "premium_btn_contact"), "https://t.me/poland_admissions_bot")
+  kb.url(
+    isUz ? "💬 Maslahatchi bilan bog'lanish" : "💬 Contact Admissions Consultant",
+    "https://t.me/poland_admissions_bot"
+  )
     .row()
     .text(t(lang, "nav_main_menu"), "go_main_menu");
 

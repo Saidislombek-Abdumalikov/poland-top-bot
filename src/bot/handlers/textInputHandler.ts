@@ -448,29 +448,23 @@ export function setupTextInputHandler(bot: Bot) {
       db.setWaitingFor(userId, null);
       const parts = text.split(" ");
       const code = parts[0]?.toUpperCase().trim();
-      const tier = (parts[1] || "Full Premium") as PremiumTier;
-      const maxUses = parseInt(parts[2] || "1", 10);
+      const rawTier = (parts[1] || "").toUpperCase();
+      const tier: PremiumTier = rawTier === "NAWA" ? "NAWA" : "NAWA_FULL";
 
       if (code) {
         const created = db.createPromoCode({
           code,
           tier,
-          maxUses,
+          maxUses: 1,
+          createdBy: userId,
+          createdByName: user.fullName || user.username || `Admin #${userId}`,
         });
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "CREATE_PROMO",
-          `Created custom promo code '${created.code}' (${created.tier}, max uses: ${created.maxUses})`,
-          created.code
-        );
 
         await ctx.reply(
           `✅ <b>Promo Code Created!</b>\n\n` +
             `• 🔑 Code: <code>${escapeHtml(created.code)}</code>\n` +
-            `• 💎 Tier: <b>${escapeHtml(created.tier)}</b>\n` +
-            `• 👥 Max Uses: <b>${created.maxUses} (Single User)</b>`,
+            `• 💎 Package: <b>${created.tier === "NAWA" ? "NAWA ($15)" : "NAWA Full ($50)"}</b>\n` +
+            `• 👥 Max Uses: <b>1 (Single Student Exclusive)</b>`,
           { parse_mode: "HTML" }
         );
       }
@@ -876,27 +870,44 @@ export function setupTextInputHandler(bot: Bot) {
       const res = db.redeemPromoCode(text, userId);
       const isUz = user.lang === "uz";
 
-      if (res.success) {
+      if (res.success && res.tier) {
+        const isNawaFull = res.tier === "NAWA_FULL" || res.tier === "Full Premium";
+        const tierName = isNawaFull ? "NAWA Full ($50)" : "NAWA ($15)";
+
         const successMsg = isUz
           ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
             `Siz kiritgan <code>${escapeHtml(text.toUpperCase())}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
-            `🌟 <b>Ochilgan A'zolik Darajasi:</b> <b>${escapeHtml(res.tier)}</b>\n\n` +
-            `• Hujjatlar nazorati va qabul hujjatlarini yuklash imkoniyati\n` +
-            `• Kirish imtihonlari va fan testlariga to'liq kirish\n` +
-            `• Universitetlarga to'g'ridan-to'g'ri ariza topshirish huquqi\n` +
-            `• Rasmiy maslahatchilar tomonidan hujjatlarni to'liq tekshirish\n` +
-            `• Rasmiy NAWA SYRENA nostrifikatsiyasi va Polsha qasamyodli tarjimalari\n` +
-            `• Shaxsiy koordinator: <a href="https://t.me/poland_admissions_bot">Admissions Team</a>`
+            `🌟 <b>Ochilgan A'zolik Paketi:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
+            (isNawaFull
+              ? `• 📁 Hujjatlar nazorati va qabul hujjatlarini to'liq tekshirish\n` +
+                `• 🏛️ Universitetlarga to'g'ridan-to'g'ri ariza topshirish huquqi\n` +
+                `• 📜 NAWA SYRENA arizasi va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły)\n` +
+                `• ✍️ Kirish imtihonlari va yo'nalish testlariga to'liq kirish\n` +
+                `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 aloqa`
+              : `• 🏛️ Standart NAWA SYRENA arizasi va nostrifikatsiya yo'riqnomasi\n` +
+                `• 📋 Polsha oliygohlari qabul talablari va dasturlar bazasi\n` +
+                `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari\n` +
+                `💡 <i>Hujjatlarni tekshirtirish va to'liq ariza topshirish uchun NAWA Full ga oshirishingiz mumkin.</i>`)
           : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
-            `Your code <code>${escapeHtml(text.toUpperCase())}</code> has been redeemed!\n` +
-            `🌟 <b>Unlocked Tier:</b> <b>${escapeHtml(res.tier)}</b>\n\n` +
-            `• Full access to Document Checklist & Certified Advisor Verification\n` +
-            `• Full access to University Entrance & Placement Exams\n` +
-            `• Direct university application filing\n` +
-            `• Official NAWA SYRENA legalization & sworn translations\n` +
-            `• Direct contact: <a href="https://t.me/poland_admissions_bot">Admissions Team</a>`;
+            `Your promo code <code>${escapeHtml(text.toUpperCase())}</code> has been redeemed successfully!\n` +
+            `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
+            (isNawaFull
+              ? `• 📁 Full Document Checklist & Certified Advisor Verification\n` +
+                `• 🏛️ Direct University Application Filing & Dossier Processing\n` +
+                `• 📜 NAWA SYRENA Legalization & Sworn Translations (Tłumacz Przysięgły)\n` +
+                `• ✍️ Complete Entrance & Placement Exam Access\n` +
+                `• 💬 1-on-1 Dedicated Admissions Consultant Support`
+              : `• 🏛️ Standard NAWA SYRENA Application & Recognition Guide\n` +
+                `• 📋 Polish University Admission Requirements Directory\n` +
+                `• ✍️ Standard Exam Preparation Materials\n` +
+                `💡 <i>You can upgrade to NAWA Full anytime for complete document review and application processing.</i>`);
 
-        await ctx.reply(successMsg, { parse_mode: "HTML" });
+        await ctx.reply(successMsg, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
+          },
+        });
       } else {
         const failMsg = isUz
           ? `❌ <b>Faollashtirish Amalga Oshmadi</b>\n\n` +
@@ -904,7 +915,7 @@ export function setupTextInputHandler(bot: Bot) {
             `Iltimos, kiritilgan kodni tekshiring yoki yangi kod olish uchun maslahatchi bilan bog'laning:`
           : `❌ <b>Activation Failed</b>\n\n` +
             `Reason: ${escapeHtml(res.error || "Code not recognized")}.\n` +
-            `Please contact your consultant or tap below to purchase a code:`;
+            `Please contact your consultant or tap below to obtain a code:`;
 
         await ctx.reply(failMsg, {
           parse_mode: "HTML",

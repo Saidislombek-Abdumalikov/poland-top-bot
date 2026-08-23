@@ -13,7 +13,7 @@ export type StudyField =
   | "Economics"
   | "Architecture";
 
-export type PremiumTier = "Free" | "Full Premium" | "VIP Admissions" | "Student Grant";
+export type PremiumTier = "Free" | "NAWA" | "NAWA_FULL" | "Full Premium" | "VIP Admissions" | "Student Grant";
 
 export type DocStatus = "approved" | "reviewing" | "needs_correction" | "missing";
 
@@ -175,6 +175,8 @@ export interface PromoCodeRecord {
   tier: PremiumTier;
   maxUses: number;
   usedCount: number;
+  createdBy?: number;
+  createdByName?: string;
   assignedUserId?: number;
   assignedUserName?: string;
   createdAt: string;

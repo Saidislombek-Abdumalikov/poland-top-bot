@@ -24,10 +24,15 @@ export function setupDocumentHandler(bot: Bot) {
       return;
     }
 
-    const hasAccess = await checkPremiumAccess(ctx, user, {
-      en: "Document Checklist & Advisor Verification",
-      uz: "Hujjatlar Nazorati va Qabul Hujjatlarini Tekshirish",
-    });
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "Document Checklist & Advisor Verification",
+        uz: "Hujjatlar Nazorati va Qabul Hujjatlarini Tekshirish",
+      },
+      "NAWA_FULL"
+    );
     if (!hasAccess) return;
 
     const docDefs = db.getDocumentDefinitions();
@@ -180,10 +185,15 @@ export function setupDocumentHandler(bot: Bot) {
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
 
-    const hasAccess = await checkPremiumAccess(ctx, user, {
-      en: "Certified Document Verification & Counselor Review",
-      uz: "Hujjatlarni Rasmiy Tekshirish va Maslahatchi Tasdig'i",
-    });
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "Certified Document Verification & Counselor Review",
+        uz: "Hujjatlarni Rasmiy Tekshirish va Maslahatchi Tasdig'i",
+      },
+      "NAWA_FULL"
+    );
     if (!hasAccess) return;
 
     const docDef = db.getDocumentDefinition(docKey);

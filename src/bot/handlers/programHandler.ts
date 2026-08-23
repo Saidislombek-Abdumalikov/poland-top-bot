@@ -282,10 +282,15 @@ export function setupProgramHandler(bot: Bot) {
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
 
-    const hasAccess = await checkPremiumAccess(ctx, user, {
-      en: "Direct University Application Submission",
-      uz: "Universitetga To'g'ridan-to'g'ri Ariza Topshirish",
-    });
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "Direct University Application Submission",
+        uz: "Universitetga To'g'ridan-to'g'ri Ariza Topshirish",
+      },
+      "NAWA_FULL"
+    );
     if (!hasAccess) return;
 
     const prog = programs.find((p) => p.id === progId);

@@ -22,6 +22,7 @@ import {
   getAdminPendingDocsKeyboard,
   getAdminDocReviewKeyboard,
   getAdminPromoCodesKeyboard,
+  getAdminPromoProductSelectKeyboard,
   getAdminPromoDetailKeyboard,
   getAdminUniversitiesKeyboard,
   getAdminUniversityEditKeyboard,
@@ -919,36 +920,97 @@ export function setupAdminHandler(bot: Bot) {
     });
   });
 
-  // 1-Click Generate Random Code (Strictly 1 Student Single-Use)
-  bot.callbackQuery("admin_gen_random_promo", async (ctx) => {
+  // Promo product selection menu
+  bot.callbackQuery("admin_create_promo_select", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
 
+    const text = isUz
+      ? `➕ <b>Yangi Promokod Yaratish</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Qaysi mahsulot/paket uchun tasodifiy 8 xonali promokod yaratmoqchisiz?\n\n` +
+        `• <b>1. NAWA — $15:</b> Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
+        `• <b>2. NAWA Full — $50:</b> To'liq hujjatlar tekshiruvi va universitet arizalari`
+      : `➕ <b>Create New Promo Code</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Select the package to generate a secure random 8-character promo code for:\n\n` +
+        `• <b>1. NAWA — $15:</b> Standard NAWA SYRENA guidance\n` +
+        `• <b>2. NAWA Full — $50:</b> Full document verification & university admissions`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getAdminPromoProductSelectKeyboard(adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // Create promo code for selected tier (NAWA or NAWA_FULL)
+  bot.callbackQuery(/^admin_create_promo_tier_(NAWA|NAWA_FULL)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const match = ctx.callbackQuery?.data?.match(/^admin_create_promo_tier_(NAWA|NAWA_FULL)$/);
+    if (!match) return;
+    const tier = match[1] as "NAWA" | "NAWA_FULL";
+
+    const adminUser = db.getUser(userId);
     const promo = db.createPromoCode({
-      tier: "Full Premium",
-      maxUses: 1, // Strictly 1 person
+      tier,
+      maxUses: 1,
+      createdBy: userId,
+      createdByName: adminUser.fullName || adminUser.username || `Admin #${userId}`,
     });
 
-    const adminId = ctx.from?.id || 0;
-    const adminUser = db.getUser(adminId);
-    db.logAdminAction(
-      adminId,
-      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
-      "CREATE_PROMO",
-      `Generated single-use VIP promo code '${promo.code}' (${promo.tier})`,
-      promo.code
-    );
+    const isUz = adminUser.lang === "uz";
+    const tierName = tier === "NAWA" ? "NAWA ($15)" : "NAWA Full ($50)";
 
-    await ctx.answerCallbackQuery({ text: `Single-use code ${promo.code} generated!` });
-    await ctx.reply(
-      `⚡ <b>New Single-Use Promo Code Generated!</b>\n\n` +
-        `• 🔑 Code: <code>${escapeHtml(promo.code)}</code>\n` +
-        `• 💎 Tier: <b>${escapeHtml(promo.tier)}</b>\n` +
-        `• 👥 Max Uses: <b>1 (Single Student Exclusive)</b>\n` +
-        `• 🟢 Status: <b>ACTIVE (Available)</b>\n\n` +
-        `<i>Give this code to 1 student. As soon as it is entered, it is consumed and immediately becomes unavailable.</i>`,
+    await ctx.answerCallbackQuery({ text: `Code ${promo.code} created for ${tierName}!` });
+
+    const text = isUz
+      ? `✅ <b>Yangi Bir Martalik Promokod Yaratildi!</b>\n\n` +
+        `• 🔑 <b>Promokod:</b> <code>${escapeHtml(promo.code)}</code>\n` +
+        `• 💎 <b>Paket:</b> <b>${escapeHtml(tierName)}</b>\n` +
+        `• 👥 <b>Maksimal Foydalanish:</b> <b>1 ta talaba (Single-use)</b>\n` +
+        `• 🟢 <b>Holati:</b> <b>Faol (Active)</b>\n\n` +
+        `<i>Ushbu 8 xonali kodni talabaga yuboring. Kod kiritilishi bilan sarflanadi va band qilinadi.</i>`
+      : `✅ <b>New Single-Use Promo Code Generated!</b>\n\n` +
+        `• 🔑 <b>Promo Code:</b> <code>${escapeHtml(promo.code)}</code>\n` +
+        `• 💎 <b>Package:</b> <b>${escapeHtml(tierName)}</b>\n` +
+        `• 👥 <b>Max Uses:</b> <b>1 Student Exclusive (Single-use)</b>\n` +
+        `• 🟢 <b>Status:</b> <b>Active</b>\n\n` +
+        `<i>Send this 8-character code to the student. As soon as it is redeemed, it is locked.</i>`;
+
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: isUz ? "➕ Yana Kod Yaratish" : "➕ Generate Another Code", callback_data: "admin_create_promo_select" }],
+          [{ text: isUz ? "◀️ Promokodlar Ro'yxatiga" : "◀️ Back to Promo Codes", callback_data: "admin_menu_promos" }],
+        ],
+      },
+    });
+  });
+
+  // Promo codes pagination
+  bot.callbackQuery(/^admin_promos_page_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_promos_page_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const userId = ctx.from?.id;
+    const adminUser = userId ? db.getUser(userId) : undefined;
+    const promos = db.getAllPromoCodes();
+
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText(
+      adminUser?.lang === "uz"
+        ? `⚡ <b>Promokodlar va Grantlar Boshqaruvi (${promos.length} ta kod)</b>\n\n<i>${page + 1}-sahifa:</i>`
+        : `⚡ <b>Promo Codes & Grants Manager (${promos.length} codes)</b>\n\n<i>Page ${page + 1}:</i>`,
       {
         parse_mode: "HTML",
+        reply_markup: getAdminPromoCodesKeyboard(promos, page, 6, adminUser?.lang),
       }
     );
   });

@@ -227,15 +227,30 @@ export function getAdminPromoCodesKeyboard(
 
   pagePromos.forEach((p) => {
     const statusIcon = p.isExpired || !p.isActive ? "🔴" : p.usedCount >= p.maxUses ? "🔒" : "🟢";
-    kb.text(`${statusIcon} ${p.code} (${p.tier} | ${p.usedCount}/${p.maxUses})`, `admin_view_promo_${p.code}`).row();
+    const displayTier = p.tier === "NAWA" ? "NAWA ($15)" : p.tier === "NAWA_FULL" ? "NAWA Full ($50)" : p.tier;
+    kb.text(`${statusIcon} ${p.code} (${displayTier})`, `admin_view_promo_${p.code}`).row();
   });
 
-  kb.text(isUz ? "⚡ Tasodifiy Promokod Yaratish" : "⚡ Generate Random Promo Code", "admin_gen_random_promo")
+  const totalPages = Math.ceil(promos.length / pageSize) || 1;
+  if (page > 0) kb.text("⬅️ Prev", `admin_promos_page_${page - 1}`);
+  if (page < totalPages - 1) kb.text("Next ➡️", `admin_promos_page_${page + 1}`);
+  if (page > 0 || page < totalPages - 1) kb.row();
+
+  kb.text(isUz ? "➕ Yangi Promokod Yaratish" : "➕ Generate Promo Code", "admin_create_promo_select")
     .row()
-    .text(isUz ? "➕ Maxsus Kod Yaratish" : "➕ Custom Code", "admin_create_promo_prompt")
     .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
 
   return kb;
+}
+
+export function getAdminPromoProductSelectKeyboard(lang: Language = "en"): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "📦 1. NAWA — $15 (Standart)" : "📦 1. NAWA — $15 (Standard)", "admin_create_promo_tier_NAWA")
+    .row()
+    .text(isUz ? "💎 2. NAWA Full — $50 (To'liq Qabul)" : "💎 2. NAWA Full — $50 (Full Admissions)", "admin_create_promo_tier_NAWA_FULL")
+    .row()
+    .text(isUz ? "◀️ Promokodlar Ro'yxatiga" : "◀️ Back to Promo Codes", "admin_menu_promos");
 }
 
 export function getAdminPromoDetailKeyboard(promo: PromoCodeRecord, lang: Language = "en"): InlineKeyboard {

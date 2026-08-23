@@ -553,13 +553,18 @@ export class DatabaseService {
   }
 
   // ================= PROMO CODES CRUD =================
-  private generateRandomCodeString(): string {
-    const part1 = crypto.randomBytes(2).toString("hex").toUpperCase();
-    const part2 = crypto.randomBytes(2).toString("hex").toUpperCase();
-    return `PTU-${part1}-${part2}`;
+  public generateRandomCodeString(): string {
+    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Unambiguous Base32 charset
+    let result = "";
+    const bytes = crypto.randomBytes(8);
+    for (let i = 0; i < 8; i++) {
+      result += chars[bytes[i] % chars.length];
+    }
+    return result;
   }
 
   public getPromoCode(code: string): PromoCodeRecord | undefined {
+    if (!code) return undefined;
     return this.data.promoCodes[code.toUpperCase().trim()];
   }
 
@@ -567,6 +572,8 @@ export class DatabaseService {
     code?: string;
     tier: PremiumTier;
     maxUses?: number;
+    createdBy?: number;
+    createdByName?: string;
     assignedUserId?: number;
     assignedUserName?: string;
     expiresAt?: string;
@@ -575,8 +582,10 @@ export class DatabaseService {
     const newCode: PromoCodeRecord = {
       code: finalCode,
       tier: promo.tier,
-      maxUses: promo.maxUses || 1, // Default strictly 1 person
+      maxUses: promo.maxUses || 1, // Strictly 1 single student
       usedCount: 0,
+      createdBy: promo.createdBy,
+      createdByName: promo.createdByName,
       assignedUserId: promo.assignedUserId,
       assignedUserName: promo.assignedUserName,
       createdAt: new Date().toISOString().split("T")[0],
@@ -585,31 +594,59 @@ export class DatabaseService {
       isActive: true,
     };
     this.data.promoCodes[newCode.code] = newCode;
+
+    if (promo.createdBy) {
+      this.logAdminAction(
+        promo.createdBy,
+        promo.createdByName || `Admin #${promo.createdBy}`,
+        "PROMO_CODE_CREATED",
+        `Created promo code '${newCode.code}' for package [${newCode.tier}] (Single-use)`,
+        newCode.code
+      );
+    }
+
     this.saveDatabase();
     return newCode;
   }
 
-  public generatePersonalPromo(userId: number, userName: string, tier: PremiumTier = "Full Premium"): PromoCodeRecord {
+  public generatePersonalPromo(
+    userId: number,
+    userName: string,
+    tier: PremiumTier = "NAWA_FULL",
+    createdBy?: number
+  ): PromoCodeRecord {
     const code = this.generateRandomCodeString();
     return this.createPromoCode({
       code,
       tier,
       maxUses: 1,
+      createdBy,
       assignedUserId: userId,
       assignedUserName: userName,
     });
   }
 
-  public expirePromoCode(code: string): boolean {
+  public expirePromoCode(code: string, actorId?: number): boolean {
     const promo = this.getPromoCode(code);
     if (!promo) return false;
     promo.isExpired = true;
     promo.isActive = false;
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        "Administrator",
+        "PROMO_CODE_DISABLED",
+        `Disabled promo code '${promo.code}' (${promo.tier})`,
+        promo.code
+      );
+    }
+
     this.saveDatabase();
     return true;
   }
 
-  public reactivatePromoCode(code: string): boolean {
+  public reactivatePromoCode(code: string, actorId?: number): boolean {
     const promo = this.getPromoCode(code);
     if (!promo) return false;
     promo.isExpired = false;
@@ -618,33 +655,71 @@ export class DatabaseService {
     promo.usedAt = undefined;
     promo.usedByUserId = undefined;
     promo.usedByUserName = undefined;
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        "Administrator",
+        "PROMO_CODE_REACTIVATED",
+        `Reactivated promo code '${promo.code}' (${promo.tier})`,
+        promo.code
+      );
+    }
+
     this.saveDatabase();
     return true;
   }
 
-  public deletePromoCode(code: string): boolean {
+  public deletePromoCode(code: string, actorId?: number): boolean {
     const clean = code.toUpperCase().trim();
     if (!this.data.promoCodes[clean]) return false;
+    const tier = this.data.promoCodes[clean].tier;
     delete this.data.promoCodes[clean];
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        "Administrator",
+        "PROMO_CODE_DELETED",
+        `Deleted promo code '${clean}' (${tier})`,
+        clean
+      );
+    }
+
     this.saveDatabase();
     return true;
   }
 
-  // REDEEM: Strictly single-use per code -> becomes unavailable immediately
-  public redeemPromoCode(code: string, userId: number): { success: boolean; tier?: PremiumTier; error?: string } {
+  // REDEEM: Strictly atomic, single-use per code -> becomes unavailable immediately
+  public redeemPromoCode(
+    code: string,
+    userId: number
+  ): { success: boolean; tier?: PremiumTier; error?: string; promo?: PromoCodeRecord } {
+    if (!code || typeof code !== "string") {
+      return { success: false, error: "Please provide a valid promo code." };
+    }
     const cleanCode = code.toUpperCase().trim();
     const promo = this.getPromoCode(cleanCode);
 
     if (!promo) {
+      this.logAdminAction(
+        userId,
+        `User #${userId}`,
+        "PROMO_CODE_REDEMPTION_FAILED",
+        `Failed redemption attempt with unrecognized code: [PROTECTED_CREDENTIAL]`,
+        undefined,
+        "system",
+        "failure"
+      );
       return { success: false, error: "Invalid activation code. Please check spelling." };
     }
     if (promo.isExpired) {
-      return { success: false, error: "This activation code has expired or been cancelled by the administrator." };
+      return { success: false, error: "This promo code is no longer available." };
     }
     if (promo.usedCount >= promo.maxUses || !promo.isActive) {
       return {
         success: false,
-        error: `This single-use code has already been redeemed and is no longer available. (Used on ${promo.usedAt || "previously"})`,
+        error: "This promo code is no longer available.",
       };
     }
     if (promo.assignedUserId && promo.assignedUserId !== userId) {
@@ -658,27 +733,41 @@ export class DatabaseService {
         promo.isExpired = true;
         promo.isActive = false;
         this.saveDatabase();
-        return { success: false, error: "This activation code has expired." };
+        return { success: false, error: "This promo code is no longer available." };
       }
     }
 
     const user = this.getUser(userId);
 
-    // Consume code (make permanently unavailable)
+    // Atomically consume code (make permanently unavailable)
     promo.usedCount += 1;
     promo.isActive = false; // Mark unavailable immediately
     promo.usedAt = new Date().toISOString().split("T")[0];
     promo.usedByUserId = userId;
-    promo.usedByUserName = user.fullName || user.firstName || "Student";
+    promo.usedByUserName = user.fullName || user.firstName || `User #${userId}`;
+
+    // Map tier cleanly
+    const grantedTier: PremiumTier =
+      promo.tier === "NAWA" || promo.tier === "NAWA_FULL" ? promo.tier : "NAWA_FULL";
 
     this.updateUser(userId, {
       isPremium: true,
-      premiumTier: promo.tier,
+      premiumTier: grantedTier,
       premiumCode: promo.code,
     });
 
+    this.logAdminAction(
+      userId,
+      user.fullName || user.username || `User #${userId}`,
+      "PROMO_CODE_REDEEMED",
+      `Student successfully redeemed promo code '${promo.code}' granting [${grantedTier}] package.`,
+      promo.code,
+      "system",
+      "success"
+    );
+
     this.saveDatabase();
-    return { success: true, tier: promo.tier };
+    return { success: true, tier: grantedTier, promo };
   }
 
   public getAllPromoCodes(): PromoCodeRecord[] {
