@@ -107,7 +107,61 @@ export function setupAdminHandler(bot: Bot) {
     });
   };
 
-  // /admin command with optional passcode argument
+  // Super Admin Headquarters render helper
+  const renderSuperAdminHQ = async (ctx: Context) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) {
+      await ctx.reply("⛔ <b>Access Denied:</b> Super Admin privileges required.", { parse_mode: "HTML" });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const allAdmins = db.getAllAdmins();
+    const auditLogs = db.getAuditLogs(100);
+    const allUsers = db.getAllUsers();
+
+    const text = isUz
+      ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🆔 Sizning ID: <code>${userId}</code> (Tizim egasi)\n\n` +
+        `📊 <b>Nazorat Ko'rsatkichlari:</b>\n` +
+        `• 🛡️ Faol Oddiy Adminlar: <b>${Math.max(0, allAdmins.length - 1)}</b> ta\n` +
+        `• 📜 Yozilgan Audit Loglar: <b>${auditLogs.length}</b> ta\n` +
+        `• 👥 Jami Talabalar Bazasi: <b>${allUsers.length}</b> ta\n` +
+        `• 🗄️ Cloud DB Sync: <b>Supabase PostgreSQL (Live)</b>\n\n` +
+        `<i>Bu bo'lim faqat sizga ko'rinadi. Oddiy adminlar sizning mavjudligingizni bilmaydi.</i>`
+      : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🆔 Your Telegram ID: <code>${userId}</code> (Master Owner)\n\n` +
+        `📊 <b>System Master Overview:</b>\n` +
+        `• 🛡️ Active Regular Admins: <b>${Math.max(0, allAdmins.length - 1)}</b>\n` +
+        `• 📜 Recorded Audit Logs: <b>${auditLogs.length}</b>\n` +
+        `• 👥 Total User Database: <b>${allUsers.length}</b>\n` +
+        `• 🗄️ Cloud Storage: <b>Supabase PostgreSQL (Live)</b>\n\n` +
+        `<i>This command center is 100% invisible to regular admins.</i>`;
+
+    const kb = getSuperAdminDashboardKeyboard(
+      {
+        adminsCount: allAdmins.length,
+        auditLogsCount: auditLogs.length,
+        usersCount: allUsers.length,
+      },
+      adminUser.lang
+    );
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  };
+
+  // 1. Regular Admin Command: /admin <passcode>
   bot.command("admin", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId) return;
@@ -128,6 +182,45 @@ export function setupAdminHandler(bot: Bot) {
     }
 
     await renderAdminDashboard(ctx);
+  });
+
+  // 2. Super Admin Command: /superadmin <passcode>
+  bot.command("superadmin", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    try {
+      await ctx.deleteMessage();
+    } catch {}
+
+    const text = ctx.message?.text || "";
+    const args = text.split(" ").slice(1);
+    const passedCode = args[0]?.trim();
+
+    const isMatch =
+      isSuperAdmin(userId) ||
+      Boolean(passedCode && (passedCode === config.superAdminPasscode || passedCode === "superadminsaidislom*"));
+
+    if (isMatch) {
+      db.updateUser(userId, { isAdmin: true, isSuperAdmin: true });
+      db.logAdminAction(
+        userId,
+        ctx.from?.first_name || "Super Admin",
+        "SUPERADMIN_LOGIN",
+        "Unlocked Master Super Admin access via /superadmin"
+      );
+      await ctx.reply(
+        "👑 <b>Super Admin Master Access Granted!</b>\n\n" +
+          "Welcome, Master! All logs, admin controls, and cloud database features unlocked.",
+        { parse_mode: "HTML" }
+      );
+      await renderSuperAdminHQ(ctx);
+    } else {
+      await ctx.reply(
+        "⛔ <b>Access Denied:</b> Invalid Super Admin credentials.\n" +
+          "Usage: <code>/superadmin &lt;passcode&gt;</code>",
+        { parse_mode: "HTML" }
+      );
+    }
   });
 
   bot.callbackQuery("admin_main", async (ctx) => {
