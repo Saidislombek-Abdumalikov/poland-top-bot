@@ -13,6 +13,7 @@ import {
   PricingConfig,
   OfertaRecord,
   TestMaterial,
+  NawaApplicationRecord,
 } from "../types";
 
 export function getAdminDashboardKeyboard(
@@ -168,29 +169,116 @@ export function getAdminApplicationsListKeyboard(
   return kb;
 }
 
-export function getAdminApplicationDetailKeyboard(app: ApplicationRecord, lang: Language = "en"): InlineKeyboard {
+export function getAdminApplicationDetailKeyboard(
+  app: ApplicationRecord,
+  userDocs: Record<string, DocumentRecord> = {},
+  docDefs: Record<string, DocumentDefinition> = {},
+  lang: Language = "en"
+): InlineKeyboard {
   const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "🟡 Holat: Jarayonda" : "🟡 Set: Processing", `admin_set_stage_${app.id}_Processing`)
-    .text(isUz ? "🏛️ Holat: Univ Tekshiruvida" : "🏛️ Set: Univ Review", `admin_set_stage_${app.id}_University Review`)
+  const kb = new InlineKeyboard();
+
+  // Document buttons for the student's full dossier
+  const docKeys = Object.keys(docDefs);
+  let hasPending = false;
+
+  docKeys.forEach((key) => {
+    const def = docDefs[key];
+    const doc = userDocs[key];
+    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 18);
+
+    if (doc && doc.status !== "missing") {
+      if (doc.status === "approved") {
+        kb.text(`✅ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+      } else if (doc.status === "reviewing") {
+        hasPending = true;
+        kb.text(`🟡 ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+      } else if (doc.status === "needs_correction") {
+        kb.text(`🔴 ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+      } else {
+        kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+      }
+    } else {
+      kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+    }
+  });
+
+  if (hasPending) {
+    kb.text(
+      isUz ? "⚡ Barcha Hujjatlarni Tasdiqlash" : "⚡ Approve All Student Documents",
+      `admin_approve_all_student_docs_${app.userId}`
+    ).row();
+  }
+
+  // Application stage controls
+  kb.text(isUz ? "🟡 Holat: Jarayonda" : "🟡 Set: Processing", `admin_set_stage_${app.id}_Processing`)
+    .text(isUz ? "🏛️ Univ Tekshiruvida" : "🏛️ Set: Univ Review", `admin_set_stage_${app.id}_University Review`)
     .row()
-    .text(isUz ? "✅ Holat: Qabul Qilindi" : "✅ Set: Accepted", `admin_set_stage_${app.id}_Accepted`)
-    .text(isUz ? "🔴 Holat: Tuzatish Kerak" : "🔴 Set: Action Needed", `admin_set_stage_${app.id}_Action Needed`)
+    .text(isUz ? "✅ Qabul Qilindi" : "✅ Set: Accepted", `admin_set_stage_${app.id}_Accepted`)
+    .text(isUz ? "🔴 Tuzatish Kerak" : "🔴 Set: Action Needed", `admin_set_stage_${app.id}_Action Needed`)
     .row()
     .text(isUz ? "💬 Talabaga Maslahatchi Izohi Yuborish" : "💬 Send Feedback Note to Student", `admin_feedback_prompt_${app.id}`)
     .row()
     .text(isUz ? "◀️ Arizalar Ro'yxatiga" : "◀️ Back to Applications", "admin_menu_apps");
+
+  return kb;
 }
 
 export function getAdminPendingDocsKeyboard(
-  studentsQueue: {
-    user: UserSessionData;
-    pendingCount: number;
-    approvedCount: number;
-    correctionCount: number;
-    totalUploadedCount: number;
-    totalRequiredCount: number;
-  }[],
+  pendingDocs: { userId: number; user: UserSessionData; doc: DocumentRecord }[],
+  page: number = 0,
+  pageSize: number = 6,
+  lang: Language = "en",
+  docDefs: Record<string, DocumentDefinition> = {}
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  if (pendingDocs.length === 0) {
+    kb.text(
+      isUz
+        ? "🎉 Kutilayotgan hujjatlar yo'q (Barchasi tekshirilgan)"
+        : "🎉 No pending documents in queue (All reviewed)",
+      "admin_menu_apps"
+    ).row();
+  } else {
+    const start = page * pageSize;
+    const pageItems = pendingDocs.slice(start, start + pageSize);
+
+    pageItems.forEach((item) => {
+      const u = item.user;
+      const name = u.fullName || u.firstName || `User #${item.userId}`;
+      const def = docDefs[item.doc.id];
+      const docName = (def?.name[lang] || def?.name.en || item.doc.id).slice(0, 16);
+
+      kb.text(
+        `🟡 ${name.slice(0, 14)} — ${docName}`,
+        `admin_review_doc_${item.userId}_${item.doc.id}`
+      ).row();
+    });
+
+    const totalPages = Math.ceil(pendingDocs.length / pageSize) || 1;
+    if (page > 0) kb.text("⬅️ Prev", `admin_queue_page_${page - 1}`);
+    if (page < totalPages - 1) kb.text("Next ➡️", `admin_queue_page_${page + 1}`);
+    if (page > 0 || page < totalPages - 1) kb.row();
+  }
+
+  kb.text(
+    isUz ? "📋 Barcha Arizalar" : "📋 All Applications",
+    "admin_menu_apps"
+  )
+    .text(
+      isUz ? "👥 Talabalar CRM" : "👥 Users CRM",
+      "admin_menu_users"
+    )
+    .row()
+    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+
+  return kb;
+}
+
+export function getAdminNawaListKeyboard(
+  nawaApps: NawaApplicationRecord[],
   page: number = 0,
   pageSize: number = 6,
   lang: Language = "en"
@@ -198,41 +286,75 @@ export function getAdminPendingDocsKeyboard(
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  if (studentsQueue.length === 0) {
+  if (nawaApps.length === 0) {
     kb.text(
-      isUz
-        ? "🎉 Tekshirish kutilayotgan talabalar yo'q"
-        : "🎉 No pending student reviews in queue",
-      "admin_menu_users"
+      isUz ? "🏛️ Hozircha NAWA arizalari yo'q" : "🏛️ No NAWA applications submitted yet",
+      "admin_main"
     ).row();
   } else {
     const start = page * pageSize;
-    const pageItems = studentsQueue.slice(start, start + pageSize);
+    const pageItems = nawaApps.slice(start, start + pageSize);
 
-    pageItems.forEach((item) => {
-      const u = item.user;
-      const name = u.fullName || u.firstName || `User #${u.userId}`;
-      const badge = item.pendingCount > 0 ? "🟡" : item.correctionCount > 0 ? "🔴" : "✅";
-      const pendingLabel = item.pendingCount > 0 ? ` (${item.pendingCount} ta kutilmoqda)` : ` (${item.approvedCount}/${item.totalRequiredCount})`;
+    pageItems.forEach((a) => {
+      const stageIcon =
+        a.stage === "Decision Issued"
+          ? "✅"
+          : a.stage === "Under Evaluation"
+          ? "🏛️"
+          : a.stage === "Requires Action"
+          ? "🔴"
+          : "🟡";
 
       kb.text(
-        `${badge} ${name.slice(0, 16)}${pendingLabel}`,
-        `admin_review_student_docs_${u.userId}`
+        `${stageIcon} ${a.studentName.slice(0, 16)} (${a.stage})`,
+        `admin_view_nawa_${a.id}`
       ).row();
     });
 
-    const totalPages = Math.ceil(studentsQueue.length / pageSize) || 1;
-    if (page > 0) kb.text("⬅️ Prev", `admin_queue_page_${page - 1}`);
-    if (page < totalPages - 1) kb.text("Next ➡️", `admin_queue_page_${page + 1}`);
+    const totalPages = Math.ceil(nawaApps.length / pageSize) || 1;
+    if (page > 0) kb.text("⬅️ Prev", `admin_nawa_page_${page - 1}`);
+    if (page < totalPages - 1) kb.text("Next ➡️", `admin_nawa_page_${page + 1}`);
     if (page > 0 || page < totalPages - 1) kb.row();
   }
 
-  kb.text(
-    isUz ? "👥 Barcha Talabalar Ro'yxati" : "👥 All Students Directory",
-    "admin_menu_users"
-  )
+  kb.text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+  return kb;
+}
+
+export function getAdminNawaDetailKeyboard(
+  app: NawaApplicationRecord,
+  userDocs: Record<string, DocumentRecord> = {},
+  docDefs: Record<string, DocumentDefinition> = {},
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  // Document buttons for NAWA relevant docs (passport, diploma, apostille, translation)
+  const nawaDocKeys = ["passport", "diploma", "apostille", "translation"];
+  nawaDocKeys.forEach((key) => {
+    const def = docDefs[key];
+    const doc = userDocs[key];
+    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 18);
+
+    if (doc && doc.status !== "missing") {
+      const icon = doc.status === "approved" ? "✅" : doc.status === "reviewing" ? "🟡" : "🔴";
+      kb.text(`${icon} ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+    } else {
+      kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
+    }
+  });
+
+  // Stage change buttons
+  kb.text(isUz ? "🟡 Holat: Topshirilgan" : "🟡 Set: Submitted", `admin_set_nawa_stage_${app.id}_Submitted`)
+    .text(isUz ? "🏛️ Holat: Baholanmoqda" : "🏛️ Set: Under Evaluation", `admin_set_nawa_stage_${app.id}_Under Evaluation`)
     .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+    .text(isUz ? "✅ Holat: Qaror Chiqdi" : "✅ Set: Decision Issued", `admin_set_nawa_stage_${app.id}_Decision Issued`)
+    .text(isUz ? "🔴 Holat: Tuzatish Kerak" : "🔴 Set: Requires Action", `admin_set_nawa_stage_${app.id}_Requires Action`)
+    .row()
+    .text(isUz ? "💬 Maslahatchi Izohi Yuborish" : "💬 Send Feedback Note to Student", `admin_feedback_nawa_prompt_${app.id}`)
+    .row()
+    .text(isUz ? "◀️ NAWA Arizalari Ro'yxatiga" : "◀️ Back to NAWA List", "admin_menu_nawa");
 
   return kb;
 }

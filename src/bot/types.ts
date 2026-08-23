@@ -301,6 +301,7 @@ export interface UserSessionData {
     | "assistant_question"
     | "admin_auth"
     | "admin_feedback_app"
+    | "admin_feedback_nawa"
     | "admin_feedback_doc"
     | "admin_create_promo"
     | "admin_broadcast_text"

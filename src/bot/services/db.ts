@@ -1789,7 +1789,15 @@ export class DatabaseService {
   }
 
   public getAllNawaApplications(): NawaApplicationRecord[] {
-    return Object.values(this.data.nawaApplications);
+    return Object.values(this.data.nawaApplications || {}).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  }
+
+  public getNawaApplication(id: string): NawaApplicationRecord | undefined {
+    return this.data.nawaApplications?.[id];
+  }
+
+  public getUserNawaApplications(userId: number): NawaApplicationRecord[] {
+    return Object.values(this.data.nawaApplications || {}).filter((n) => n.userId === userId);
   }
 
   // ================= TEST MATERIALS CRUD =================

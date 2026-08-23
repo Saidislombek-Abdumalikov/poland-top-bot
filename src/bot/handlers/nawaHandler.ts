@@ -192,13 +192,20 @@ export function setupNawaHandler(bot: Bot) {
     const text = isUz
       ? `🏛️ <b>NAWA Nostrifikatsiya Hujjatlar Paketi Ro'yxatdan O'tkazildi!</b>\n\n` +
         `• 📋 Qabul Koordinatoringiz: <b>PTU Legal Team</b>\n` +
-        `• 📌 Holati: <b>Hujjatlarni Qabul Qilish</b>\n\n` +
-        `Iltimos, <b>Hujjatlar Nazorati</b> menyusidan pasport va diplomingizni yuklang!`
+        `• 📌 Holati: <b>Hujjatlarni Qabul Qilish (Topshirilgan)</b>\n\n` +
+        `Iltimos, pastdagi tugma orqali <b>Hujjatlar Nazorati</b> bo'limiga o'ting va pasport, attestat/diplom, apostil va qasamyodli tarjimalaringizni yuklang!`
       : `🏛️ <b>NAWA Legalization Dossier Initiated!</b>\n\n` +
         `• 📋 Assigned Advisor: <b>PTU Legal Team</b>\n` +
-        `• 📌 Status: <b>Dossier Opened</b>\n\n` +
-        `Please proceed to the <b>Document Checklist</b> menu to submit your scans!`;
+        `• 📌 Status: <b>Dossier Opened (Submitted)</b>\n\n` +
+        `Please tap below to open the <b>Document Checklist</b> and upload your passport, diploma, apostille, and sworn translations!`;
 
-    await ctx.reply(text, { parse_mode: "HTML" });
+    const kb = {
+      inline_keyboard: [
+        [{ text: isUz ? "📁 Hujjatlarni Yuklash & Nazorat" : "📁 Document Checklist & Upload", callback_data: "menu_docs" }],
+        [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+      ],
+    };
+
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
   });
 }

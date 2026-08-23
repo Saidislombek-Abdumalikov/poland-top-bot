@@ -43,8 +43,10 @@ import {
   getAdminTestsListKeyboard,
   getAdminTestDetailKeyboard,
   getAdminDeleteTestConfirmKeyboard,
+  getAdminNawaListKeyboard,
+  getAdminNawaDetailKeyboard,
 } from "../keyboards/adminKeyboards";
-import { AppStage, DocStatus, Language } from "../types";
+import { AppStage, DocStatus, Language, NawaApplicationRecord } from "../types";
 import { escapeHtml } from "../utils/format";
 
 export function setupAdminHandler(bot: Bot) {
@@ -688,43 +690,87 @@ export function setupAdminHandler(bot: Bot) {
     const isUz = adminUser?.lang === "uz";
     const student = db.getUser(app.userId);
 
+    const docDefs = db.getDocumentDefinitions();
+    const userDocs = student.documents || {};
+    const totalRequired = Object.keys(docDefs).length || 7;
+
+    const approvedList = Object.values(userDocs).filter((d) => d.status === "approved");
+    const pendingList = Object.values(userDocs).filter((d) => d.status === "reviewing");
+    const correctionList = Object.values(userDocs).filter((d) => d.status === "needs_correction");
+    const missingCount = Math.max(0, totalRequired - (approvedList.length + pendingList.length + correctionList.length));
+    const progressPercent = Math.round((approvedList.length / totalRequired) * 100);
+
+    let checklistText = "";
+    Object.keys(docDefs).forEach((k, idx) => {
+      const def = docDefs[k];
+      const doc = userDocs[k];
+      const name = def.name[adminUser?.lang || "uz"] || def.name.en || k;
+
+      if (!doc || doc.status === "missing") {
+        checklistText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ⚪ Yuklanmagan (Yetishmayapti)" : "Status: ⚪ Not Uploaded (Missing)"}\n`;
+      } else if (doc.status === "approved") {
+        checklistText += `\n<b>${idx + 1}. ✅ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ✅ Tasdiqlangan" : "Status: ✅ Approved"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "") + `\n`;
+      } else if (doc.status === "reviewing") {
+        checklistText += `\n<b>${idx + 1}. 🟡 ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: 🟡 Tekshiruv Kutilmoqda" : "Status: 🟡 Under Review"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "") + `\n`;
+      } else if (doc.status === "needs_correction") {
+        checklistText += `\n<b>${idx + 1}. 🔴 ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: 🔴 Qayta yuklash kerak (Tuzatishda)" : "Status: 🔴 Needs Correction"}` +
+          (doc.feedbackNote ? `\n   • 💬 Izoh: <i>${escapeHtml(doc.feedbackNote)}</i>` : "") + `\n`;
+      } else {
+        checklistText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ⚪ Yuklanmagan (Yetishmayapti)" : "Status: ⚪ Not Uploaded (Missing)"}\n`;
+      }
+    });
+
     const text = isUz
-      ? `📋 <b>Ariza Ma'lumotlari #${escapeHtml(app.id)}</b>\n` +
+      ? `📋 <b>Universitet Arizasi #${escapeHtml(app.id)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `• 👤 Talaba: <b>${escapeHtml(app.studentName)}</b> (<code>${app.userId}</code>)\n` +
         `• 📞 Telefon: <code>${escapeHtml(student.phone || "kiritilmagan")}</code>\n` +
         `• 🏛️ Universitet: <b>${escapeHtml(app.university)}</b> (${escapeHtml(app.city)})\n` +
         `• 📘 Dastur: <b>${escapeHtml(app.programName)}</b>\n` +
-        `• 📌 Bosqich: <code>${escapeHtml(app.stage)}</code>\n` +
+        `• 📌 Qabul Bosqichi: <code>${escapeHtml(app.stage)}</code>\n` +
         (app.counselorNote ? `• 💬 Maslahatchi Izohi: <i>"${escapeHtml(app.counselorNote)}"</i>\n` : "") +
-        `• 📅 Topshirilgan: ${escapeHtml(app.submittedAt)}\n` +
-        `• ⏱️ Yangilangan: ${escapeHtml(app.updatedAt)}\n\n` +
-        `<i>Qabul bosqichini tanlang:</i>`
-      : `📋 <b>Application Dossier #${escapeHtml(app.id)}</b>\n` +
+        `• 📅 Topshirilgan: ${escapeHtml(app.submittedAt)}\n\n` +
+        `📊 <b>TALABA HUJJATLAR TAYYORGARLIGI (DOSSIER):</b>\n` +
+        `• 🎯 Tayyorgarlik: <b>${approvedList.length} / ${totalRequired} ta hujjat (${progressPercent}%)</b>\n` +
+        `• ✅ Tasdiqlangan: <b>${approvedList.length}</b> | 🟡 Tekshiruvda: <b>${pendingList.length}</b>\n` +
+        `• 🔴 Tuzatishda: <b>${correctionList.length}</b> | ⚪ Yetishmayotgan: <b>${missingCount}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📑 <b>HUJJATLAR NAZORATI:</b>${checklistText}\n\n` +
+        `<i>Hujjatlarni tekshirish yoki qabul bosqichini o'zgartirish uchun quyidagi tugmalardan foydalaning:</i>`
+      : `📋 <b>University Application #${escapeHtml(app.id)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `• 👤 Student: <b>${escapeHtml(app.studentName)}</b> (<code>${app.userId}</code>)\n` +
         `• 📞 Phone: <code>${escapeHtml(student.phone || "not set")}</code>\n` +
         `• 🏛️ University: <b>${escapeHtml(app.university)}</b> (${escapeHtml(app.city)})\n` +
         `• 📘 Program: <b>${escapeHtml(app.programName)}</b>\n` +
-        `• 📌 Stage: <code>${escapeHtml(app.stage)}</code>\n` +
+        `• 📌 Admission Stage: <code>${escapeHtml(app.stage)}</code>\n` +
         (app.counselorNote ? `• 💬 Counselor Note: <i>"${escapeHtml(app.counselorNote)}"</i>\n` : "") +
-        `• 📅 Submitted: ${escapeHtml(app.submittedAt)}\n` +
-        `• ⏱️ Updated: ${escapeHtml(app.updatedAt)}\n\n` +
-        `<i>Change the admission stage below:</i>`;
+        `• 📅 Submitted: ${escapeHtml(app.submittedAt)}\n\n` +
+        `📊 <b>STUDENT DOCUMENTATION DOSSIER:</b>\n` +
+        `• 🎯 Readiness: <b>${approvedList.length} / ${totalRequired} documents (${progressPercent}%)</b>\n` +
+        `• ✅ Approved: <b>${approvedList.length}</b> | 🟡 Under Review: <b>${pendingList.length}</b>\n` +
+        `• 🔴 Correction Needed: <b>${correctionList.length}</b> | ⚪ Missing: <b>${missingCount}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📑 <b>DOCUMENT CHECKLIST:</b>${checklistText}\n\n` +
+        `<i>Inspect documents or update admission stage below:</i>`;
+
+    const kb = getAdminApplicationDetailKeyboard(app, userDocs, docDefs, adminUser?.lang);
 
     await ctx.answerCallbackQuery();
     if (ctx.callbackQuery?.message) {
       try {
         await ctx.editMessageText(text, {
           parse_mode: "HTML",
-          reply_markup: getAdminApplicationDetailKeyboard(app, adminUser?.lang),
+          reply_markup: kb,
         });
         return;
       } catch {}
     }
     await ctx.reply(text, {
       parse_mode: "HTML",
-      reply_markup: getAdminApplicationDetailKeyboard(app, adminUser?.lang),
+      reply_markup: kb,
     });
   });
 
@@ -749,9 +795,10 @@ export function setupAdminHandler(bot: Bot) {
         `App #${appId}`
       );
 
+      const student = db.getUser(app.userId);
+
       // Notify student in Telegram
       try {
-        const student = db.getUser(app.userId);
         const isUz = student.lang === "uz";
 
         const stageUzMap: Record<string, string> = {
@@ -788,11 +835,14 @@ export function setupAdminHandler(bot: Bot) {
         );
       } catch {}
 
+      const docDefs = db.getDocumentDefinitions();
+      const userDocs = student.documents || {};
+
       await ctx.editMessageText(
         `✅ Application <b>${escapeHtml(app.id)}</b> updated to <b>${escapeHtml(newStage)}</b> and student notified!`,
         {
           parse_mode: "HTML",
-          reply_markup: getAdminApplicationDetailKeyboard(app, adminUser?.lang),
+          reply_markup: getAdminApplicationDetailKeyboard(app, userDocs, docDefs, adminUser?.lang),
         }
       );
     }
@@ -810,6 +860,240 @@ export function setupAdminHandler(bot: Bot) {
     await ctx.answerCallbackQuery();
     const msg = await ctx.reply(
       `💬 <b>Send Counselor Note for Application #${escapeHtml(appId)}:</b>\n\n` +
+        `Type the feedback or missing requirements message you want to send to the student:`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  // ================= NAWA APPLICATIONS CRM =================
+  bot.callbackQuery("admin_menu_nawa", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const nawaApps = db.getAllNawaApplications();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `🏛️ <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n` +
+        `<i>Talabaning NAWA arizasi, topshirgan hujjatlari va bosqichini boshqarish uchun arizani tanlang:</i>`
+      : `🏛️ <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n` +
+        `<i>Select any NAWA application below to inspect documents, update legalization stage, or send notes:</i>`;
+
+    const kb = getAdminNawaListKeyboard(nawaApps, 0, 6, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  bot.callbackQuery(/^admin_nawa_page_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_nawa_page_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const nawaApps = db.getAllNawaApplications();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `🏛️ <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n<i>${page + 1}-sahifa:</i>`
+      : `🏛️ <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n<i>Page ${page + 1}:</i>`;
+
+    const kb = getAdminNawaListKeyboard(nawaApps, page, 6, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  // View NAWA Application Detail
+  bot.callbackQuery(/^admin_view_nawa_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_view_nawa_(.+)$/);
+    if (!match) return;
+    const nawaId = match[1];
+    const nawaApp = db.getNawaApplication(nawaId);
+    if (!nawaApp) {
+      await ctx.answerCallbackQuery({ text: "NAWA application not found." });
+      return;
+    }
+
+    const adminId = ctx.from?.id;
+    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const isUz = adminUser?.lang === "uz";
+    const student = db.getUser(nawaApp.userId);
+
+    const docDefs = db.getDocumentDefinitions();
+    const userDocs = student.documents || {};
+
+    const nawaDocKeys = ["passport", "diploma", "apostille", "translation"];
+    let docsSummaryText = "";
+    nawaDocKeys.forEach((key, idx) => {
+      const def = docDefs[key];
+      const doc = userDocs[key];
+      const name = def?.name[adminUser?.lang || "uz"] || def?.name.en || key;
+
+      if (!doc || doc.status === "missing") {
+        docsSummaryText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>: ${isUz ? "⚪ Yuklanmagan" : "⚪ Missing"}`;
+      } else if (doc.status === "approved") {
+        docsSummaryText += `\n<b>${idx + 1}. ✅ ${escapeHtml(name)}</b>: ${isUz ? "✅ Tasdiqlangan" : "✅ Approved"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "");
+      } else if (doc.status === "reviewing") {
+        docsSummaryText += `\n<b>${idx + 1}. 🟡 ${escapeHtml(name)}</b>: ${isUz ? "🟡 Kutilmoqda" : "🟡 Under Review"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "");
+      } else if (doc.status === "needs_correction") {
+        docsSummaryText += `\n<b>${idx + 1}. 🔴 ${escapeHtml(name)}</b>: ${isUz ? "🔴 Tuzatishda" : "🔴 Needs Correction"}`;
+      }
+    });
+
+    const text = isUz
+      ? `🏛️ <b>NAWA NOSTRIFIKATSIYA ARIZASI #${escapeHtml(nawaApp.id)}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 Talaba: <b>${escapeHtml(nawaApp.studentName)}</b> (<code>${nawaApp.userId}</code>)\n` +
+        `• 📞 Telefon: <code>${escapeHtml(student.phone || "kiritilmagan")}</code>\n` +
+        `• 🌍 Fuqaroligi: <b>${escapeHtml(nawaApp.country || "O'zbekiston")}</b>\n` +
+        `• 📌 NAWA Holati: <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        (nawaApp.counselorNote ? `• 💬 Maslahatchi Izohi: <i>"${escapeHtml(nawaApp.counselorNote)}"</i>\n` : "") +
+        `• 📅 Topshirilgan: ${escapeHtml(nawaApp.submittedAt)}\n\n` +
+        `📑 <b>NAWA UCHUN TALAB QILINADIGAN HUJJATLAR:</b>${docsSummaryText}\n\n` +
+        `<i>Hujjatlarni tekshirish yoki NAWA bosqichini o'zgartirish uchun quyidagi tugmalardan foydalaning:</i>`
+      : `🏛️ <b>NAWA LEGALIZATION APPLICATION #${escapeHtml(nawaApp.id)}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 Student: <b>${escapeHtml(nawaApp.studentName)}</b> (<code>${nawaApp.userId}</code>)\n` +
+        `• 📞 Phone: <code>${escapeHtml(student.phone || "not set")}</code>\n` +
+        `• 🌍 Country: <b>${escapeHtml(nawaApp.country || "Uzbekistan")}</b>\n` +
+        `• 📌 NAWA Stage: <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        (nawaApp.counselorNote ? `• 💬 Counselor Note: <i>"${escapeHtml(nawaApp.counselorNote)}"</i>\n` : "") +
+        `• 📅 Submitted: ${escapeHtml(nawaApp.submittedAt)}\n\n` +
+        `📑 <b>REQUIRED NAWA DOSSIER DOCUMENTS:</b>${docsSummaryText}\n\n` +
+        `<i>Inspect documents or update NAWA stage below:</i>`;
+
+    const kb = getAdminNawaDetailKeyboard(nawaApp, userDocs, docDefs, adminUser?.lang);
+
+    await ctx.answerCallbackQuery();
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  // Update NAWA Stage
+  bot.callbackQuery(/^admin_set_nawa_stage_([^_]+)_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_set_nawa_stage_([^_]+)_(.+)$/);
+    if (!match) return;
+    const nawaId = match[1];
+    const newStage = match[2] as NawaApplicationRecord["stage"];
+
+    const nawaApp = db.updateNawaStage(nawaId, newStage);
+    await ctx.answerCallbackQuery({ text: `NAWA stage updated to ${newStage}` });
+
+    if (nawaApp) {
+      const adminId = ctx.from?.id || 0;
+      const adminUser = db.getUser(adminId);
+      db.logAdminAction(
+        adminId,
+        adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+        "UPDATE_NAWA_STAGE",
+        `Changed NAWA Application #${nawaId} stage to '${newStage}' for Student #${nawaApp.userId}`,
+        `NAWA #${nawaId}`
+      );
+
+      // Notify student in Telegram
+      try {
+        const student = db.getUser(nawaApp.userId);
+        const isUz = student.lang === "uz";
+
+        const stageUzMap: Record<string, string> = {
+          "Submitted": "Hujjatlar qabul qilindi 📝",
+          "Under Evaluation": "NAWA/Kuratoriumda ko'rib chiqilmoqda 🔍",
+          "Decision Issued": "Nostrifikatsiya hujjati tayyor bo'ldi 🎉",
+          "Requires Action": "Harakat talab etiladi (Tuzatish kerak) 🔴",
+        };
+
+        const studentMsg = isUz
+          ? `🏛️ <b>NAWA Nostrifikatsiya Arizangiz Holati Yangilandi!</b>\n\n` +
+            `• Ariza: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
+            `• Yangi Holat: <b>${stageUzMap[newStage] || newStage}</b>\n\n` +
+            `Arizangiz bo'yicha batafsil ma'lumotni /nawa yoki /profile bo'limida ko'rishingiz mumkin.`
+          : `🏛️ <b>Your NAWA Application Status Has Been Updated!</b>\n\n` +
+            `• Application: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
+            `• New Stage: <b>${newStage}</b>\n\n` +
+            `You can check your application status via /nawa or /profile.`;
+
+        await bot.api.sendMessage(
+          nawaApp.userId,
+          studentMsg,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "🏛️ NAWA Bo'limi" : "🏛️ NAWA Section", callback_data: "menu_nawa" }],
+              ],
+            },
+          }
+        );
+      } catch {}
+
+      const student = db.getUser(nawaApp.userId);
+      const docDefs = db.getDocumentDefinitions();
+      const userDocs = student.documents || {};
+
+      await ctx.editMessageText(
+        `✅ NAWA Application <b>${escapeHtml(nawaApp.id)}</b> updated to <b>${escapeHtml(newStage)}</b> and student notified!`,
+        {
+          parse_mode: "HTML",
+          reply_markup: getAdminNawaDetailKeyboard(nawaApp, userDocs, docDefs, adminUser?.lang),
+        }
+      );
+    }
+  });
+
+  // Prompt feedback note for NAWA application
+  bot.callbackQuery(/^admin_feedback_nawa_prompt_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_feedback_nawa_prompt_(.+)$/);
+    if (!match) return;
+    const nawaId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+
+    db.setWaitingFor(userId, "admin_feedback_nawa", { nawaId });
+    await ctx.answerCallbackQuery();
+    const msg = await ctx.reply(
+      `💬 <b>Send Counselor Note for NAWA Application #${escapeHtml(nawaId)}:</b>\n\n` +
         `Type the feedback or missing requirements message you want to send to the student:`,
       { parse_mode: "HTML" }
     );
@@ -949,24 +1233,24 @@ export function setupAdminHandler(bot: Bot) {
     });
   };
 
-  // Review Queue: List of Students
+  // Review Queue: Direct Pending Documents List
   bot.callbackQuery("admin_menu_docs", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !checkAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
-    const studentsQueue = db.getStudentsWithDocumentsInQueue();
-    const totalPending = studentsQueue.reduce((acc, s) => acc + s.pendingCount, 0);
+    const pendingDocs = db.getPendingDocuments();
+    const docDefs = db.getDocumentDefinitions();
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `📁 <b>Hujjatlarni Tekshirish Navbati (${studentsQueue.length} ta talaba, ${totalPending} ta kutilmoqda)</b>\n\n` +
-        `<i>Har bir talabaning hujjatlar tayyorgarligi (dossier), yuklangan va yetishmayotgan hujjatlarini ko'rish uchun talabani tanlang:</i>`
-      : `📁 <b>Document Verification Queue (${studentsQueue.length} students, ${totalPending} pending)</b>\n\n` +
-        `<i>Select a student below to view their full document preparedness, uploaded files, and missing items:</i>`;
+      ? `📁 <b>Kutilayotgan Hujjatlar Navbati (${pendingDocs.length} ta kutilmoqda)</b>\n\n` +
+        `<i>Quyidagi kutilayotgan hujjatlardan birini tanlang va faylni ko'rib, bevosita tasdiqlang:</i>`
+      : `📁 <b>Pending Documents Review Queue (${pendingDocs.length} pending)</b>\n\n` +
+        `<i>Select any document below to inspect the uploaded file and approve/reject directly:</i>`;
 
-    const kb = getAdminPendingDocsKeyboard(studentsQueue, 0, 6, adminUser.lang);
+    const kb = getAdminPendingDocsKeyboard(pendingDocs, 0, 6, adminUser.lang, docDefs);
 
     if (ctx.callbackQuery?.message) {
       try {
@@ -993,17 +1277,17 @@ export function setupAdminHandler(bot: Bot) {
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
-    const studentsQueue = db.getStudentsWithDocumentsInQueue();
-    const totalPending = studentsQueue.reduce((acc, s) => acc + s.pendingCount, 0);
+    const pendingDocs = db.getPendingDocuments();
+    const docDefs = db.getDocumentDefinitions();
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `📁 <b>Hujjatlarni Tekshirish Navbati (${studentsQueue.length} ta talaba, ${totalPending} ta kutilmoqda)</b>\n\n` +
-        `<i>Har bir talabaning hujjatlar tayyorgarligi (dossier), yuklangan va yetishmayotgan hujjatlarini ko'rish uchun talabani tanlang:</i>`
-      : `📁 <b>Document Verification Queue (${studentsQueue.length} students, ${totalPending} pending)</b>\n\n` +
-        `<i>Select a student below to view their full document preparedness, uploaded files, and missing items:</i>`;
+      ? `📁 <b>Kutilayotgan Hujjatlar Navbati (${pendingDocs.length} ta kutilmoqda)</b>\n\n` +
+        `<i>${page + 1}-sahifa:</i>`
+      : `📁 <b>Pending Documents Review Queue (${pendingDocs.length} pending)</b>\n\n` +
+        `<i>Page ${page + 1}:</i>`;
 
-    const kb = getAdminPendingDocsKeyboard(studentsQueue, page, 6, adminUser.lang);
+    const kb = getAdminPendingDocsKeyboard(pendingDocs, page, 6, adminUser.lang, docDefs);
 
     if (ctx.callbackQuery?.message) {
       try {

@@ -651,6 +651,67 @@ export function setupTextInputHandler(bot: Bot) {
       }
     }
 
+    // 1b. Admin Counselor Feedback Note on NAWA Application
+    if (user.waitingFor === "admin_feedback_nawa") {
+      await cleanUpInput(ctx, userId);
+      const nawaId = user.waitingPayload?.nawaId;
+      if (nawaId) {
+        const nawaApp = db.updateNawaStage(nawaId, "Requires Action", text);
+        db.setWaitingFor(userId, null);
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "NAWA_FEEDBACK",
+          `Sent counselor feedback on NAWA Application #${nawaId}: "${text}"`,
+          `NAWA #${nawaId}`
+        );
+
+        if (nawaApp) {
+          try {
+            const student = db.getUser(nawaApp.userId);
+            const isUz = student.lang === "uz";
+
+            const studentMsg = isUz
+              ? `💬 <b>NAWA Nostrifikatsiya Maslahatchisi Xabari (#${escapeHtml(nawaApp.id)}):</b>\n\n` +
+                `"${escapeHtml(text)}"\n\n` +
+                `Iltimos, ko'rsatilgan hujjatlarni to'g'rilab, qayta yuklang.`
+              : `💬 <b>NAWA Legalization Counselor Feedback (#${escapeHtml(nawaApp.id)}):</b>\n\n` +
+                `"${escapeHtml(text)}"\n\n` +
+                `Please review the requested changes and update your document dossier.`;
+
+            await bot.api.sendMessage(
+              nawaApp.userId,
+              studentMsg,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: isUz ? "📁 Hujjatlar Nazorati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+                  ],
+                },
+              }
+            );
+          } catch {}
+
+          await ctx.reply(
+            `✅ <b>Maslahatchi izohi talabaga muvaffaqiyatli yuborildi!</b>\n\n` +
+              `Talaba #${nawaApp.userId} xabardor qilindi va NAWA arizasi holati 'Requires Action' ga o'tkazildi.`,
+            {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: "◀️ NAWA Arizasiga Qaytish", callback_data: `admin_view_nawa_${nawaId}` }],
+                  [{ text: "◀️ NAWA Arizalari Ro'yxatiga", callback_data: "admin_menu_nawa" }],
+                ],
+              },
+            }
+          );
+        }
+        return;
+      }
+    }
+
     // 2. Admin Rejection Note on Document
     if (user.waitingFor === "admin_feedback_doc") {
       await cleanUpInput(ctx, userId);

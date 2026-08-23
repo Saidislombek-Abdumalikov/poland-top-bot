@@ -163,7 +163,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "acceptedOfertaAt": "2026-08-23T14:07:01.138Z",
+      "acceptedOfertaAt": "2026-08-23T14:57:02.584Z",
       "acceptedOfertaVersion": 1
     },
     "777101": {
@@ -323,10 +323,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 14:06:52",
+      "premiumVerifiedAt": "2026-08-23 14:56:56",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-0B1539"
+      "premiumTransactionId": "TXN-6F41B1"
     },
     "777103": {
       "lang": "en",
@@ -400,7 +400,7 @@
       },
       "isPremium": true,
       "waitingFor": null,
-      "premiumCode": "LL6RYKN5",
+      "premiumCode": "2NL65HZK",
       "premiumTier": "NAWA_FULL",
       "isRegistered": true,
       "isSuperAdmin": false,
@@ -408,10 +408,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "acceptedOfertaAt": "2026-08-23 14:06:52",
-      "premiumVerifiedAt": "2026-08-23 14:06:52",
+      "acceptedOfertaAt": "2026-08-23 14:56:56",
+      "premiumVerifiedAt": "2026-08-23 14:56:56",
       "premiumGrantReason": "PROMO_CODE",
-      "premiumTransactionId": "TXN-89606C",
+      "premiumTransactionId": "TXN-535B6F",
       "acceptedOfertaVersion": 1
     },
     "777104": {
@@ -492,10 +492,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 14:06:52",
+      "premiumVerifiedAt": "2026-08-23 14:56:56",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-F47ED4"
+      "premiumTransactionId": "TXN-C2FE94"
     },
     "777701": {
       "lang": "en",
@@ -577,7 +577,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787537221123
+      "adminSessionExpiresAt": 1787540222576
     },
     "777702": {
       "lang": "en",
@@ -741,7 +741,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787537212951
+      "adminSessionExpiresAt": 1787540216606
     },
     "888801": {
       "lang": "en",
@@ -823,7 +823,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787537221084
+      "adminSessionExpiresAt": 1787540222555
     },
     "888802": {
       "lang": "en",
@@ -905,7 +905,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787537221090
+      "adminSessionExpiresAt": 1787540222558
     },
     "999901": {
       "lang": "en",
@@ -987,7 +987,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787537221042
+      "adminSessionExpiresAt": 1787540222534
     },
     "999902": {
       "lang": "en",
@@ -1069,7 +1069,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787537221051
+      "adminSessionExpiresAt": 1787540222540
     },
     "999903": {
       "lang": "en",
@@ -1316,12 +1316,12 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787537212884
+      "adminSessionExpiresAt": 1787540216568
     }
   },
   "promoCodes": {
-    "LL6RYKN5": {
-      "code": "LL6RYKN5",
+    "2NL65HZK": {
+      "code": "2NL65HZK",
       "tier": "NAWA_FULL",
       "usedAt": "2026-08-23",
       "maxUses": 1,
@@ -1334,8 +1334,22 @@
     }
   },
   "transactions": {
-    "TXN-0B1539": {
-      "id": "TXN-0B1539",
+    "TXN-535B6F": {
+      "id": "TXN-535B6F",
+      "notes": "Access unlocked via promo code [2NL65HZK]",
+      "amount": 60,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 777103,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777103",
+      "createdAt": "2026-08-23 14:56:56",
+      "promoCode": "2NL65HZK",
+      "verifiedAt": "2026-08-23 14:56:56"
+    },
+    "TXN-6F41B1": {
+      "id": "TXN-6F41B1",
       "notes": "Confirmed in bank statement",
       "amount": 15,
       "source": "EXTERNAL_TRANSFER",
@@ -1344,13 +1358,13 @@
       "product": "NAWA",
       "currency": "USD",
       "userName": "User #777102",
-      "createdAt": "2026-08-23 14:06:52",
-      "verifiedAt": "2026-08-23 14:06:52",
+      "createdAt": "2026-08-23 14:56:56",
+      "verifiedAt": "2026-08-23 14:56:56",
       "verifiedBy": 5059829001,
       "verifiedByName": "Super Admin"
     },
-    "TXN-18B954": {
-      "id": "TXN-18B954",
+    "TXN-963E53": {
+      "id": "TXN-963E53",
       "notes": "Student sent bank transfer receipt via Telegram",
       "amount": 60,
       "source": "EXTERNAL_TRANSFER",
@@ -1359,24 +1373,10 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777101",
-      "createdAt": "2026-08-23 14:06:52"
+      "createdAt": "2026-08-23 14:56:56"
     },
-    "TXN-89606C": {
-      "id": "TXN-89606C",
-      "notes": "Access unlocked via promo code [LL6RYKN5]",
-      "amount": 60,
-      "source": "PROMO_CODE",
-      "status": "PAID",
-      "userId": 777103,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777103",
-      "createdAt": "2026-08-23 14:06:52",
-      "promoCode": "LL6RYKN5",
-      "verifiedAt": "2026-08-23 14:06:52"
-    },
-    "TXN-F47ED4": {
-      "id": "TXN-F47ED4",
+    "TXN-C2FE94": {
+      "id": "TXN-C2FE94",
       "notes": "Refunded: User requested refund",
       "amount": 60,
       "source": "EXTERNAL_TRANSFER",
@@ -1385,8 +1385,8 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777104",
-      "createdAt": "2026-08-23 14:06:52",
-      "verifiedAt": "2026-08-23 14:06:52",
+      "createdAt": "2026-08-23 14:56:56",
+      "verifiedAt": "2026-08-23 14:56:56",
       "verifiedBy": 5059829001,
       "verifiedByName": "Super Admin"
     }
@@ -1940,7 +1940,7 @@
   "reviews": [],
   "auditLogs": [
     {
-      "id": "FE4F1E",
+      "id": "69E1D5",
       "action": "ADMIN_PERMISSION_REVOKED",
       "status": "success",
       "target": "777702",
@@ -1950,10 +1950,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 14:07:01"
+      "timestamp": "2026-08-23 14:57:02"
     },
     {
-      "id": "C18810",
+      "id": "640584",
       "action": "ADMIN_PERMISSION_GRANTED",
       "status": "success",
       "target": "777702",
@@ -1963,10 +1963,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 14:07:01"
+      "timestamp": "2026-08-23 14:57:02"
     },
     {
-      "id": "B504F5",
+      "id": "D0D021",
       "action": "TEST_ACTION",
       "status": "success",
       "target": "[PROTECTED_CREDENTIAL]",
@@ -1976,72 +1976,72 @@
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:07:01"
+      "timestamp": "2026-08-23 14:57:02"
     },
     {
-      "id": "418E2E",
+      "id": "EEFD25",
       "action": "PAYMENT_REFUNDED",
       "status": "success",
-      "target": "TXN-F47ED4",
+      "target": "TXN-C2FE94",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin refunded Transaction TXN-F47ED4 ($60). Premium revoked for User #777104.",
+      "details": "Super Admin refunded Transaction TXN-C2FE94 ($60). Premium revoked for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:06:52"
+      "timestamp": "2026-08-23 14:56:56"
     },
     {
-      "id": "4DEBE7",
+      "id": "63F619",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-F47ED4",
+      "target": "TXN-C2FE94",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-F47ED4 ($60 NAWA_FULL). Premium activated for User #777104.",
+      "details": "Super Admin manually verified payment for Transaction TXN-C2FE94 ($60 NAWA_FULL). Premium activated for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:06:52"
+      "timestamp": "2026-08-23 14:56:56"
     },
     {
-      "id": "129D95",
+      "id": "D1A49B",
       "action": "PROMO_CODE_REDEEMED",
       "status": "success",
-      "target": "LL6RYKN5",
+      "target": "2NL65HZK",
       "actorId": 777103,
       "adminId": 777103,
-      "details": "Student successfully redeemed promo code 'LL6RYKN5' granting [NAWA_FULL] package. Transaction TXN-89606C recorded.",
+      "details": "Student successfully redeemed promo code '2NL65HZK' granting [NAWA_FULL] package. Transaction TXN-535B6F recorded.",
       "actorName": "User #777103",
       "actorRole": "system",
       "adminName": "User #777103",
-      "timestamp": "2026-08-23 14:06:52"
+      "timestamp": "2026-08-23 14:56:56"
     },
     {
-      "id": "AB9618",
+      "id": "5F1C31",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-0B1539",
+      "target": "TXN-6F41B1",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-0B1539 ($15 NAWA). Premium activated for User #777102.",
+      "details": "Super Admin manually verified payment for Transaction TXN-6F41B1 ($15 NAWA). Premium activated for User #777102.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:06:52"
+      "timestamp": "2026-08-23 14:56:56"
     },
     {
-      "id": "9B094B",
+      "id": "D3D6CC",
       "action": "TRANSACTION_CREATED",
       "status": "success",
-      "target": "TXN-18B954",
+      "target": "TXN-963E53",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Created private transaction record TXN-18B954 (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
+      "details": "Created private transaction record TXN-963E53 (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:06:52"
+      "timestamp": "2026-08-23 14:56:56"
     }
   ]
 }
