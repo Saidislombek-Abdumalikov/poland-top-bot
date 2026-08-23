@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { config } from "../config";
 import {
   UserSessionData,
   PromoCodeRecord,
@@ -128,9 +130,76 @@ export class DatabaseService {
     reviews: [],
   };
 
+  private supabase: SupabaseClient | null = null;
+  private isCloudSyncing = false;
+
   constructor() {
     this.ensureDataDir();
     this.loadDatabase();
+    this.initSupabase();
+  }
+
+  private initSupabase() {
+    if (config.supabaseUrl && config.supabaseKey) {
+      try {
+        this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
+        this.syncFromCloud().catch(() => {});
+      } catch (e) {
+        console.error("Supabase init error:", e);
+      }
+    }
+  }
+
+  public async syncFromCloud(): Promise<void> {
+    if (!this.supabase) return;
+    try {
+      const { data, error } = await this.supabase
+        .from("ptu_database")
+        .select("data")
+        .eq("id", "main")
+        .single();
+
+      if (data && data.data && !error) {
+        this.data = {
+          users: data.data.users || this.data.users || {},
+          promoCodes: data.data.promoCodes || this.data.promoCodes || {},
+          applications: data.data.applications || this.data.applications || {},
+          nawaApplications: data.data.nawaApplications || this.data.nawaApplications || {},
+          universities: data.data.universities || this.data.universities || {},
+          documentDefinitions: data.data.documentDefinitions || this.data.documentDefinitions || {},
+          reviews: data.data.reviews || this.data.reviews || [],
+        };
+        this.saveToDisk();
+      } else if (error && (error.code === "PGRST116" || error.message?.includes("0 rows"))) {
+        // Table exists but no row with id='main' yet -> seed it to Supabase
+        await this.syncToCloud();
+      }
+    } catch (e) {
+      // Graceful fallback to local cache
+    }
+  }
+
+  public async syncToCloud(): Promise<void> {
+    if (!this.supabase || this.isCloudSyncing) return;
+    this.isCloudSyncing = true;
+    try {
+      await this.supabase
+        .from("ptu_database")
+        .upsert({ id: "main", data: this.data, updated_at: new Date().toISOString() });
+    } catch (e) {
+      // Non-blocking
+    } finally {
+      this.isCloudSyncing = false;
+    }
+  }
+
+  private saveToDisk() {
+    try {
+      this.ensureDataDir();
+      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
+    } catch (e) {
+      // Ignore if read-only filesystem (e.g. Vercel)
+    }
   }
 
   private ensureDataDir() {
@@ -138,7 +207,7 @@ export class DatabaseService {
       try {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       } catch (e) {
-        console.error("Could not create data dir", e);
+        // Ignore if read-only filesystem
       }
     }
   }
@@ -231,12 +300,8 @@ export class DatabaseService {
   }
 
   public saveDatabase() {
-    try {
-      this.ensureDataDir();
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("Error writing database file:", e);
-    }
+    this.saveToDisk();
+    this.syncToCloud().catch(() => {});
   }
 
   // ================= UNIVERSITIES CRUD =================

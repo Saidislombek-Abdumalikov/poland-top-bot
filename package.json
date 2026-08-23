@@ -12,6 +12,7 @@
     "bot:dev": "tsx watch src/bot/index.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "dotenv": "^17.4.2",
     "grammy": "^1.45.1",
     "react": "^19.0.0",
