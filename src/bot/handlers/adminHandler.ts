@@ -496,43 +496,81 @@ export function setupAdminHandler(bot: Bot) {
     const targetUserId = parseInt(match[1], 10);
     const user = db.getUser(targetUserId);
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+
+    // 1. Create single-use promo code specifically for student
     const promo = db.generatePersonalPromo(
       targetUserId,
       user.fullName || user.firstName || `User #${targetUserId}`,
-      "Full Premium"
+      "NAWA_FULL",
+      adminId
     );
 
-    const adminId = ctx.from?.id || 0;
-    const adminUser = db.getUser(adminId);
+    // 2. Automatically redeem and activate Full Application + NAWA on the student's profile!
+    db.redeemPromoCode(promo.code, targetUserId);
+
     db.logAdminAction(
       adminId,
       adminUser.fullName || adminUser.username || `Admin #${adminId}`,
-      "CREATE_VIP_PROMO",
-      `Generated VIP Promo Code '${promo.code}' (${promo.tier}) for Student #${targetUserId} (${user.fullName || user.username || "Student"})`,
+      "GRANT_VIP_PREMIUM",
+      `Directly granted & activated Full Application + NAWA ($50) via code '${promo.code}' for Student #${targetUserId} (${user.fullName || user.username || "Student"})`,
       promo.code
     );
 
-    await ctx.answerCallbackQuery({ text: `VIP Code ${promo.code} created!` });
+    await ctx.answerCallbackQuery({ text: `Full Application + NAWA activated for ${user.fullName || targetUserId}!` });
 
-    // Send code notification to student directly
+    // 3. Send instant celebration notification to student directly
+    const isUz = user.lang === "uz";
+    const studentText = isUz
+      ? `🎉 <b>TABRIKLAYMIZ! QABUL MASLAHATCHISI SIZGA TO'LIQ PREMIUM TAQDIM ETDI!</b>\n\n` +
+        `Sizning hisobingizga <b>Full Application + NAWA ($50)</b> paketi to'g'ridan-to'g'ri faollashtirildi!\n\n` +
+        `🔑 <b>Promokod:</b> <code>${escapeHtml(promo.code)}</code> (Avtomatik faollashtirildi ✅)\n\n` +
+        `✨ <b>Ochilgan Imkoniyatlar:</b>\n` +
+        `• 📁 Barcha kerakli hujjatlarni tekshiruvga yuklash va tasdiqlatish\n` +
+        `• 🏛️ Universitet arizalarini to'liq yuritish va topshirish\n` +
+        `• 📜 NAWA SYRENA va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły) ko'magi\n` +
+        `• 💬 Shaxsiy qabul koordinatori bilan doimiy 1-ga-1 aloqa\n\n` +
+        `<i>Hujjatlaringizni yuklashni boshlash uchun quyidagi tugmani bosing:</i>`
+      : `🎉 <b>CONGRATULATIONS! ADMISSIONS ADVISOR GRANTED YOU FULL PREMIUM!</b>\n\n` +
+        `The <b>Full Application + NAWA ($50)</b> package has been activated directly on your account!\n\n` +
+        `🔑 <b>Promo Code:</b> <code>${escapeHtml(promo.code)}</code> (Auto-activated ✅)\n\n` +
+        `✨ <b>Unlocked Features:</b>\n` +
+        `• 📁 Full Document Verification & Advisor Checklist\n` +
+        `• 🏛️ Direct University Application Processing\n` +
+        `• 📜 NAWA SYRENA & Sworn Translations (Tłumacz Przysięgły)\n` +
+        `• 💬 1-on-1 Dedicated Admissions Consultant Support\n\n` +
+        `<i>Tap below to access your document checklist:</i>`;
+
     try {
-      await bot.api.sendMessage(
-        targetUserId,
-        `🎁 <b>Admissions Consultant Gift!</b>\n\n` +
-          `An advisor assigned you an exclusive Single-Use VIP Promo Code:\n` +
-          `🔑 <code>${escapeHtml(promo.code)}</code>\n\n` +
-          `Tap <b>💎 Premium A'zolik</b> in the bot menu to activate your full admissions package!`,
-        { parse_mode: "HTML" }
-      );
+      await bot.api.sendMessage(targetUserId, studentText, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "📁 Hujjatlarni Yuklash" : "📁 Document Checklist", callback_data: "menu_docs" }],
+            [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+          ],
+        },
+      });
     } catch {}
 
+    const pricing = db.getPricingConfig();
+    const updatedTarget = db.getUser(targetUserId);
+
     await ctx.reply(
-      `✅ <b>Exclusive Single-Use Promo Code Generated & Sent to Student!</b>\n\n` +
-        `• 👤 Student: <b>${escapeHtml(user.fullName || user.firstName || "")}</b> (<code>${targetUserId}</code>)\n` +
-        `• 🔑 Code: <code>${escapeHtml(promo.code)}</code>\n` +
-        `• 💎 Tier: <b>${escapeHtml(promo.tier)}</b>`,
+      `✅ <b>Full Application + NAWA Paketi Talabaga To'g'ridan-to'g'ri Faollashtirildi!</b>\n\n` +
+        `• 👤 <b>Talaba:</b> <b>${escapeHtml(user.fullName || user.firstName || "Student")}</b> (<code>${targetUserId}</code>)\n` +
+        `• 🔑 <b>Promokod:</b> <code>${escapeHtml(promo.code)}</code>\n` +
+        `• 💎 <b>Paket:</b> <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice}) — Faol ✅</b>\n` +
+        `• 💳 <b>Tranzaksiya:</b> <code>${updatedTarget.premiumTransactionId || "PAID"}</code>\n\n` +
+        `<i>Talabaga faollashtirish xabari va hujjatlarni yuklash tugmalari yuborildi.</i>`,
       {
         parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Students", callback_data: "admin_menu_users" }],
+          ],
+        },
       }
     );
   });

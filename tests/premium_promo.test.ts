@@ -178,6 +178,53 @@ async function runPremiumPromoTestSuite() {
     assert.equal(isNawaFullAllowed(db.getUser(222102)), true);
   });
 
+  // 9. Admin Direct Personal Promo Grant & Auto-Activation
+  test("Admin granting personal promo to student directly auto-activates Full Application + NAWA", () => {
+    const adminId = 444105;
+    const studentId = 333401;
+    const studentUser = db.getUser(studentId, { fullName: "Akmal Saidov" });
+
+    // Admin creates personal promo
+    const promo = db.generatePersonalPromo(studentId, studentUser.fullName!, "NAWA_FULL", adminId);
+    assert.equal(promo.assignedUserId, studentId);
+    assert.equal(promo.tier, "NAWA_FULL");
+
+    // Automatically redeem
+    const redeemRes = db.redeemPromoCode(promo.code, studentId);
+    assert.equal(redeemRes.success, true);
+    assert.equal(redeemRes.tier, "NAWA_FULL");
+
+    // Verify student is immediately Full Application + NAWA
+    const updated = db.getUser(studentId);
+    assert.equal(updated.isPremium, true);
+    assert.equal(updated.premiumTier, "NAWA_FULL");
+    assert.ok(updated.premiumTransactionId);
+    assert.equal(isNawaFullAllowed(updated), true);
+  });
+
+  // 10. Student Upgrades from NAWA to Full Application + NAWA
+  test("Student with NAWA can upgrade to Full Application + NAWA with upgrade code", () => {
+    const studentId = 333402;
+    db.getUser(studentId, { fullName: "Sherzod" });
+
+    // First redeem NAWA
+    const nawaCode = db.createPromoCode({ tier: "NAWA", maxUses: 1 });
+    db.redeemPromoCode(nawaCode.code, studentId);
+    assert.equal(db.getUser(studentId).premiumTier, "NAWA");
+    assert.equal(isNawaFullAllowed(db.getUser(studentId)), false);
+
+    // Now redeem NAWA_FULL
+    const fullCode = db.createPromoCode({ tier: "NAWA_FULL", maxUses: 1 });
+    const upgradeRes = db.redeemPromoCode(fullCode.code.toLowerCase(), studentId);
+    assert.equal(upgradeRes.success, true);
+    assert.equal(upgradeRes.tier, "NAWA_FULL");
+
+    // Verified upgraded
+    const upgraded = db.getUser(studentId);
+    assert.equal(upgraded.premiumTier, "NAWA_FULL");
+    assert.equal(isNawaFullAllowed(upgraded), true);
+  });
+
   console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} PREMIUM & PROMO TESTS PASSED! =================\n`);
 }
 

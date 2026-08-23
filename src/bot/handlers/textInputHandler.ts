@@ -963,7 +963,10 @@ export function setupTextInputHandler(bot: Bot) {
     if (user.waitingFor === "premium_code") {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
-      const res = db.redeemPromoCode(text, userId);
+
+      const codeMatch = text.match(/[A-Za-z0-9]{6,12}/);
+      const codeToRedeem = codeMatch ? codeMatch[0] : text.trim();
+      const res = db.redeemPromoCode(codeToRedeem, userId);
       const isUz = user.lang === "uz";
       const pricing = db.getPricingConfig();
 
@@ -975,7 +978,7 @@ export function setupTextInputHandler(bot: Bot) {
 
         const successMsg = isUz
           ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
-            `Siz kiritgan <code>${escapeHtml(text.toUpperCase())}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
+            `Siz kiritgan <code>${escapeHtml(codeToRedeem.toUpperCase())}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
             `🌟 <b>Ochilgan A'zolik Paketi:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
             (isNawaFull
               ? `• 📁 Hujjatlar nazorati va qabul hujjatlarini to'liq tekshirish\n` +
@@ -988,7 +991,7 @@ export function setupTextInputHandler(bot: Bot) {
                 `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari\n` +
                 `💡 <i>Hujjatlarni tekshirtirish va to'liq ariza topshirish uchun Full Application + NAWA ga oshirishingiz mumkin.</i>`)
           : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
-            `Your promo code <code>${escapeHtml(text.toUpperCase())}</code> has been redeemed successfully!\n` +
+            `Your promo code <code>${escapeHtml(codeToRedeem.toUpperCase())}</code> has been redeemed successfully!\n` +
             `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
             (isNawaFull
               ? `• 📁 Full Document Checklist & Certified Advisor Verification\n` +
@@ -1004,7 +1007,12 @@ export function setupTextInputHandler(bot: Bot) {
         await ctx.reply(successMsg, {
           parse_mode: "HTML",
           reply_markup: {
-            inline_keyboard: [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
+            inline_keyboard: isNawaFull
+              ? [
+                  [{ text: isUz ? "📁 Hujjatlarni Yuklash" : "📁 Document Checklist", callback_data: "menu_docs" }],
+                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+                ]
+              : [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
           },
         });
       } else {
@@ -1020,6 +1028,7 @@ export function setupTextInputHandler(bot: Bot) {
           parse_mode: "HTML",
           reply_markup: {
             inline_keyboard: [
+              [{ text: isUz ? "🔑 Qayta Kiritish" : "🔑 Try Again", callback_data: "premium_enter_code" }],
               [{
                 text: isUz ? "💬 Maslahatchidan Kod Olish" : "💬 Contact Advisor for Access Code",
                 url: "https://t.me/poland_admissions_bot",
@@ -1030,6 +1039,66 @@ export function setupTextInputHandler(bot: Bot) {
         });
       }
       return;
+    }
+
+    // 10b. Direct Promo Code Detection in Plain Chat Text
+    if (!user.waitingFor) {
+      const codeMatch = text.match(/^[A-Za-z0-9]{6,12}$/);
+      if (codeMatch) {
+        const candidateCode = codeMatch[0].toUpperCase();
+        const maybePromo = db.getPromoCode(candidateCode);
+        if (maybePromo && maybePromo.isActive && !maybePromo.isExpired) {
+          await cleanUpInput(ctx, userId);
+          const res = db.redeemPromoCode(candidateCode, userId);
+          if (res.success && res.tier) {
+            const isUz = user.lang === "uz";
+            const pricing = db.getPricingConfig();
+            const isNawaFull = res.tier === "NAWA_FULL" || res.tier === "Full Premium";
+            const tierName = isNawaFull
+              ? `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`
+              : `NAWA ($${pricing.nawaPrice})`;
+
+            const successMsg = isUz
+              ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
+                `Siz kiritgan <code>${escapeHtml(candidateCode)}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
+                `🌟 <b>Ochilgan A'zolik Paketi:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
+                (isNawaFull
+                  ? `• 📁 Hujjatlar nazorati va qabul hujjatlarini to'liq tekshirish\n` +
+                    `• 🏛️ Universitetlarga to'g'ridan-to'g'ri ariza topshirish huquqi\n` +
+                    `• 📜 NAWA SYRENA arizasi va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły)\n` +
+                    `• ✍️ Kirish imtihonlari va yo'nalish testlariga to'liq kirish\n` +
+                    `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 aloqa`
+                  : `• 🏛️ Standart NAWA SYRENA arizasi va nostrifikatsiya yo'riqnomasi\n` +
+                    `• 📋 Polsha oliygohlari qabul talablari va dasturlar bazasi\n` +
+                    `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari`)
+              : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
+                `Your promo code <code>${escapeHtml(candidateCode)}</code> has been redeemed successfully!\n` +
+                `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
+                (isNawaFull
+                  ? `• 📁 Full Document Checklist & Certified Advisor Verification\n` +
+                    `• 🏛️ Direct University Application Filing & Dossier Processing\n` +
+                    `• 📜 NAWA SYRENA Legalization & Sworn Translations (Tłumacz Przysięgły)\n` +
+                    `• ✍️ Complete Entrance & Placement Exam Access\n` +
+                    `• 💬 1-on-1 Dedicated Admissions Consultant Support`
+                  : `• 🏛️ Standard NAWA SYRENA Application & Recognition Guide\n` +
+                    `• 📋 Polish University Admission Requirements Directory\n` +
+                    `• ✍️ Standard Exam Preparation Materials`);
+
+            await ctx.reply(successMsg, {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: isNawaFull
+                  ? [
+                      [{ text: isUz ? "📁 Hujjatlarni Yuklash" : "📁 Document Checklist", callback_data: "menu_docs" }],
+                      [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+                    ]
+                  : [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
+              },
+            });
+            return;
+          }
+        }
+      }
     }
 
     // 11. Super Admin Appoint User

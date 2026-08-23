@@ -24,6 +24,16 @@ export function setupStartHandler(bot: Bot) {
       lastName: ctx.from.last_name,
     });
 
+    // Handle deep-linked promo code (e.g. /start promo_K7X9P2LM or /start K7X9P2LM)
+    const startPayload = ctx.match ? ctx.match.toString().trim() : "";
+    if (startPayload) {
+      const candidateCode = startPayload.replace(/^promo_/, "").toUpperCase().trim();
+      const maybePromo = db.getPromoCode(candidateCode);
+      if (maybePromo && maybePromo.isActive && !maybePromo.isExpired) {
+        db.redeemPromoCode(candidateCode, userId);
+      }
+    }
+
     // If user is not yet registered, guide them to their current onboarding step without flickering!
     if (!user.isRegistered) {
       const isUz = user.lang === "uz";
