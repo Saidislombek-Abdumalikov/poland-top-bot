@@ -195,6 +195,7 @@ export class DatabaseService {
 
   private saveToDisk() {
     try {
+      if (process.env.VERCEL) return;
       this.ensureDataDir();
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
     } catch (e) {
@@ -203,18 +204,19 @@ export class DatabaseService {
   }
 
   private ensureDataDir() {
-    if (!fs.existsSync(DATA_DIR)) {
-      try {
+    if (process.env.VERCEL) return;
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-      } catch (e) {
-        // Ignore if read-only filesystem
       }
+    } catch (e) {
+      // Ignore if read-only filesystem
     }
   }
 
   private loadDatabase() {
     try {
-      if (fs.existsSync(DB_FILE)) {
+      if (!process.env.VERCEL && fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         this.data = {
@@ -227,76 +229,75 @@ export class DatabaseService {
           reviews: parsed.reviews || [],
         };
       }
-
-      // Seed default universities if empty
-      if (!this.data.universities || Object.keys(this.data.universities).length === 0) {
-        this.data.universities = {};
-        defaultUniversities.forEach((u) => {
-          this.data.universities[u.id] = u;
-        });
-        this.saveDatabase();
-      }
-
-      // Seed default document definitions if empty
-      if (!this.data.documentDefinitions || Object.keys(this.data.documentDefinitions).length === 0) {
-        this.data.documentDefinitions = { ...defaultDocumentDefinitions };
-        this.saveDatabase();
-      }
-
-      // Seed default reviews if empty
-      if (!this.data.reviews || this.data.reviews.length === 0) {
-        this.data.reviews = [
-          {
-            id: 1,
-            name: "Sanjarbek Rahimov",
-            country: "Uzbekistan",
-            university: "University of Warsaw",
-            program: "Computer Science (B.Sc)",
-            rating: 5,
-            year: "2024",
-            text: {
-              en: "The PTU admissions roadmap was a lifesaver! Got all my documents apostilled and received my Polish visa in 3 weeks. Studying CS at UW now!",
-              uz: "PTU jamoasining yordami bilan barcha hujjatlarimni apostil qildirib, 3 haftada viza oldim. Hozir Varshava universitetida CS bo'yicha o'qiyapman!",
-            },
-            status: "approved",
-            submittedAt: "2024-09-15",
-          },
-          {
-            id: 2,
-            name: "Malika Aliyeva",
-            country: "Uzbekistan",
-            university: "Jagiellonian University",
-            program: "International Relations (M.A)",
-            rating: 5,
-            year: "2024",
-            text: {
-              en: "Krakow is such a magical student city. The NAWA recognition process was super smooth with PTU guidance.",
-              uz: "Krakov talabalar uchun ajoyib shahar. NAWA nostrifikatsiya jarayoni PTU ko'rsatmalari bilan juda oson kechdi.",
-            },
-            status: "approved",
-            submittedAt: "2024-10-02",
-          },
-          {
-            id: 3,
-            name: "Azizbek Tursunov",
-            country: "Uzbekistan",
-            university: "Warsaw University of Technology",
-            program: "Civil Engineering (B.Sc)",
-            rating: 5,
-            year: "2025",
-            text: {
-              en: "The practice exams helped me pass the technical university entrance test with an 88% score. Highly recommend!",
-              uz: "Mashq imtihonlari Polsha texnika universiteti kirish testidan 88% ball olishimga yordam berdi. Barchaga tavsiya qilaman!",
-            },
-            status: "approved",
-            submittedAt: "2025-02-10",
-          },
-        ];
-        this.saveDatabase();
-      }
     } catch (e) {
-      console.error("Error reading database file:", e);
+      // Ignore
     }
+
+    // Seed default universities if empty
+    if (!this.data.universities || Object.keys(this.data.universities).length === 0) {
+      this.data.universities = {};
+      defaultUniversities.forEach((u) => {
+        this.data.universities[u.id] = u;
+      });
+    }
+
+    // Seed default document definitions if empty
+    if (!this.data.documentDefinitions || Object.keys(this.data.documentDefinitions).length === 0) {
+      this.data.documentDefinitions = { ...defaultDocumentDefinitions };
+    }
+
+    // Seed default reviews if empty
+    if (!this.data.reviews || this.data.reviews.length === 0) {
+      this.data.reviews = [
+        {
+          id: 1,
+          name: "Sanjarbek Rahimov",
+          country: "Uzbekistan",
+          university: "University of Warsaw",
+          program: "Computer Science (B.Sc)",
+          rating: 5,
+          year: "2024",
+          text: {
+            en: "The PTU admissions roadmap was a lifesaver! Got all my documents apostilled and received my Polish visa in 3 weeks. Studying CS at UW now!",
+            uz: "PTU jamoasining yordami bilan barcha hujjatlarimni apostil qildirib, 3 haftada viza oldim. Hozir Varshava universitetida CS bo'yicha o'qiyapman!",
+          },
+          status: "approved",
+          submittedAt: "2024-09-15",
+        },
+        {
+          id: 2,
+          name: "Malika Aliyeva",
+          country: "Uzbekistan",
+          university: "Jagiellonian University",
+          program: "International Relations (M.A)",
+          rating: 5,
+          year: "2024",
+          text: {
+            en: "Krakow is such a magical student city. The NAWA recognition process was super smooth with PTU guidance.",
+            uz: "Krakov talabalar uchun ajoyib shahar. NAWA nostrifikatsiya jarayoni PTU ko'rsatmalari bilan juda oson kechdi.",
+          },
+          status: "approved",
+          submittedAt: "2024-10-02",
+        },
+        {
+          id: 3,
+          name: "Azizbek Tursunov",
+          country: "Uzbekistan",
+          university: "Warsaw University of Technology",
+          program: "Civil Engineering (B.Sc)",
+          rating: 5,
+          year: "2025",
+          text: {
+            en: "The practice exams helped me pass the technical university entrance test with an 88% score. Highly recommend!",
+            uz: "Mashq imtihonlari Polsha texnika universiteti kirish testidan 88% ball olishimga yordam berdi. Barchaga tavsiya qilaman!",
+          },
+          status: "approved",
+          submittedAt: "2025-02-10",
+        },
+      ];
+    }
+
+    this.saveToDisk();
   }
 
   public saveDatabase() {
