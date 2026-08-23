@@ -463,6 +463,8 @@ export function getSuperAdminFinancialHQKeyboard(lang: Language = "en"): InlineK
     .row()
     .text(isUz ? "➕ Tashqi To'lovni Kiritish (Manual)" : "➕ Record External Payment", "admin_super_create_txn_prompt")
     .row()
+    .text(isUz ? "🗑️ Barcha Tranzaksiyalarni Tozalash" : "🗑️ Purge All Transactions", "admin_super_purge_txns_confirm")
+    .row()
     .text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "admin_super_financial_hq")
     .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
 }
@@ -520,6 +522,7 @@ export function getSuperAdminTransactionDetailKeyboard(
     kb.text(isUz ? "↩️ To'lovni Qaytarish (Refund)" : "↩️ Refund Payment", `admin_super_refund_txn_${txn.id}`).row();
   }
 
+  kb.text(isUz ? "🗑️ Tranzaksiyani Butunlay O'chirish" : "🗑️ Delete Transaction Record", `admin_super_delete_txn_${txn.id}`).row();
   kb.text(isUz ? "◀️ Tranzaksiyalar Ro'yxatiga" : "◀️ Back to Transactions", "admin_super_txns_0");
   return kb;
 }
@@ -538,7 +541,9 @@ export function getSuperAdminLogsKeyboard(
   if (page < totalPages - 1) kb.text("Next ➡️", `admin_super_logs_${page + 1}`);
   if (page > 0 || page < totalPages - 1) kb.row();
 
-  kb.text(isUz ? `🔄 Yangilash` : `🔄 Refresh Logs`, `admin_super_logs_${page}`)
+  kb.text(isUz ? "🗑️ Barcha Loglarni Tozalash" : "🗑️ Clear All Logs", "admin_super_clear_logs_confirm")
+    .row()
+    .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Logs`, `admin_super_logs_${page}`)
     .row()
     .text(isUz ? `◀️ Super Admin HQ` : `◀️ Super Admin HQ`, "admin_super_hq");
 
@@ -671,4 +676,24 @@ export function getAdminOfertaPreviewKeyboard(
   );
 
   return kb;
+}
+
+export function getSuperAdminPurgeTransactionsConfirmKeyboard(
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "🚨 Ha, barcha tranzaksiyalarni o'chirish" : "🚨 Yes, purge all transactions", "admin_super_purge_txns_execute")
+    .row()
+    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", "admin_super_financial_hq");
+}
+
+export function getSuperAdminClearLogsConfirmKeyboard(
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "🚨 Ha, barcha loglarni tozalash" : "🚨 Yes, clear all logs", "admin_super_clear_logs_execute")
+    .row()
+    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", "admin_super_hq");
 }

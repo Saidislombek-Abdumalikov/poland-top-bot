@@ -40,6 +40,8 @@ import {
   getSuperAdminDbStatusKeyboard,
   getAdminOfertaPricingKeyboard,
   getAdminOfertaPreviewKeyboard,
+  getSuperAdminPurgeTransactionsConfirmKeyboard,
+  getSuperAdminClearLogsConfirmKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -2674,6 +2676,133 @@ export function setupAdminHandler(bot: Bot) {
       { parse_mode: "HTML" }
     );
     db.setLastPromptMsgId(userId, msg.message_id);
+  });
+  // Delete single transaction permanently
+  bot.callbackQuery(/^admin_super_delete_txn_(.+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_delete_txn_(.+)$/);
+    if (!match) return;
+    const txnId = match[1];
+
+    const ok = db.deleteTransaction(txnId, userId);
+    if (ok) {
+      await ctx.answerCallbackQuery({ text: "Transaction deleted permanently." });
+      await ctx.reply(
+        `🗑️ <b>Transaction Deleted:</b> <code>${escapeHtml(txnId)}</code> has been permanently removed from records.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: "◀️ Financial HQ", callback_data: "admin_super_financial_hq" }]],
+          },
+        }
+      );
+    } else {
+      await ctx.answerCallbackQuery({ text: "Transaction not found or could not be deleted." });
+    }
+  });
+
+  // Prompt purge all transactions confirmation
+  bot.callbackQuery("admin_super_purge_txns_confirm", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const count = db.getAllTransactions().length;
+
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      adminUser.lang === "uz"
+        ? `⚠️ <b>DIQQAT! Barcha tranzaksiyalarni o'chirish</b>\n\n` +
+          `Siz tizimdagi barcha <b>${count} ta</b> tranzaksiya yozuvlarini butunlay o'chirmoqchisiz.\n\n` +
+          `Haqiqatan ham barcha tranzaksiyalarni tozalashni tasdiqlaysizmi?`
+        : `⚠️ <b>WARNING! Purge All Transactions</b>\n\n` +
+          `You are about to permanently delete all <b>${count}</b> transaction records.\n\n` +
+          `Are you sure you want to proceed?`,
+      {
+        parse_mode: "HTML",
+        reply_markup: getSuperAdminPurgeTransactionsConfirmKeyboard(adminUser.lang),
+      }
+    );
+  });
+
+  // Execute purge all transactions
+  bot.callbackQuery("admin_super_purge_txns_execute", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const count = db.clearAllTransactions(userId);
+
+    await ctx.answerCallbackQuery({ text: "All transactions purged." });
+    await ctx.reply(
+      adminUser.lang === "uz"
+        ? `✅ <b>Barcha tranzaksiyalar tozalandi:</b> ${count} ta yozuv butunlay o'chirildi.`
+        : `✅ <b>All transactions purged:</b> ${count} records permanently deleted.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "◀️ Financial HQ", callback_data: "admin_super_financial_hq" }]],
+        },
+      }
+    );
+  });
+
+  // Prompt clear all audit logs confirmation
+  bot.callbackQuery("admin_super_clear_logs_confirm", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const count = db.getAuditLogs(500).length;
+
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      adminUser.lang === "uz"
+        ? `⚠️ <b>DIQQAT! Audit loglarni tozalash</b>\n\n` +
+          `Siz tizimdagi barcha <b>${count} ta</b> audit log yozuvlarini tozalash arafasidasiz.\n\n` +
+          `Tasdiqlaysizmi?`
+        : `⚠️ <b>WARNING! Clear Audit Logs</b>\n\n` +
+          `You are about to delete all <b>${count}</b> audit log entries.\n\n` +
+          `Are you sure?`,
+      {
+        parse_mode: "HTML",
+        reply_markup: getSuperAdminClearLogsConfirmKeyboard(adminUser.lang),
+      }
+    );
+  });
+
+  // Execute clear all audit logs
+  bot.callbackQuery("admin_super_clear_logs_execute", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    db.clearAuditLogs();
+
+    await ctx.answerCallbackQuery({ text: "Audit logs cleared." });
+    await ctx.reply(
+      adminUser.lang === "uz"
+        ? `✅ <b>Barcha audit loglar muvaffaqiyatli tozalandi.</b>`
+        : `✅ <b>All audit logs successfully cleared.</b>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "◀️ Super Admin HQ", callback_data: "admin_super_hq" }]],
+        },
+      }
+    );
   });
 }
 

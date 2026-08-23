@@ -104,6 +104,46 @@ async function runDeleteAndResetTestSuite() {
     assert.ok(Object.keys(db.getDocumentDefinitions()).length > 0, "Document definitions must be preserved");
   });
 
+  // 5. Super Admin Delete Single Transaction
+  test("Super Admin can permanently delete an individual transaction record", () => {
+    const superAdminId = config.superAdminTelegramId;
+    const testStudentId = 999333;
+    db.getUser(testStudentId, { fullName: "Txn Test Student" });
+
+    const txn = db.createTransaction({
+      userId: testStudentId,
+      product: "NAWA",
+      amount: 15,
+      status: "PAID",
+    });
+
+    assert.ok(db.getTransaction(txn.id), "Transaction must exist initially");
+
+    const deleted = db.deleteTransaction(txn.id, superAdminId);
+    assert.equal(deleted, true, "Transaction deletion must return true");
+    assert.equal(db.getTransaction(txn.id), undefined, "Transaction must be deleted from database");
+  });
+
+  // 6. Super Admin Purge All Transactions
+  test("Super Admin can purge all transaction records at once", () => {
+    const superAdminId = config.superAdminTelegramId;
+    db.createTransaction({ userId: 101, product: "NAWA", amount: 15, status: "PAID" });
+    db.createTransaction({ userId: 102, product: "NAWA_FULL", amount: 50, status: "PAID" });
+
+    assert.ok(db.getAllTransactions().length >= 2);
+
+    const purgedCount = db.clearAllTransactions(superAdminId);
+    assert.ok(purgedCount >= 2);
+    assert.equal(db.getAllTransactions().length, 0, "All transactions must be purged (0)");
+  });
+
+  // 7. Super Admin Clear Audit Logs
+  test("Super Admin can clear all audit logs", () => {
+    assert.ok(db.getAuditLogs(100).length > 0, "Audit logs should have entries");
+    db.clearAuditLogs();
+    assert.equal(db.getAuditLogs(100).length, 0, "Audit logs must be empty (0)");
+  });
+
   console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} DELETE & RESET TESTS PASSED! =================\n`);
 }
 

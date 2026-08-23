@@ -459,12 +459,12 @@ export class DatabaseService {
         username: defaults?.username,
         firstName: defaults?.firstName,
         lastName: defaults?.lastName,
-        fullName: defaults?.firstName ? `${defaults.firstName} ${defaults.lastName || ""}`.trim() : undefined,
+        fullName: defaults?.fullName,
         lang: defaults?.lang || "en",
         country: defaults?.country || "Uzbekistan",
         phone: defaults?.phone,
         email: defaults?.email,
-        preferredLevel: defaults?.preferredLevel || "Bachelor",
+        preferredLevel: defaults?.preferredLevel,
         preferredCity: defaults?.preferredCity || "Warsaw",
         isRegistered: false,
         isAdmin: isAdmin,
@@ -1189,6 +1189,55 @@ export class DatabaseService {
 
     this.saveDatabase();
     return true;
+  }
+
+  public deleteTransaction(transactionId: string, superAdminId: number): boolean {
+    if (!this.data.transactions || !this.data.transactions[transactionId]) return false;
+    const txn = this.data.transactions[transactionId];
+
+    // If user's premium was active and directly tied to this transaction, reset to Free
+    if (this.data.users[txn.userId]?.premiumTransactionId === transactionId) {
+      this.updateUser(txn.userId, {
+        isPremium: false,
+        premiumTier: "Free",
+        premiumTransactionId: undefined,
+        premiumGrantReason: undefined,
+      });
+    }
+
+    delete this.data.transactions[transactionId];
+
+    const superUser = this.getUser(superAdminId);
+    this.logAdminAction(
+      superAdminId,
+      superUser.fullName || "Super Admin",
+      "TRANSACTION_DELETED",
+      `Super Admin permanently deleted Transaction ${transactionId} ($${txn.amount} ${txn.product}).`,
+      transactionId,
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return true;
+  }
+
+  public clearAllTransactions(superAdminId: number): number {
+    if (!this.data.transactions) this.data.transactions = {};
+    const count = Object.keys(this.data.transactions).length;
+    this.data.transactions = {};
+
+    const superUser = this.getUser(superAdminId);
+    this.logAdminAction(
+      superAdminId,
+      superUser.fullName || "Super Admin",
+      "ALL_TRANSACTIONS_PURGED",
+      `Super Admin permanently purged all ${count} transaction records.`,
+      undefined,
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return count;
   }
 
   // ================= DYNAMIC PRICING & OFERTA MANAGEMENT =================

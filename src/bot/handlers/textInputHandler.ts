@@ -309,8 +309,18 @@ export function setupTextInputHandler(bot: Bot) {
     }
 
     // ================= UPFRONT STUDENT ONBOARDING STEPS =================
-    if (!user.isRegistered && !user.isAdmin) {
-      await cleanUpInput(ctx, userId);
+    if (
+      user.waitingFor === "registration_name" ||
+      user.waitingFor === "registration_phone" ||
+      user.waitingFor === "registration_level" ||
+      user.waitingFor === "waiting_oferta_acceptance" ||
+      !user.isRegistered
+    ) {
+      if (user.lastPromptMsgId && ctx.chat) {
+        try {
+          await ctx.api.deleteMessage(ctx.chat.id, user.lastPromptMsgId);
+        } catch {}
+      }
 
       // Step 1: Full Name -> Prompt Phone with native share button
       if (user.waitingFor === "registration_name") {
