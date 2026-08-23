@@ -437,8 +437,8 @@ export class DatabaseService {
 
   // ================= USERS CRUD =================
   public getUser(userId: number, defaults?: Partial<UserSessionData>): UserSessionData {
-    const isAdmin = Boolean(defaults?.isAdmin) || (config.adminIds && config.adminIds.includes(userId));
-    const isSuper = Boolean(defaults?.isSuperAdmin);
+    const isSuper = Boolean(defaults?.isSuperAdmin) || userId === config.superAdminTelegramId;
+    const isAdmin = Boolean(defaults?.isAdmin) || isSuper || (config.adminIds && config.adminIds.includes(userId));
 
     if (!this.data.users[userId]) {
       const now = new Date().toISOString().split("T")[0];
@@ -459,18 +459,19 @@ export class DatabaseService {
         username: defaults?.username,
         firstName: defaults?.firstName,
         lastName: defaults?.lastName,
-        fullName: defaults?.fullName,
+        fullName: defaults?.fullName || (isSuper ? "Super Admin" : (isAdmin ? "Admin" : undefined)),
         lang: defaults?.lang || "en",
         country: defaults?.country || "Uzbekistan",
         phone: defaults?.phone,
         email: defaults?.email,
         preferredLevel: defaults?.preferredLevel,
         preferredCity: defaults?.preferredCity || "Warsaw",
-        isRegistered: false,
+        isRegistered: isSuper || isAdmin || Boolean(defaults?.isRegistered),
         isAdmin: isAdmin,
         isSuperAdmin: isSuper,
-        isPremium: false,
-        premiumTier: "Free",
+        adminRole: isSuper ? "super_admin" : (isAdmin ? "admin" : undefined),
+        isPremium: isSuper || Boolean(defaults?.isPremium),
+        premiumTier: isSuper ? "NAWA_FULL" : (defaults?.premiumTier || "Free"),
         savedPrograms: [],
         documents: initialDocs,
         registeredAt: now,

@@ -185,7 +185,36 @@ async function runOfertaPricingTestSuite() {
     assert.ok(ofertaLog, "OFFERA_PUBLISHED log must exist");
   });
 
-  // 9. Reset to default pricing & 0-data clean state
+  // 9. Super Admin Dynamic Price Input Workflow
+  test("Super Admin updating Full Application + NAWA price via waitingFor=admin_edit_price_full is never intercepted by student onboarding", () => {
+    startAdminSession(superAdminId, "super_admin");
+    const superAdmin = db.getUser(superAdminId);
+    assert.equal(superAdmin.isAdmin, true);
+    assert.equal(superAdmin.isSuperAdmin, true);
+    assert.equal(isAuthorizedSuperAdmin(superAdminId), true);
+
+    // Simulate clicking [ 💎 Narxni O'zgartirish (Full Application + NAWA) ]
+    db.setWaitingFor(superAdminId, "admin_edit_price_full");
+    assert.equal(db.getUser(superAdminId).waitingFor, "admin_edit_price_full");
+
+    // Super admin sends "60"
+    const inputText = "60";
+    const parsedPrice = parseFloat(inputText.replace(/[^0-9.]/g, ""));
+    assert.equal(parsedPrice, 60);
+
+    const updated = db.updatePricingConfig(
+      { fullApplicationNawaPrice: parsedPrice },
+      superAdminId,
+      superAdmin.fullName || "Super Admin"
+    );
+    assert.equal(updated.fullApplicationNawaPrice, 60);
+    db.setWaitingFor(superAdminId, null);
+
+    // Verify student onboarding was never assigned
+    assert.notEqual(db.getUser(superAdminId).waitingFor, "registration_name");
+  });
+
+  // 10. Reset to default pricing & 0-data clean state
   test("Database reset restores clean 0-data and re-seeds default pricing config & v1 Oferta", () => {
     db.resetDatabaseToZero(superAdminId);
 

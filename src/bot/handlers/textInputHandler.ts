@@ -1,6 +1,12 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { authenticatePasscode, startAdminSession, grantAdminRole, isAuthorizedSuperAdmin } from "../services/auth";
+import {
+  authenticatePasscode,
+  startAdminSession,
+  grantAdminRole,
+  isAuthorizedSuperAdmin,
+  isAuthorizedAdmin,
+} from "../services/auth";
 import {
   getAdminDashboardKeyboard,
   getSuperAdminDashboardKeyboard,
@@ -326,12 +332,16 @@ export function setupTextInputHandler(bot: Bot) {
     }
 
     // ================= UPFRONT STUDENT ONBOARDING STEPS =================
+    const isAdminWorkflow = Boolean(user.waitingFor?.startsWith("admin_"));
+    const isAuthorized = user.isAdmin || user.isSuperAdmin || isAuthorizedAdmin(userId);
+
     if (
-      user.waitingFor === "registration_name" ||
-      user.waitingFor === "registration_phone" ||
-      user.waitingFor === "registration_level" ||
-      user.waitingFor === "waiting_oferta_acceptance" ||
-      !user.isRegistered
+      !isAdminWorkflow &&
+      (user.waitingFor === "registration_name" ||
+        user.waitingFor === "registration_phone" ||
+        user.waitingFor === "registration_level" ||
+        user.waitingFor === "waiting_oferta_acceptance" ||
+        (!user.isRegistered && !isAuthorized))
     ) {
       if (user.lastPromptMsgId && ctx.chat) {
         try {
