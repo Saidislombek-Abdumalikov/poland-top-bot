@@ -1,11 +1,12 @@
 {
   "users": {
-    "555501": {
+    "500101": {
       "lang": "en",
-      "userId": 555501,
+      "phone": "+998901112233",
+      "userId": 500101,
       "country": "Uzbekistan",
-      "isAdmin": true,
-      "adminRole": "admin",
+      "isAdmin": false,
+      "fullName": "User A",
       "documents": {
         "photo": {
           "id": "photo",
@@ -73,22 +74,20 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
-      "savedPrograms": [],
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805601
+      "savedPrograms": []
     },
-    "555502": {
+    "500201": {
       "lang": "en",
-      "userId": 555502,
+      "phone": "+998909998877",
+      "userId": 500201,
       "country": "Uzbekistan",
-      "isAdmin": true,
-      "adminRole": "admin",
+      "isAdmin": false,
+      "fullName": "Dilshod Aliyev",
       "documents": {
         "photo": {
           "id": "photo",
@@ -155,182 +154,17 @@
         }
       },
       "isPremium": false,
+      "waitingFor": null,
       "premiumTier": "Free",
-      "ghostSession": null,
-      "isRegistered": false,
+      "isRegistered": true,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805607
-    },
-    "666601": {
-      "lang": "en",
-      "userId": 666601,
-      "country": "Uzbekistan",
-      "isAdmin": true,
-      "adminRole": "super_admin",
-      "documents": {
-        "photo": {
-          "id": "photo",
-          "name": {
-            "en": "Biometric ID Photos (35x45 mm)",
-            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "diploma": {
-          "id": "diploma",
-          "name": {
-            "en": "High School Diploma / Bachelor Degree",
-            "uz": "Attestat yoki Bakalavr Diplomi"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "language": {
-          "id": "language",
-          "name": {
-            "en": "English Language Certificate (IELTS/Duolingo)",
-            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "passport": {
-          "id": "passport",
-          "name": {
-            "en": "International Passport",
-            "uz": "Xorijga Chiqish Pasporti (Zagran)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "apostille": {
-          "id": "apostille",
-          "name": {
-            "en": "Apostille Certificate / Legalization",
-            "uz": "Apostil Muhri / Legalizatsiya"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "eligibility": {
-          "id": "eligibility",
-          "name": {
-            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
-            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "translation": {
-          "id": "translation",
-          "name": {
-            "en": "Sworn Polish Translation (Tłumacz)",
-            "uz": "Polsha Qasamyodli Tarjimasi"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        }
-      },
-      "isPremium": false,
-      "premiumTier": "Free",
-      "ghostSession": null,
-      "isRegistered": false,
-      "isSuperAdmin": true,
-      "lastActiveAt": "2026-08-23",
-      "registeredAt": "2026-08-23",
-      "preferredCity": "Warsaw",
-      "savedPrograms": [],
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805581
-    },
-    "666602": {
-      "lang": "en",
-      "userId": 666602,
-      "country": "Uzbekistan",
-      "isAdmin": true,
-      "adminRole": "admin",
-      "documents": {
-        "photo": {
-          "id": "photo",
-          "name": {
-            "en": "Biometric ID Photos (35x45 mm)",
-            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "diploma": {
-          "id": "diploma",
-          "name": {
-            "en": "High School Diploma / Bachelor Degree",
-            "uz": "Attestat yoki Bakalavr Diplomi"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "language": {
-          "id": "language",
-          "name": {
-            "en": "English Language Certificate (IELTS/Duolingo)",
-            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "passport": {
-          "id": "passport",
-          "name": {
-            "en": "International Passport",
-            "uz": "Xorijga Chiqish Pasporti (Zagran)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "apostille": {
-          "id": "apostille",
-          "name": {
-            "en": "Apostille Certificate / Legalization",
-            "uz": "Apostil Muhri / Legalizatsiya"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "eligibility": {
-          "id": "eligibility",
-          "name": {
-            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
-            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        },
-        "translation": {
-          "id": "translation",
-          "name": {
-            "en": "Sworn Polish Translation (Tłumacz)",
-            "uz": "Polsha Qasamyodli Tarjimasi"
-          },
-          "status": "missing",
-          "updatedAt": "2026-08-23"
-        }
-      },
-      "isPremium": false,
-      "premiumTier": "Free",
-      "ghostSession": null,
-      "isRegistered": false,
-      "isSuperAdmin": false,
-      "lastActiveAt": "2026-08-23",
-      "registeredAt": "2026-08-23",
-      "preferredCity": "Warsaw",
-      "savedPrograms": [],
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805586
+      "preferredLevel": "Bachelor",
+      "acceptedOfertaAt": "2026-08-23T09:36:58.454Z",
+      "acceptedOfertaVersion": 1
     },
     "777101": {
       "lang": "en",
@@ -489,10 +323,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 09:16:39",
+      "premiumVerifiedAt": "2026-08-23 09:36:52",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-3EBA09"
+      "premiumTransactionId": "TXN-A56C64"
     },
     "777103": {
       "lang": "en",
@@ -565,7 +399,7 @@
         }
       },
       "isPremium": true,
-      "premiumCode": "2PFSBVYA",
+      "premiumCode": "W25GZJVC",
       "premiumTier": "NAWA_FULL",
       "isRegistered": false,
       "isSuperAdmin": false,
@@ -573,9 +407,9 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 09:16:39",
+      "premiumVerifiedAt": "2026-08-23 09:36:52",
       "premiumGrantReason": "PROMO_CODE",
-      "premiumTransactionId": "TXN-39E648"
+      "premiumTransactionId": "TXN-E5CB5B"
     },
     "777104": {
       "lang": "en",
@@ -655,10 +489,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 09:16:39",
+      "premiumVerifiedAt": "2026-08-23 09:36:52",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-8188FC"
+      "premiumTransactionId": "TXN-4BC178"
     },
     "777701": {
       "lang": "en",
@@ -733,7 +567,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -741,7 +574,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787519805580
+      "adminSessionExpiresAt": 1787521018447
     },
     "777702": {
       "lang": "en",
@@ -816,7 +649,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -899,7 +731,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -907,7 +738,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519799986
+      "adminSessionExpiresAt": 1787521012778
     },
     "888801": {
       "lang": "en",
@@ -982,7 +813,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -990,7 +820,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805561
+      "adminSessionExpiresAt": 1787521018425
     },
     "888802": {
       "lang": "en",
@@ -1065,7 +895,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -1073,14 +902,14 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805564
+      "adminSessionExpiresAt": 1787521018428
     },
     "999901": {
       "lang": "en",
       "userId": 999901,
       "country": "Uzbekistan",
-      "isAdmin": false,
-      "adminRole": null,
+      "isAdmin": true,
+      "adminRole": "admin",
       "documents": {
         "photo": {
           "id": "photo",
@@ -1148,15 +977,14 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "sessionVersion": 3,
-      "adminSessionExpiresAt": 0
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787521018400
     },
     "999902": {
       "lang": "en",
@@ -1231,7 +1059,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -1239,7 +1066,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787519805546
+      "adminSessionExpiresAt": 1787521018407
     },
     "999903": {
       "lang": "en",
@@ -1314,7 +1141,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -1324,11 +1150,12 @@
       "sessionVersion": 3,
       "adminSessionExpiresAt": 0
     },
-    "999999": {
+    "999904": {
       "lang": "en",
-      "userId": 999999,
+      "userId": 999904,
       "country": "Uzbekistan",
       "isAdmin": false,
+      "adminRole": null,
       "documents": {
         "photo": {
           "id": "photo",
@@ -1401,7 +1228,9 @@
       "lastActiveAt": "2026-08-23",
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
-      "savedPrograms": []
+      "savedPrograms": [],
+      "sessionVersion": 3,
+      "adminSessionExpiresAt": 0
     },
     "5059829001": {
       "lang": "en",
@@ -1476,7 +1305,6 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
-      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -1484,12 +1312,12 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787519799947
+      "adminSessionExpiresAt": 1787521012730
     }
   },
   "promoCodes": {
-    "2PFSBVYA": {
-      "code": "2PFSBVYA",
+    "W25GZJVC": {
+      "code": "W25GZJVC",
       "tier": "NAWA_FULL",
       "usedAt": "2026-08-23",
       "maxUses": 1,
@@ -1502,37 +1330,8 @@
     }
   },
   "transactions": {
-    "TXN-39E648": {
-      "id": "TXN-39E648",
-      "notes": "Access unlocked via promo code [2PFSBVYA]",
-      "amount": 50,
-      "source": "PROMO_CODE",
-      "status": "PAID",
-      "userId": 777103,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777103",
-      "createdAt": "2026-08-23 09:16:39",
-      "promoCode": "2PFSBVYA",
-      "verifiedAt": "2026-08-23 09:16:39"
-    },
-    "TXN-3EBA09": {
-      "id": "TXN-3EBA09",
-      "notes": "Confirmed in bank statement",
-      "amount": 15,
-      "source": "EXTERNAL_TRANSFER",
-      "status": "PAID",
-      "userId": 777102,
-      "product": "NAWA",
-      "currency": "USD",
-      "userName": "User #777102",
-      "createdAt": "2026-08-23 09:16:39",
-      "verifiedAt": "2026-08-23 09:16:39",
-      "verifiedBy": 5059829001,
-      "verifiedByName": "Super Admin #5059829001"
-    },
-    "TXN-8188FC": {
-      "id": "TXN-8188FC",
+    "TXN-4BC178": {
+      "id": "TXN-4BC178",
       "notes": "Refunded: User requested refund",
       "amount": 50,
       "source": "EXTERNAL_TRANSFER",
@@ -1541,13 +1340,42 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777104",
-      "createdAt": "2026-08-23 09:16:39",
-      "verifiedAt": "2026-08-23 09:16:39",
+      "createdAt": "2026-08-23 09:36:52",
+      "verifiedAt": "2026-08-23 09:36:52",
       "verifiedBy": 5059829001,
       "verifiedByName": "Super Admin #5059829001"
     },
-    "TXN-8DD98A": {
-      "id": "TXN-8DD98A",
+    "TXN-A56C64": {
+      "id": "TXN-A56C64",
+      "notes": "Confirmed in bank statement",
+      "amount": 15,
+      "source": "EXTERNAL_TRANSFER",
+      "status": "PAID",
+      "userId": 777102,
+      "product": "NAWA",
+      "currency": "USD",
+      "userName": "User #777102",
+      "createdAt": "2026-08-23 09:36:52",
+      "verifiedAt": "2026-08-23 09:36:52",
+      "verifiedBy": 5059829001,
+      "verifiedByName": "Super Admin #5059829001"
+    },
+    "TXN-E5CB5B": {
+      "id": "TXN-E5CB5B",
+      "notes": "Access unlocked via promo code [W25GZJVC]",
+      "amount": 50,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 777103,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777103",
+      "createdAt": "2026-08-23 09:36:52",
+      "promoCode": "W25GZJVC",
+      "verifiedAt": "2026-08-23 09:36:52"
+    },
+    "TXN-FD7DB4": {
+      "id": "TXN-FD7DB4",
       "notes": "Student sent bank transfer receipt via Telegram",
       "amount": 50,
       "source": "EXTERNAL_TRANSFER",
@@ -1556,7 +1384,7 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777101",
-      "createdAt": "2026-08-23 09:16:39"
+      "createdAt": "2026-08-23 09:36:52"
     }
   },
   "applications": {},
@@ -2034,72 +1862,7 @@
   "reviews": [],
   "auditLogs": [
     {
-      "id": "8A7E40",
-      "action": "ADMIN_PERMISSION_GRANTED",
-      "status": "success",
-      "target": "555502",
-      "actorId": 999999,
-      "adminId": 999999,
-      "details": "Granted Normal Admin privileges to User #555502 (User)",
-      "actorName": "Admin #999999",
-      "actorRole": "super_admin",
-      "adminName": "Admin #999999",
-      "timestamp": "2026-08-23 09:16:45"
-    },
-    {
-      "id": "93A891",
-      "action": "GHOST_MODE_EXIT",
-      "status": "success",
-      "target": "666602",
-      "actorId": 666601,
-      "adminId": 666601,
-      "details": "Exited Ghost Mode (was acting as Admin #666602)",
-      "actorName": "Super Admin",
-      "actorRole": "super_admin",
-      "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:45"
-    },
-    {
-      "id": "CF8C72",
-      "action": "DOCUMENT_VERIFY",
-      "status": "success",
-      "target": "12345",
-      "actorId": 666601,
-      "adminId": 666601,
-      "details": "[GHOST MODE acting as Admin #666602] Approved secondary school diploma for student #12345",
-      "actorName": "Super Admin (Ghost as Admin #666602)",
-      "actorRole": "super_admin",
-      "adminName": "Super Admin (Ghost as Admin #666602)",
-      "timestamp": "2026-08-23 09:16:45"
-    },
-    {
-      "id": "DE5691",
-      "action": "GHOST_MODE_ENTER",
-      "status": "success",
-      "target": "666602",
-      "actorId": 666601,
-      "adminId": 666601,
-      "details": "[GHOST MODE acting as Admin #666602] Entered Ghost Mode acting as Admin #666602 (Admin #666602)",
-      "actorName": "Super Admin (Ghost as Admin #666602)",
-      "actorRole": "super_admin",
-      "adminName": "Super Admin (Ghost as Admin #666602)",
-      "timestamp": "2026-08-23 09:16:45"
-    },
-    {
-      "id": "8FFB7F",
-      "action": "ADMIN_PERMISSION_GRANTED",
-      "status": "success",
-      "target": "666602",
-      "actorId": 666601,
-      "adminId": 666601,
-      "details": "Granted Normal Admin privileges to User #666602 (User)",
-      "actorName": "Admin #666601",
-      "actorRole": "super_admin",
-      "adminName": "Admin #666601",
-      "timestamp": "2026-08-23 09:16:45"
-    },
-    {
-      "id": "8DBA40",
+      "id": "4BC786",
       "action": "ADMIN_PERMISSION_REVOKED",
       "status": "success",
       "target": "777702",
@@ -2109,10 +1872,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 09:16:45"
+      "timestamp": "2026-08-23 09:36:58"
     },
     {
-      "id": "E16850",
+      "id": "D9D248",
       "action": "ADMIN_PERMISSION_GRANTED",
       "status": "success",
       "target": "777702",
@@ -2122,10 +1885,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 09:16:45"
+      "timestamp": "2026-08-23 09:36:58"
     },
     {
-      "id": "9FD111",
+      "id": "66E60C",
       "action": "TEST_ACTION",
       "status": "success",
       "target": "[PROTECTED_CREDENTIAL]",
@@ -2135,72 +1898,72 @@
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:45"
+      "timestamp": "2026-08-23 09:36:58"
     },
     {
-      "id": "9C6752",
+      "id": "376131",
       "action": "PAYMENT_REFUNDED",
       "status": "success",
-      "target": "TXN-8188FC",
+      "target": "TXN-4BC178",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin refunded Transaction TXN-8188FC ($50). Premium revoked for User #777104.",
+      "details": "Super Admin refunded Transaction TXN-4BC178 ($50). Premium revoked for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:39"
+      "timestamp": "2026-08-23 09:36:52"
     },
     {
-      "id": "A3D8D1",
+      "id": "6C4CD5",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-8188FC",
+      "target": "TXN-4BC178",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-8188FC ($50 NAWA_FULL). Premium activated for User #777104.",
+      "details": "Super Admin manually verified payment for Transaction TXN-4BC178 ($50 NAWA_FULL). Premium activated for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:39"
+      "timestamp": "2026-08-23 09:36:52"
     },
     {
-      "id": "57B2C3",
+      "id": "49A31D",
       "action": "PROMO_CODE_REDEEMED",
       "status": "success",
-      "target": "2PFSBVYA",
+      "target": "W25GZJVC",
       "actorId": 777103,
       "adminId": 777103,
-      "details": "Student successfully redeemed promo code '2PFSBVYA' granting [NAWA_FULL] package. Transaction TXN-39E648 recorded.",
+      "details": "Student successfully redeemed promo code 'W25GZJVC' granting [NAWA_FULL] package. Transaction TXN-E5CB5B recorded.",
       "actorName": "User #777103",
       "actorRole": "system",
       "adminName": "User #777103",
-      "timestamp": "2026-08-23 09:16:39"
+      "timestamp": "2026-08-23 09:36:52"
     },
     {
-      "id": "53333A",
+      "id": "6818B4",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-3EBA09",
+      "target": "TXN-A56C64",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-3EBA09 ($15 NAWA). Premium activated for User #777102.",
+      "details": "Super Admin manually verified payment for Transaction TXN-A56C64 ($15 NAWA). Premium activated for User #777102.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:39"
+      "timestamp": "2026-08-23 09:36:52"
     },
     {
-      "id": "CE3ED1",
+      "id": "6C895D",
       "action": "TRANSACTION_CREATED",
       "status": "success",
-      "target": "TXN-8DD98A",
+      "target": "TXN-FD7DB4",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Created private transaction record TXN-8DD98A (NAWA_FULL, $50, status: UNVERIFIED) for User #777101",
+      "details": "Created private transaction record TXN-FD7DB4 (NAWA_FULL, $50, status: UNVERIFIED) for User #777101",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 09:16:39"
+      "timestamp": "2026-08-23 09:36:52"
     }
   ]
 }

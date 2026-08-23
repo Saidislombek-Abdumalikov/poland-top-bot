@@ -290,8 +290,11 @@ export function getPremiumKeyboard(
 export function getOfertaKeyboard(lang: Language = "uz"): InlineKeyboard {
   const isUz = lang === "uz";
   return new InlineKeyboard()
-    .text(isUz ? "✅ Roziman" : "✅ I Agree", "accept_oferta")
-    .row()
+    .text(isUz ? "✅ Roziman" : "✅ I Agree", "accept_oferta");
+}
+
+export function getOfertaViewKeyboard(lang: Language = "uz"): InlineKeyboard {
+  return new InlineKeyboard()
     .text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 

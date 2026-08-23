@@ -25,20 +25,13 @@ export function getAdminDashboardKeyboard(
     auditLogsCount?: number;
   },
   lang: Language = "en",
-  isSuperAdminUser: boolean = false,
-  isGhostMode: boolean = false
+  isSuperAdminUser: boolean = false
 ): InlineKeyboard {
   const isUz = lang === "uz";
 
   const kb = new InlineKeyboard();
 
-  // If Super Admin is acting in Ghost Mode, render the Exit Ghost Mode banner button
-  if (isGhostMode) {
-    kb.text(
-      isUz ? `🔴 [GHOST AUDIT REJIMI: CHIQISH]` : `🔴 [EXIT GHOST AUDIT MODE]`,
-      "admin_ghost_exit"
-    ).row();
-  } else if (isSuperAdminUser) {
+  if (isSuperAdminUser) {
     kb.text(
       isUz ? `👑 SUPER ADMIN HQ (Master Loglar & Boshqaruv)` : `👑 SUPER ADMIN HQ (Logs & Master Control)`,
       "admin_super_hq"
@@ -438,10 +431,6 @@ export function getSuperAdminDashboardKeyboard(
       isUz ? `🛡️ Adminlar Boshqaruvi (${stats.adminsCount})` : `🛡️ Manage Admins (${stats.adminsCount})`,
       "admin_super_admins_list"
     )
-    .text(
-      isUz ? `👻 Ghost Mode (Impersonatsiya)` : `👻 Ghost Mode (Audit Panel)`,
-      "admin_super_ghost_menu"
-    )
     .row()
     .text(
       isUz ? `🗄️ Supabase Cloud DB Holati` : `🗄️ Supabase Cloud DB Status`,
@@ -562,7 +551,6 @@ export function getSuperAdminAdminsKeyboard(
     if (adm.isSuperAdmin || adm.adminRole === "super_admin" || adm.userId === currentUserId) return; // Hide Super Admin from list to maintain stealth
     const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `User #${adm.userId}`);
     kb.text(`❌ [Bo'shatish]`, `admin_super_demote_${adm.userId}`)
-      .text(`👻 [Ghost]`, `admin_super_ghost_${adm.userId}`)
       .text(`🗑️ [O'chirish]`, `admin_super_delete_admin_${adm.userId}`)
       .row();
   });
@@ -571,34 +559,6 @@ export function getSuperAdminAdminsKeyboard(
     .row()
     .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
 
-  return kb;
-}
-
-export function getSuperAdminGhostMenuKeyboard(
-  admins: UserSessionData[],
-  currentUserId: number,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  const regularAdmins = admins.filter(
-    (adm) => !adm.isSuperAdmin && adm.adminRole !== "super_admin" && adm.userId !== currentUserId
-  );
-
-  if (regularAdmins.length === 0) {
-    kb.text(
-      isUz ? "⚠️ Hozircha oddiy adminlar mavjud emas" : "⚠️ No regular admins available",
-      "admin_super_hq"
-    ).row();
-  } else {
-    regularAdmins.forEach((adm) => {
-      const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `Admin #${adm.userId}`);
-      kb.text(`👻 [Kirish] ${name.slice(0, 20)}`, `admin_super_ghost_${adm.userId}`).row();
-    });
-  }
-
-  kb.text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
   return kb;
 }
 

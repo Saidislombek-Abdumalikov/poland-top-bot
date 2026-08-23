@@ -543,6 +543,24 @@ export class DatabaseService {
     );
   }
 
+  public getUserByPhone(phone: string): UserSessionData | undefined {
+    if (!phone) return undefined;
+    const digits = phone.replace(/[^0-9]/g, "");
+    if (!digits) return undefined;
+    return Object.values(this.data.users || {}).find(
+      (u) => u.phone && u.phone.replace(/[^0-9]/g, "") === digits
+    );
+  }
+
+  public isPhoneRegistered(phone: string, excludeUserId?: number): boolean {
+    if (!phone) return false;
+    const digits = phone.replace(/[^0-9]/g, "");
+    if (!digits) return false;
+    return Object.values(this.data.users || {}).some(
+      (u) => u.userId !== excludeUserId && u.phone && u.phone.replace(/[^0-9]/g, "") === digits
+    );
+  }
+
   public deleteUser(userId: number, actorId?: number): boolean {
     if (!this.data.users[userId]) return false;
     const targetUser = this.data.users[userId];
@@ -676,19 +694,11 @@ export class DatabaseService {
     }
 
     const user = this.data.users[actorId];
-    let finalActorId = actorId;
-    let finalActorName = actorName || `User #${actorId}`;
-    let finalRole: "super_admin" | "admin" | "system" =
+    const finalActorId = actorId;
+    const finalActorName = actorName || `User #${actorId}`;
+    const finalRole: "super_admin" | "admin" | "system" =
       actorRole || (user?.isSuperAdmin || user?.adminRole === "super_admin" ? "super_admin" : "admin");
-    let finalDetails = cleanDetails;
-
-    // If action performed in Ghost Mode, attribute to true Super Admin with Ghost tag
-    if (user?.ghostSession) {
-      finalActorId = user.ghostSession.actualSuperAdminId;
-      finalActorName = `Super Admin (Ghost as ${user.ghostSession.actingAsAdminName})`;
-      finalRole = "super_admin";
-      finalDetails = `[GHOST MODE acting as Admin #${user.ghostSession.actingAsAdminId}] ${cleanDetails}`;
-    }
+    const finalDetails = cleanDetails;
 
     const entry: AuditLogEntry = {
       id: crypto.randomBytes(3).toString("hex").toUpperCase(),
@@ -1415,7 +1425,7 @@ export class DatabaseService {
     return this.data.ofertaHistory || [];
   }
 
-  public acceptOferta(userId: number): void {
+  public acceptOferta(userId: number): UserSessionData {
     const user = this.getUser(userId);
     const published = this.getPublishedOferta();
     user.acceptedOfertaVersion = published.version;
@@ -1423,6 +1433,7 @@ export class DatabaseService {
     user.isRegistered = true;
     user.waitingFor = null;
     this.saveDatabase();
+    return user;
   }
 
   // ================= DOCUMENTS SUBMISSION CRUD =================

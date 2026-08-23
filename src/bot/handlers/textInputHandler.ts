@@ -44,6 +44,23 @@ export function setupTextInputHandler(bot: Bot) {
         ? contact.phone_number
         : `+${contact.phone_number}`;
 
+      // Check if phone number is already registered by another user
+      if (db.isPhoneRegistered(phoneNumber, userId)) {
+        const errorMsg =
+          user.lang === "uz"
+            ? `⚠️ <b>Ushbu telefon raqam allaqachon ro'yxatdan o'tgan!</b>\n\n` +
+              `Bitta telefon raqam faqat bitta Telegram akkauntga biriktiriladi. Iltimos, o'zingizning shaxsiy telefon raqamingizni yuboring:`
+            : `⚠️ <b>This phone number is already registered!</b>\n\n` +
+              `Each phone number can only be linked to one Telegram account. Please share or type your own phone number:`;
+
+        const msg = await ctx.reply(errorMsg, {
+          parse_mode: "HTML",
+          reply_markup: getPhoneRequestKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
       db.updateUser(userId, { phone: phoneNumber });
       db.setWaitingFor(userId, "registration_level");
 
@@ -352,6 +369,36 @@ export function setupTextInputHandler(bot: Bot) {
       if (user.waitingFor === "registration_phone") {
         const cleanPhone = text.replace(/[^0-9+]/g, "");
         const formattedPhone = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
+
+        if (cleanPhone.replace("+", "").length < 7) {
+          const invalidPrompt =
+            user.lang === "uz"
+              ? `⚠️ <b>Noto'g'ri telefon raqam formati!</b>\n\nIltimos, to'liq telefon raqamingizni kiriting (masalan: <code>+998901234567</code>) yoki pastdagi tugmani bosing:`
+              : `⚠️ <b>Invalid phone number format!</b>\n\nPlease enter a valid phone number (e.g. <code>+998901234567</code>) or use the button below:`;
+          const msg = await ctx.reply(invalidPrompt, {
+            parse_mode: "HTML",
+            reply_markup: getPhoneRequestKeyboard(user.lang),
+          });
+          db.setLastPromptMsgId(userId, msg.message_id);
+          return;
+        }
+
+        // Check if phone number is already registered by another account
+        if (db.isPhoneRegistered(formattedPhone, userId)) {
+          const errorMsg =
+            user.lang === "uz"
+              ? `⚠️ <b>Ushbu telefon raqam allaqachon ro'yxatdan o'tgan!</b>\n\n` +
+                `Bitta telefon raqam faqat bitta Telegram akkauntga biriktiriladi. Iltimos, o'zingizning shaxsiy telefon raqamingizni yuboring:`
+              : `⚠️ <b>This phone number is already registered!</b>\n\n` +
+                `Each phone number can only be linked to one Telegram account. Please share or type your own phone number:`;
+
+          const msg = await ctx.reply(errorMsg, {
+            parse_mode: "HTML",
+            reply_markup: getPhoneRequestKeyboard(user.lang),
+          });
+          db.setLastPromptMsgId(userId, msg.message_id);
+          return;
+        }
 
         db.updateUser(userId, { phone: formattedPhone });
         db.setWaitingFor(userId, "registration_level");

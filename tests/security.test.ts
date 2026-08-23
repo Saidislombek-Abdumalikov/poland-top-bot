@@ -7,8 +7,6 @@ import {
   endAdminSession,
   grantAdminRole,
   revokeAdminRole,
-  startGhostSession,
-  endGhostSession,
   isAuthorizedAdmin,
   isAuthorizedSuperAdmin,
   sanitizeAuditText,
@@ -35,23 +33,24 @@ async function runSecurityTestSuite() {
     }
   }
 
-  // 1. Password Hashing & Constant-Time Verification
+  // 1. Password Hashing & Secret Verification Tests
   test("SHA-256 Hashing generates correct deterministic digests", () => {
-    const hash1 = sha256Hash("PTUADMIN2025");
-    const hash2 = sha256Hash("super*admin");
-    assert.equal(hash1, "1de5c0b5b3fe90c0ce256712d7f84f1607e93f15282b7a3509463fa24d26225b");
-    assert.equal(hash2, "524ebee4ea5727134ed3a89f4b14f5086bcdb822a718e3c1420d891c9efc4bc9");
+    const hash = sha256Hash("PTUADMIN2025");
+    assert.equal(hash, "1de5c0b5b3fe90c0ce256712d7f84f1607e93f15282b7a3509463fa24d26225b");
+
+    const superHash = sha256Hash("super*admin");
+    assert.equal(superHash, "524ebee4ea5727134ed3a89f4b14f5086bcdb822a718e3c1420d891c9efc4bc9");
   });
 
   test("Constant-time verification handles valid and invalid secrets correctly", () => {
-    const targetHash = sha256Hash("MySecretPassword123");
-    assert.equal(verifySecret("MySecretPassword123", targetHash), true);
-    assert.equal(verifySecret("WrongPassword", targetHash), false);
+    const targetHash = sha256Hash("MySecurePasscode123!");
+    assert.equal(verifySecret("MySecurePasscode123!", targetHash), true);
+    assert.equal(verifySecret("WrongPasscode", targetHash), false);
     assert.equal(verifySecret("", targetHash), false);
-    assert.equal(verifySecret("MySecretPassword123", ""), false);
+    assert.equal(verifySecret("MySecurePasscode123!", ""), false);
   });
 
-  // 2. Authentication & Role Determination
+  // 2. Passcode Authentication & Role Resolution Tests
   test("Normal Admin passcode authenticates strictly as 'admin'", () => {
     const role = authenticatePasscode("PTUADMIN2025");
     assert.equal(role, "admin");
@@ -63,63 +62,60 @@ async function runSecurityTestSuite() {
   });
 
   test("Invalid passwords return null without revealing role information", () => {
-    assert.equal(authenticatePasscode("wrong_pass"), null);
-    assert.equal(authenticatePasscode("admin"), null);
+    assert.equal(authenticatePasscode("wrongpassword"), null);
+    assert.equal(authenticatePasscode("admin123"), null);
     assert.equal(authenticatePasscode(""), null);
   });
 
-  // 3. Server-Side Session Management & Authorization
+  // 3. Server-Side Session Management Tests
   test("Starting Normal Admin session grants only normal admin privileges", () => {
     const testUserId = 999901;
-    startAdminSession(testUserId, "admin");
+    const session = startAdminSession(testUserId, "admin");
+
+    assert.equal(session.adminRole, "admin");
+    assert.equal(session.isAdmin, true);
+    assert.equal(session.isSuperAdmin, false);
+    assert.ok(session.adminSessionExpiresAt && session.adminSessionExpiresAt > Date.now());
 
     assert.equal(isAuthorizedAdmin(testUserId), true);
     assert.equal(isAuthorizedSuperAdmin(testUserId), false);
-
-    const user = db.getUser(testUserId);
-    assert.equal(user.isAdmin, true);
-    assert.equal(user.isSuperAdmin, false);
-    assert.equal(user.adminRole, "admin");
-    assert.ok(user.adminSessionExpiresAt && user.adminSessionExpiresAt > Date.now());
   });
 
   test("Starting Super Admin session grants both admin and super admin privileges", () => {
-    const superUserId = 999902;
-    startAdminSession(superUserId, "super_admin");
+    const testUserId = 999902;
+    const session = startAdminSession(testUserId, "super_admin");
 
-    assert.equal(isAuthorizedAdmin(superUserId), true);
-    assert.equal(isAuthorizedSuperAdmin(superUserId), true);
+    assert.equal(session.adminRole, "super_admin");
+    assert.equal(session.isAdmin, true);
+    assert.equal(session.isSuperAdmin, true);
+    assert.ok(session.adminSessionExpiresAt && session.adminSessionExpiresAt > Date.now());
 
-    const user = db.getUser(superUserId);
-    assert.equal(user.isAdmin, true);
-    assert.equal(user.isSuperAdmin, true);
-    assert.equal(user.adminRole, "super_admin");
+    assert.equal(isAuthorizedAdmin(testUserId), true);
+    assert.equal(isAuthorizedSuperAdmin(testUserId), true);
   });
 
   test("Ending admin session revokes all privileges immediately", () => {
-    const testUserId = 999901;
-    endAdminSession(testUserId);
+    const testUserId = 999903;
+    startAdminSession(testUserId, "super_admin");
+    assert.equal(isAuthorizedSuperAdmin(testUserId), true);
 
+    endAdminSession(testUserId);
     assert.equal(isAuthorizedAdmin(testUserId), false);
     assert.equal(isAuthorizedSuperAdmin(testUserId), false);
-
-    const user = db.getUser(testUserId);
-    assert.equal(user.isAdmin, false);
-    assert.equal(user.isSuperAdmin, false);
-    assert.equal(user.adminRole, null);
   });
 
   test("Expired session is automatically invalidated server-side", () => {
-    const expiredUserId = 999903;
-    startAdminSession(expiredUserId, "admin");
-    // Manually backdate expiration
-    db.updateUser(expiredUserId, { adminSessionExpiresAt: Date.now() - 1000 });
+    const testUserId = 999904;
+    startAdminSession(testUserId, "admin");
 
-    assert.equal(isAuthorizedAdmin(expiredUserId), false);
-    assert.equal(isAuthorizedSuperAdmin(expiredUserId), false);
+    // Manually set expiration in the past
+    db.updateUser(testUserId, { adminSessionExpiresAt: Date.now() - 1000 });
+
+    assert.equal(isAuthorizedAdmin(testUserId), false);
+    assert.equal(isAuthorizedSuperAdmin(testUserId), false);
   });
 
-  // 4. Super Admin Invisibility to Normal Admins
+  // 4. Admin Role Separation & Super Admin Stealth
   test("db.getAllAdmins(false) completely excludes Super Admins for normal admins", () => {
     const normalAdminId = 888801;
     const superAdminId = 888802;
@@ -201,65 +197,48 @@ async function runSecurityTestSuite() {
     assert.equal(superUser.adminRole, "super_admin");
   });
 
-  // 7. Ghost Mode Impersonation & Audit Attribution
-  test("Super Admin can enter Ghost Mode acting as a target admin", () => {
-    const superAdminId = 666601;
-    const targetAdminId = 666602;
+  // 7. Phone Uniqueness & Registration Binding
+  test("Phone number uniqueness prevents two accounts from registering the same phone number", () => {
+    const userA = 500101;
+    const userB = 500102;
+    const phone = "+998901112233";
 
-    startAdminSession(superAdminId, "super_admin");
-    grantAdminRole(targetAdminId, superAdminId, false);
+    db.getUser(userA, { fullName: "User A", phone });
+    db.updateUser(userA, { phone });
 
-    // Enter Ghost Mode
-    const ghost = startGhostSession(superAdminId, targetAdminId);
-    assert.ok(ghost, "Ghost session must be created");
-    assert.equal(ghost.actualSuperAdminId, superAdminId);
-    assert.equal(ghost.actingAsAdminId, targetAdminId);
+    // Verify userA is found by phone
+    const found = db.getUserByPhone(phone);
+    assert.ok(found, "User A must be found by phone");
+    assert.equal(found.userId, userA);
 
-    const superUser = db.getUser(superAdminId);
-    assert.ok(superUser.ghostSession, "User record must have active ghostSession");
-    assert.equal(superUser.adminRole, "admin", "Ghost interface role must be normal admin");
+    // Check if phone is registered excluding userA -> should be false
+    assert.equal(db.isPhoneRegistered(phone, userA), false);
 
-    // Super Admin HQ is suspended during Ghost Mode for clean privilege isolation
-    assert.equal(isAuthorizedSuperAdmin(superAdminId), false, "Super Admin controls suspended in Ghost Mode");
-    assert.equal(isAuthorizedAdmin(superAdminId), true, "Admin permissions active in Ghost Mode");
-
-    // Perform an action in Ghost Mode
-    const actionLog = db.logAdminAction(
-      superAdminId,
-      "Ghost Actor",
-      "DOCUMENT_VERIFY",
-      "Approved secondary school diploma for student #12345",
-      "12345"
-    );
-
-    // Verify audit attribution is preserved to the true Super Admin
-    assert.equal(actionLog.actorId, superAdminId, "Audit log must trace to actual Super Admin");
-    assert.equal(actionLog.actorRole, "super_admin");
-    assert.ok(
-      actionLog.details.includes(`[GHOST MODE acting as Admin #${targetAdminId}]`),
-      "Audit log must be stamped with Ghost Mode details"
-    );
-
-    // Exit Ghost Mode
-    const exited = endGhostSession(superAdminId);
-    assert.equal(exited, true, "Exit ghost mode must succeed");
-
-    // Super Admin HQ restored
-    assert.equal(isAuthorizedSuperAdmin(superAdminId), true, "Super Admin privileges restored after exit");
-    const restoredUser = db.getUser(superAdminId);
-    assert.equal(restoredUser.ghostSession, null);
-    assert.equal(restoredUser.adminRole, "super_admin");
+    // Check if phone is registered excluding userB -> should be true (belongs to userA)
+    assert.equal(db.isPhoneRegistered(phone, userB), true);
+    assert.equal(db.isPhoneRegistered("+998901112233", userB), true);
+    assert.equal(db.isPhoneRegistered("998901112233", userB), true);
   });
 
-  test("Normal admins and regular users cannot start Ghost Mode", () => {
-    const normalAdminId = 555501;
-    const targetAdminId = 555502;
+  // 8. Oferta Acceptance Immortality & Registration Lock
+  test("Accepted Oferta immortality preserves registration and prevents repeated prompts on restart", () => {
+    const studentId = 500201;
+    db.getUser(studentId, { fullName: "Dilshod Aliyev", phone: "+998909998877", preferredLevel: "Bachelor" });
 
-    startAdminSession(normalAdminId, "admin");
-    grantAdminRole(targetAdminId, 999999, false);
+    // Initial state: not registered until Oferta is accepted
+    assert.equal(db.getUser(studentId).isRegistered, false);
 
-    const ghost = startGhostSession(normalAdminId, targetAdminId);
-    assert.equal(ghost, null, "Normal admin MUST NOT be able to start Ghost Mode");
+    // Student accepts Oferta
+    const accepted = db.acceptOferta(studentId);
+    assert.ok(accepted);
+    assert.equal(accepted.isRegistered, true);
+    assert.ok(accepted.acceptedOfertaVersion);
+    assert.ok(accepted.acceptedOfertaAt);
+
+    // On subsequent restart / reload, isRegistered remains true
+    const reloaded = db.getUser(studentId);
+    assert.equal(reloaded.isRegistered, true);
+    assert.equal(reloaded.acceptedOfertaVersion, accepted.acceptedOfertaVersion);
   });
 
   console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} SECURITY & SUPER ADMIN TESTS PASSED! =================\n`);
