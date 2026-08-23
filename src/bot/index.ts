@@ -64,6 +64,14 @@ export async function startBot(token?: string) {
   const bot = createBot(activeToken);
 
   console.log("🚀 Starting Poland Top Universities (PTU) Telegram Bot...");
+
+  // Clear any existing webhook so local long-polling can start without 409 conflict
+  try {
+    await bot.api.deleteWebhook({ drop_pending_updates: false });
+  } catch (e) {
+    // Ignore
+  }
+
   await bot.start({
     onStart: (botInfo) => {
       console.log(`✅ PTU Bot is running as @${botInfo.username} (ID: ${botInfo.id})`);

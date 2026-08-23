@@ -4,25 +4,24 @@ import { db } from "../src/bot/services/db";
 
 // Initialize Grammy bot
 const bot = createBot();
-const handleTelegramUpdate = webhookCallback(bot, "std/http");
+const handleTelegramUpdate = webhookCallback(bot, "node:http");
 
-export default async function handler(req: Request) {
-  // Check if health check / GET request
+export default async function handler(req: any, res: any) {
+  // Health check on GET
   if (req.method === "GET") {
-    return new Response(
+    res.setHeader("Content-Type", "application/json");
+    res.statusCode = 200;
+    res.end(
       JSON.stringify({
         status: "ok",
         bot: "Poland Top Universities (PTU) Telegram Bot",
         message: "Vercel Webhook is online and operational 🚀",
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      })
     );
+    return;
   }
 
-  // Sync latest cloud database state before handling update
+  // Sync cloud database state before handling update
   try {
     await db.syncFromCloud();
   } catch (e) {
@@ -30,5 +29,5 @@ export default async function handler(req: Request) {
   }
 
   // Handle Telegram webhook update
-  return handleTelegramUpdate(req);
+  return handleTelegramUpdate(req, res);
 }
