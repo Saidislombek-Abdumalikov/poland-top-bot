@@ -505,22 +505,33 @@ export class DatabaseService {
     }
 
     const user = this.data.users[actorId];
-    const determinedRole =
+    let finalActorId = actorId;
+    let finalActorName = actorName || `User #${actorId}`;
+    let finalRole: "super_admin" | "admin" | "system" =
       actorRole || (user?.isSuperAdmin || user?.adminRole === "super_admin" ? "super_admin" : "admin");
+    let finalDetails = cleanDetails;
+
+    // If action performed in Ghost Mode, attribute to true Super Admin with Ghost tag
+    if (user?.ghostSession) {
+      finalActorId = user.ghostSession.actualSuperAdminId;
+      finalActorName = `Super Admin (Ghost as ${user.ghostSession.actingAsAdminName})`;
+      finalRole = "super_admin";
+      finalDetails = `[GHOST MODE acting as Admin #${user.ghostSession.actingAsAdminId}] ${cleanDetails}`;
+    }
 
     const entry: AuditLogEntry = {
       id: crypto.randomBytes(3).toString("hex").toUpperCase(),
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
-      actorId,
-      actorName: actorName || `User #${actorId}`,
-      actorRole: determinedRole,
+      actorId: finalActorId,
+      actorName: finalActorName,
+      actorRole: finalRole,
       action,
       target: cleanTarget || undefined,
-      details: cleanDetails,
+      details: finalDetails,
       status,
       // Backward compatibility aliases
-      adminId: actorId,
-      adminName: actorName || `User #${actorId}`,
+      adminId: finalActorId,
+      adminName: finalActorName,
     };
 
     this.data.auditLogs.unshift(entry);

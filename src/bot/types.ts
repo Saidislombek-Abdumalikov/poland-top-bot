@@ -188,6 +188,14 @@ export interface PromoCodeRecord {
 
 export type AdminRole = "super_admin" | "admin" | null;
 
+export interface GhostSession {
+  actualSuperAdminId: number;
+  actingAsAdminId: number;
+  actingAsAdminName: string;
+  enteredAt: number;
+  expiresAt: number;
+}
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
@@ -220,6 +228,8 @@ export interface UserSessionData {
   isSuperAdmin?: boolean;
   adminRole?: AdminRole;
   adminSessionExpiresAt?: number;
+  sessionVersion?: number;
+  ghostSession?: GhostSession | null;
   isPremium: boolean;
   premiumTier: PremiumTier;
   premiumCode?: string;

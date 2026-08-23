@@ -1,6 +1,6 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { authenticatePasscode, startAdminSession } from "../services/auth";
+import { authenticatePasscode, startAdminSession, grantAdminRole } from "../services/auth";
 import {
   getAdminDashboardKeyboard,
   getSuperAdminDashboardKeyboard,
@@ -939,14 +939,7 @@ export function setupTextInputHandler(bot: Bot) {
       }
 
       if (targetUser) {
-        db.updateUser(targetUser.userId, { isAdmin: true });
-        db.logAdminAction(
-          userId,
-          "Super Admin",
-          "APPOINT_ADMIN",
-          `Appointed User #${targetUser.userId} (${targetUser.fullName || targetUser.username || "User"}) as Admin`,
-          targetUser.userId.toString()
-        );
+        grantAdminRole(targetUser.userId, userId, false);
 
         await ctx.reply(
           `✅ <b>Admin Successfully Appointed!</b>\n\n` +

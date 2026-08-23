@@ -7,6 +7,11 @@ import {
   authenticatePasscode,
   startAdminSession,
   endAdminSession,
+  grantAdminRole,
+  revokeAdminRole,
+  startGhostSession,
+  endGhostSession,
+  getEffectiveActor,
 } from "../services/auth";
 import {
   getAdminDashboardKeyboard,
@@ -27,6 +32,7 @@ import {
   getSuperAdminDashboardKeyboard,
   getSuperAdminLogsKeyboard,
   getSuperAdminAdminsKeyboard,
+  getSuperAdminGhostMenuKeyboard,
   getSuperAdminDbStatusKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language } from "../types";
@@ -66,10 +72,19 @@ export function setupAdminHandler(bot: Bot) {
     const nawaApps = db.getAllNawaApplications();
     const allRevs = db.getAllReviews();
     const pendingRevs = db.getPendingReviews();
-    const isSuper = checkSuperAdminAuth(userId);
+
+    const isGhost = Boolean(user.ghostSession);
+    const isSuper = !isGhost && checkSuperAdminAuth(userId);
+
+    let headerPrefix = "";
+    if (isGhost && user.ghostSession) {
+      headerPrefix = isUz
+        ? `👻 <b>GHOST AUDIT REJIMI:</b> Admin #${user.ghostSession.actingAsAdminId} (<code>${escapeHtml(user.ghostSession.actingAsAdminName)}</code>) nomidan ish olib borilmoqda.\n━━━━━━━━━━━━━━━━━━━━\n\n`
+        : `👻 <b>GHOST AUDIT MODE:</b> Acting as Admin #${user.ghostSession.actingAsAdminId} (<code>${escapeHtml(user.ghostSession.actingAsAdminName)}</code>).\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
 
     const text = isUz
-      ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n` +
+      ? `${headerPrefix}🎛️ <b>PTU Administrator CRM Paneli</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📊 <b>Tizim Statistikasi:</b>\n` +
         `• 👥 Ro'yxatdan o'tgan talabalar: <b>${users.length}</b> ta\n` +
@@ -78,7 +93,7 @@ export function setupAdminHandler(bot: Bot) {
         `• 🏛️ NAWA arizalari: <b>${nawaApps.length}</b> ta\n` +
         `• ⭐ Talabalar sharhlari: <b>${allRevs.length} ta (${pendingRevs.length} ta kutilmoqda)</b>\n\n` +
         `<i>Boshqarish uchun quyidagi bo'limlardan birini tanlang:</i>`
-      : `🎛️ <b>PTU Admin CRM Dashboard</b>\n` +
+      : `${headerPrefix}🎛️ <b>PTU Admin CRM Dashboard</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📊 <b>Live System Overview:</b>\n` +
         `• 👥 Registered Students: <b>${users.length}</b>\n` +
@@ -99,7 +114,8 @@ export function setupAdminHandler(bot: Bot) {
         auditLogsCount: isSuper ? db.getAuditLogs().length : undefined,
       },
       user.lang,
-      isSuper
+      isSuper,
+      isGhost
     );
 
     if (ctx.callbackQuery?.message) {
@@ -1733,28 +1749,108 @@ export function setupAdminHandler(bot: Bot) {
     if (!match) return;
     const targetAdminId = parseInt(match[1], 10);
 
-    const targetUser = db.getUser(targetAdminId);
-    if (targetUser.isSuperAdmin) {
-      await ctx.answerCallbackQuery({ text: "Cannot demote Super Admin" });
+    const success = revokeAdminRole(targetAdminId, userId);
+    if (!success) {
+      await ctx.answerCallbackQuery({ text: "Cannot demote this user" });
       return;
     }
 
-    db.updateUser(targetAdminId, { isAdmin: false });
-
-    db.logAdminAction(
-      userId,
-      "Super Admin",
-      "REVOKE_ADMIN",
-      `Revoked admin privileges from User #${targetAdminId} (${targetUser.fullName || targetUser.username || "Unknown"})`,
-      targetAdminId.toString()
-    );
-
-    await ctx.answerCallbackQuery({ text: `Admin #${targetAdminId} privileges revoked!` });
-    const allAdmins = db.getAllAdmins();
+    await ctx.answerCallbackQuery({ text: `Admin #${targetAdminId} privileges revoked and sessions terminated!` });
+    const allAdmins = db.getAllAdmins(true);
     const kb = getSuperAdminAdminsKeyboard(allAdmins, userId, db.getUser(userId).lang);
     try {
       await ctx.editMessageReplyMarkup({ reply_markup: kb });
     } catch {}
+  });
+
+  // Ghost Mode Menu: Select regular admin to impersonate
+  bot.callbackQuery("admin_super_ghost_menu", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "⛔ Access Denied: Insufficient permissions." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const allAdmins = db.getAllAdmins(true);
+
+    const text = isUz
+      ? `👻 <b>GHOST MODE (ADMIN SIFATIDA AUDIT QILISH)</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Bu maxsus rejim orqali siz tanlangan oddiy admin sifatida panelga kirasiz va uning ko'rinishida tizimni xavfsiz tekshirasiz.\n\n` +
+        `<i>Audit maqsadida kirmoqchi bo'lgan adminni tanlang:</i>`
+      : `👻 <b>GHOST MODE (AUDIT IMPERSONATION)</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Enter the Admin Panel acting as a specific normal admin to audit and inspect their workflow.\n\n` +
+        `<i>Select an admin to enter in Ghost Mode:</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminGhostMenuKeyboard(allAdmins, userId, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // Enter Ghost Mode for a specific admin
+  bot.callbackQuery(/^admin_super_ghost_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "⛔ Access Denied: Insufficient permissions." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_ghost_(\d+)$/);
+    if (!match) return;
+    const targetAdminId = parseInt(match[1], 10);
+
+    const ghost = startGhostSession(userId, targetAdminId);
+    if (!ghost) {
+      await ctx.answerCallbackQuery({ text: "Cannot enter Ghost Mode for this user" });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: `👻 Ghost Mode Active: Acting as Admin #${targetAdminId}` });
+    await renderAdminDashboard(ctx);
+  });
+
+  // Exit Ghost Mode
+  bot.callbackQuery("admin_ghost_exit", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    endGhostSession(userId);
+    await ctx.answerCallbackQuery({ text: "Exited Ghost Mode" });
+    await renderSuperAdminHQ(ctx);
+  });
+
+  // Exit Ghost Mode via command
+  bot.command("exitghost", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    try {
+      await ctx.deleteMessage();
+    } catch {}
+    endGhostSession(userId);
+    await ctx.reply("👑 <b>Exited Ghost Mode:</b> Super Admin HQ restored.", { parse_mode: "HTML" });
+    await renderSuperAdminHQ(ctx);
+  });
+
+  // Admin Logout Handler
+  bot.callbackQuery("admin_logout", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+
+    if (user.ghostSession) {
+      endGhostSession(userId);
+      await ctx.answerCallbackQuery({ text: "Exited Ghost Mode" });
+      await renderSuperAdminHQ(ctx);
+      return;
+    }
+
+    endAdminSession(userId);
+    await ctx.answerCallbackQuery({ text: "Admin session ended" });
+    await ctx.reply("🔒 <b>Administrator Session Ended.</b> You have logged out.", { parse_mode: "HTML" });
   });
 
   bot.callbackQuery("admin_super_appoint_prompt", async (ctx) => {
@@ -1777,9 +1873,9 @@ export function setupAdminHandler(bot: Bot) {
     const userId = ctx.from?.id;
     if (!userId || !checkSuperAdminAuth(userId)) return;
     db.clearAuditLogs();
-    db.logAdminAction(userId, "Super Admin", "CLEAR_LOGS", "Cleared all previous audit logs.");
+    db.logAdminAction(userId, "Super Admin", "CLEAR_LOGS", "Cleared all previous audit logs.", undefined, "super_admin");
     await ctx.answerCallbackQuery({ text: "All audit logs cleared!" });
-    const allAdmins = db.getAllAdmins();
+    const allAdmins = db.getAllAdmins(true);
     const allUsers = db.getAllUsers();
     const kb = getSuperAdminDashboardKeyboard(
       {

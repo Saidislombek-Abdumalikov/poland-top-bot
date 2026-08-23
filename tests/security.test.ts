@@ -5,6 +5,10 @@ import {
   authenticatePasscode,
   startAdminSession,
   endAdminSession,
+  grantAdminRole,
+  revokeAdminRole,
+  startGhostSession,
+  endGhostSession,
   isAuthorizedAdmin,
   isAuthorizedSuperAdmin,
   sanitizeAuditText,
@@ -148,7 +152,117 @@ async function runSecurityTestSuite() {
     assert.equal(entry.target?.includes("PTUADMIN2025"), false);
   });
 
-  console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} SECURITY TESTS PASSED! =================\n`);
+  // 6. Admin Permission Revocation & Session Invalidation
+  test("revokeAdminRole atomically removes admin permissions and invalidates active sessions", () => {
+    const superAdminId = 777701;
+    const targetAdminId = 777702;
+
+    startAdminSession(superAdminId, "super_admin");
+    grantAdminRole(targetAdminId, superAdminId, false);
+
+    // Verify target is active admin
+    assert.equal(isAuthorizedAdmin(targetAdminId), true);
+    let targetUser = db.getUser(targetAdminId);
+    assert.equal(targetUser.isAdmin, true);
+    assert.equal(targetUser.adminRole, "admin");
+
+    // Super Admin revokes permissions
+    const revoked = revokeAdminRole(targetAdminId, superAdminId);
+    assert.equal(revoked, true, "Revoke operation should return true");
+
+    // Verify target immediately lost authorization
+    assert.equal(isAuthorizedAdmin(targetAdminId), false, "Revoked admin MUST fail isAuthorizedAdmin check");
+    assert.equal(isAuthorizedSuperAdmin(targetAdminId), false);
+
+    // Verify database state is updated
+    targetUser = db.getUser(targetAdminId);
+    assert.equal(targetUser.isAdmin, false);
+    assert.equal(targetUser.adminRole, null);
+    assert.equal(targetUser.adminSessionExpiresAt, 0);
+
+    // Verify audit log has the event
+    const logs = db.getAuditLogs(10);
+    const revokeLog = logs.find((l) => l.action === "ADMIN_PERMISSION_REVOKED" && l.target === targetAdminId.toString());
+    assert.ok(revokeLog, "Audit log must contain ADMIN_PERMISSION_REVOKED event");
+    assert.equal(revokeLog.actorId, superAdminId);
+  });
+
+  test("Super Admin cannot be demoted or revoked by demote functions", () => {
+    const superAdminId = 777701;
+    const attackerId = 777703;
+
+    startAdminSession(superAdminId, "super_admin");
+    const demoteResult = revokeAdminRole(superAdminId, attackerId);
+    assert.equal(demoteResult, false, "Revoking Super Admin must be rejected");
+
+    const superUser = db.getUser(superAdminId);
+    assert.equal(superUser.isAdmin, true);
+    assert.equal(superUser.isSuperAdmin, true);
+    assert.equal(superUser.adminRole, "super_admin");
+  });
+
+  // 7. Ghost Mode Impersonation & Audit Attribution
+  test("Super Admin can enter Ghost Mode acting as a target admin", () => {
+    const superAdminId = 666601;
+    const targetAdminId = 666602;
+
+    startAdminSession(superAdminId, "super_admin");
+    grantAdminRole(targetAdminId, superAdminId, false);
+
+    // Enter Ghost Mode
+    const ghost = startGhostSession(superAdminId, targetAdminId);
+    assert.ok(ghost, "Ghost session must be created");
+    assert.equal(ghost.actualSuperAdminId, superAdminId);
+    assert.equal(ghost.actingAsAdminId, targetAdminId);
+
+    const superUser = db.getUser(superAdminId);
+    assert.ok(superUser.ghostSession, "User record must have active ghostSession");
+    assert.equal(superUser.adminRole, "admin", "Ghost interface role must be normal admin");
+
+    // Super Admin HQ is suspended during Ghost Mode for clean privilege isolation
+    assert.equal(isAuthorizedSuperAdmin(superAdminId), false, "Super Admin controls suspended in Ghost Mode");
+    assert.equal(isAuthorizedAdmin(superAdminId), true, "Admin permissions active in Ghost Mode");
+
+    // Perform an action in Ghost Mode
+    const actionLog = db.logAdminAction(
+      superAdminId,
+      "Ghost Actor",
+      "DOCUMENT_VERIFY",
+      "Approved secondary school diploma for student #12345",
+      "12345"
+    );
+
+    // Verify audit attribution is preserved to the true Super Admin
+    assert.equal(actionLog.actorId, superAdminId, "Audit log must trace to actual Super Admin");
+    assert.equal(actionLog.actorRole, "super_admin");
+    assert.ok(
+      actionLog.details.includes(`[GHOST MODE acting as Admin #${targetAdminId}]`),
+      "Audit log must be stamped with Ghost Mode details"
+    );
+
+    // Exit Ghost Mode
+    const exited = endGhostSession(superAdminId);
+    assert.equal(exited, true, "Exit ghost mode must succeed");
+
+    // Super Admin HQ restored
+    assert.equal(isAuthorizedSuperAdmin(superAdminId), true, "Super Admin privileges restored after exit");
+    const restoredUser = db.getUser(superAdminId);
+    assert.equal(restoredUser.ghostSession, null);
+    assert.equal(restoredUser.adminRole, "super_admin");
+  });
+
+  test("Normal admins and regular users cannot start Ghost Mode", () => {
+    const normalAdminId = 555501;
+    const targetAdminId = 555502;
+
+    startAdminSession(normalAdminId, "admin");
+    grantAdminRole(targetAdminId, 999999, false);
+
+    const ghost = startGhostSession(normalAdminId, targetAdminId);
+    assert.equal(ghost, null, "Normal admin MUST NOT be able to start Ghost Mode");
+  });
+
+  console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} SECURITY & SUPER ADMIN TESTS PASSED! =================\n`);
 }
 
 runSecurityTestSuite().catch((e) => {
