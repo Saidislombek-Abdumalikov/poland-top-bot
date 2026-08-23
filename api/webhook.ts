@@ -2,9 +2,7 @@ import { webhookCallback } from "grammy";
 import { createBot } from "../src/bot";
 import { db } from "../src/bot/services/db";
 
-// Initialize Grammy bot
-const bot = createBot();
-const handleTelegramUpdate = webhookCallback(bot, "http");
+let handleTelegramUpdate: any = null;
 
 export default async function handler(req: any, res: any) {
   // Health check on GET
@@ -21,13 +19,25 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  // Sync cloud database state before handling update
   try {
-    await db.syncFromCloud();
-  } catch (e) {
-    // Non-blocking fallback
-  }
+    if (!handleTelegramUpdate) {
+      const bot = createBot();
+      handleTelegramUpdate = webhookCallback(bot, "http");
+    }
 
-  // Handle Telegram webhook update
-  return handleTelegramUpdate(req, res);
+    // Sync cloud database state before handling update
+    try {
+      await db.syncFromCloud();
+    } catch (e) {
+      // Non-blocking fallback
+    }
+
+    return await handleTelegramUpdate(req, res);
+  } catch (err) {
+    console.error("Vercel Webhook execution error:", err);
+    if (!res.headersSent) {
+      res.statusCode = 200;
+      res.end("OK");
+    }
+  }
 }
