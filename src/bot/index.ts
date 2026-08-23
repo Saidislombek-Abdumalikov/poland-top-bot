@@ -51,6 +51,8 @@ export function createBot(token?: string) {
   return bot;
 }
 
+import * as http from "http";
+
 export async function startBot(token?: string) {
   validateConfig();
   const activeToken = token || config.botToken;
@@ -60,6 +62,24 @@ export async function startBot(token?: string) {
     console.log("👉 How to fix: Set BOT_TOKEN in your .env file or run with BOT_TOKEN=your_token");
     return;
   }
+
+  // Start lightweight HTTP health server for cloud platforms (Render / Railway / Koyeb)
+  const port = Number(process.env.PORT) || 10000;
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        bot: "Poland Top Universities (PTU) Telegram Bot",
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+      })
+    );
+  });
+
+  server.listen(port, () => {
+    console.log(`🌐 Health check server active on port ${port}`);
+  });
 
   const bot = createBot(activeToken);
 
