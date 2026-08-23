@@ -13,6 +13,8 @@ COPY . .
 
 # Environment variables
 ENV NODE_ENV=production
+ENV PORT=10000
+EXPOSE 10000
 
 # Run the Telegram bot
 CMD ["npm", "run", "bot"]

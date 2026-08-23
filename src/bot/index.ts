@@ -77,8 +77,8 @@ export async function startBot(token?: string) {
     );
   });
 
-  server.listen(port, () => {
-    console.log(`🌐 Health check server active on port ${port}`);
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`🌐 Health check server active on 0.0.0.0:${port}`);
   });
 
   const bot = createBot(activeToken);
