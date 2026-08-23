@@ -1487,7 +1487,9 @@ export class DatabaseService {
     if (!user.documents || !user.documents[docKey]) return undefined;
 
     user.documents[docKey].status = status;
-    if (feedbackNote) {
+    if (status === "approved") {
+      delete user.documents[docKey].feedbackNote;
+    } else if (feedbackNote) {
       user.documents[docKey].feedbackNote = feedbackNote;
     }
     user.documents[docKey].updatedAt = new Date().toISOString().split("T")[0];

@@ -117,7 +117,8 @@ export function getUniversityDetailKeyboard(lang: Language, uni: University): In
     .row()
     .text(t(lang, "uni_btn_apply"), `apply_uni_${uni.id}`)
     .row()
-    .text(t(lang, "nav_back"), "back_to_unis");
+    .text(t(lang, "nav_back"), "back_to_unis")
+    .text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 
 export function getProgramsFilterKeyboard(
@@ -184,7 +185,8 @@ export function getProgramDetailKeyboard(
     )
     .text(t(lang, "prog_btn_apply"), `apply_prog_${progId}`)
     .row()
-    .text(t(lang, "nav_back"), "back_to_progs");
+    .text(t(lang, "nav_back"), "back_to_progs")
+    .text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 
 export function getNawaKeyboard(lang: Language): InlineKeyboard {

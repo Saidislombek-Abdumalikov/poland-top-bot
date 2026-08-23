@@ -147,15 +147,21 @@ export function setupDocumentHandler(bot: Bot) {
       ? `👇 <i>PDF fayl yuborish, rasm yuklash yoki havola kiritish uchun pastdagi tugmani bosing:</i>`
       : `👇 <i>Tap below to upload a PDF, send a photo, or paste a link:</i>`;
 
+    const uploadBtnText = userDoc.status === "needs_correction"
+      ? (isUz ? "🔄 Qayta Yuklash (To'g'rilash)" : "🔄 Re-upload (Corrected File)")
+      : (userDoc.status === "approved"
+        ? (isUz ? "🔄 Yangi Nusxa Yuklash" : "🔄 Upload New Version")
+        : (isUz ? "📤 Hujjat yoki Havola Yuborish" : "📤 Upload / Send File or Link"));
+
     const kb = {
       inline_keyboard: isUz
         ? [
-            [{ text: "📤 Hujjat yoki Havola Yuborish", callback_data: `doc_upload_prompt_${docKey}` }],
-            [{ text: "◀️ Hujjatlar Ro'yxatiga Qaytish", callback_data: "back_to_docs" }],
+            [{ text: uploadBtnText, callback_data: `doc_upload_prompt_${docKey}` }],
+            [{ text: "◀️ Hujjatlar Ro'yxatiga", callback_data: "back_to_docs" }, { text: "🏠 Bosh Menyu", callback_data: "go_main_menu" }],
           ]
         : [
-            [{ text: "📤 Upload / Send File or Link", callback_data: `doc_upload_prompt_${docKey}` }],
-            [{ text: "◀️ Back to Documents", callback_data: "back_to_docs" }],
+            [{ text: uploadBtnText, callback_data: `doc_upload_prompt_${docKey}` }],
+            [{ text: "◀️ Back to Documents", callback_data: "back_to_docs" }, { text: "🏠 Main Menu", callback_data: "go_main_menu" }],
           ],
     };
 

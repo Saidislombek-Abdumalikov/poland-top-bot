@@ -950,12 +950,13 @@ export function setupAdminHandler(bot: Bot) {
           ? `🔴 <b>Hujjatga Tuzatish Talab Qilinadi!</b>\n\n` +
             `Siz yuklagan <b>${escapeHtml(docName)}</b> bo'yicha kamchiliklar aniqlandi. Iltimos, talablarga muvofiq qayta yuklang.`
           : `🔴 <b>Document Correction Required!</b>\n\n` +
-            `Your <b>${escapeHtml(docName)}</b> requires revision. Please re-upload in the Document Checklist.`;
+            `Your <b>${escapeHtml(docName)}</b> requires revision. Please re-upload your document.`;
 
         await bot.api.sendMessage(targetUserId, studentMsg, {
           parse_mode: "HTML",
           reply_markup: {
             inline_keyboard: [
+              [{ text: isUz ? "🔄 Qayta Yuklash (To'g'rilash)" : "🔄 Re-upload Document", callback_data: `doc_upload_prompt_${docKey}` }],
               [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
             ],
           },

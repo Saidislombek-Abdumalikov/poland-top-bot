@@ -98,6 +98,21 @@ export function setupTextInputHandler(bot: Bot) {
     if (user.waitingFor === "document_upload") {
       const docKey = user.waitingPayload?.docKey;
       if (docKey) {
+        const isUz = user.lang === "uz";
+        const docDef = db.getDocumentDefinition(docKey);
+        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
+
+        // Size validation (max 20MB)
+        if (document.file_size && document.file_size > 20 * 1024 * 1024) {
+          await ctx.reply(
+            isUz
+              ? `⚠️ <b>Fayl hajmi juda katta!</b>\n\nTelegram orqali maksimal 20 MB gacha bo'lgan fayllarni yuborishingiz mumkin. Iltimos, fayl hajmini qisqartiring yoki Google Drive havolasini yuboring.`
+              : `⚠️ <b>File size exceeds limit!</b>\n\nPlease upload a file smaller than 20 MB or share a cloud link (Google Drive / OneDrive).`,
+            { parse_mode: "HTML" }
+          );
+          return;
+        }
+
         db.submitDocument(userId, docKey, {
           fileId: document.file_id,
           fileName: document.file_name || "document.pdf",
@@ -105,20 +120,27 @@ export function setupTextInputHandler(bot: Bot) {
         });
         db.setWaitingFor(userId, null);
 
-        const isUz = user.lang === "uz";
         const replyText = isUz
           ? `✅ <b>Hujjat Fayli Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
+            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
             `📎 <b>Fayl:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
             `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `Hujjatlaringiz tasdiqlanishi bilan sizga bu yerda xabar beramiz!`
+            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
           : `✅ <b>Document File Received!</b>\n\n` +
-            `📄 <b>Document:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
+            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
             `📎 <b>File Name:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
             `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `You will be notified here as soon as our counselors verify your file!`;
+            `<i>You will be notified as soon as our counselors review your file!</i>`;
 
-        await ctx.reply(replyText, { parse_mode: "HTML" });
+        await ctx.reply(replyText, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+            ],
+          },
+        });
       }
     }
   });
@@ -134,6 +156,10 @@ export function setupTextInputHandler(bot: Bot) {
     if (user.waitingFor === "document_upload") {
       const docKey = user.waitingPayload?.docKey;
       if (docKey) {
+        const isUz = user.lang === "uz";
+        const docDef = db.getDocumentDefinition(docKey);
+        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
+
         const largestPhoto = photos[photos.length - 1];
         db.submitDocument(userId, docKey, {
           fileId: largestPhoto.file_id,
@@ -142,20 +168,27 @@ export function setupTextInputHandler(bot: Bot) {
         });
         db.setWaitingFor(userId, null);
 
-        const isUz = user.lang === "uz";
         const replyText = isUz
           ? `✅ <b>Hujjat Fotosurati Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
-            `🖼️ <b>Fayl:</b> Sifatli rasm skaneri\n` +
+            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
+            `🖼️ <b>Fayl:</b> Sifatli rasm nusxasi\n` +
             `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `Hujjatlaringiz tasdiqlanishi bilan sizga bu yerda xabar beramiz!`
+            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
           : `✅ <b>Document Photo Received!</b>\n\n` +
-            `📄 <b>Document:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
+            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
             `🖼️ <b>Image File:</b> High-Resolution Scan\n` +
             `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `You will be notified here as soon as our counselors verify your file!`;
+            `<i>You will be notified as soon as our counselors review your file!</i>`;
 
-        await ctx.reply(replyText, { parse_mode: "HTML" });
+        await ctx.reply(replyText, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+            ],
+          },
+        });
       }
     }
   });
@@ -567,6 +600,7 @@ export function setupTextInputHandler(bot: Bot) {
               parse_mode: "HTML",
               reply_markup: {
                 inline_keyboard: [
+                  [{ text: isUz ? "🔄 Qayta Yuklash (To'g'rilash)" : "🔄 Re-upload Document", callback_data: `doc_upload_prompt_${docKey}` }],
                   [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
                 ],
               },
@@ -916,26 +950,37 @@ export function setupTextInputHandler(bot: Bot) {
       await cleanUpInput(ctx, userId);
       const docKey = user.waitingPayload?.docKey;
       if (docKey) {
+        const isUz = user.lang === "uz";
+        const docDef = db.getDocumentDefinition(docKey);
+        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
+
         db.submitDocument(userId, docKey, {
           link: text,
           fileType: "link",
         });
         db.setWaitingFor(userId, null);
 
-        const isUz = user.lang === "uz";
         const replyText = isUz
           ? `✅ <b>Hujjat Havolasi Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
+            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
             `🔗 <b>Havola:</b> <code>${escapeHtml(text)}</code>\n` +
             `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `Hujjatlaringiz tasdiqlanishi bilan sizga bu yerda xabar beramiz!`
+            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
           : `✅ <b>Document Link Submitted!</b>\n\n` +
-            `📄 <b>Document:</b> ${escapeHtml(docKey.toUpperCase())}\n` +
+            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
             `🔗 <b>Link:</b> <code>${escapeHtml(text)}</code>\n` +
             `🟡 <b>Status:</b> Under Review by Admissions Team\n\n` +
-            `You will be notified here as soon as an advisor verifies your document!`;
+            `<i>You will be notified as soon as an advisor verifies your document!</i>`;
 
-        await ctx.reply(replyText, { parse_mode: "HTML" });
+        await ctx.reply(replyText, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+            ],
+          },
+        });
         return;
       }
     }
