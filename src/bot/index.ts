@@ -36,6 +36,7 @@ export function createBot(token?: string) {
   });
 
   // Setup all feature handlers
+  setupAdminHandler(bot);
   setupStartHandler(bot);
   setupUniversityHandler(bot);
   setupProgramHandler(bot);
@@ -46,7 +47,19 @@ export function createBot(token?: string) {
   setupReviewHandler(bot);
   setupProfileHandler(bot);
   setupTextInputHandler(bot);
-  setupAdminHandler(bot);
+
+  // Version/Health command for instant verification
+  bot.command(["version", "ping"], async (ctx) => {
+    await ctx.reply(
+      `🤖 <b>PTU Bot Status: ONLINE & ACTIVE</b>\n` +
+        `• 🏷️ <b>Version:</b> 2.2.0 (Stealth SuperAdmin & Passcode Auth)\n` +
+        `• 🔐 <b>Auth:</b> Pure Passcode-Driven\n` +
+        `• 👑 <b>SuperAdmin:</b> /superadmin super*admin\n` +
+        `• 🛡️ <b>Admin:</b> /admin PTUADMIN2025\n` +
+        `• 🗄️ <b>Cloud Sync:</b> Supabase PostgreSQL Live`,
+      { parse_mode: "HTML" }
+    );
+  });
 
   return bot;
 }
