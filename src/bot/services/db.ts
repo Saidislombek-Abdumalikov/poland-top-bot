@@ -446,8 +446,20 @@ export class DatabaseService {
     return Object.values(this.data.users);
   }
 
-  public getAllAdmins(): UserSessionData[] {
-    return Object.values(this.data.users).filter((u) => u.isAdmin || u.isSuperAdmin);
+  /**
+   * Retrieves administrators list.
+   * If includeSuperAdmin is false (default), Super Admins are completely filtered out
+   * to preserve absolute invisibility to normal admins.
+   */
+  public getAllAdmins(includeSuperAdmin: boolean = false): UserSessionData[] {
+    const all = Object.values(this.data.users);
+    if (includeSuperAdmin) {
+      return all.filter((u) => u.isAdmin || u.isSuperAdmin || u.adminRole === "admin" || u.adminRole === "super_admin");
+    }
+    // Normal admin view: Super Admins are 100% excluded
+    return all.filter(
+      (u) => (u.isAdmin || u.adminRole === "admin") && !u.isSuperAdmin && u.adminRole !== "super_admin"
+    );
   }
 
   public searchUsers(query: string): UserSessionData[] {
@@ -463,22 +475,54 @@ export class DatabaseService {
 
   // ================= AUDIT LOGS =================
   public logAdminAction(
-    adminId: number,
-    adminName: string,
+    actorId: number,
+    actorName: string,
     action: string,
     details: string,
-    target?: string
+    target?: string,
+    actorRole?: "super_admin" | "admin" | "system",
+    status: "success" | "failure" = "success"
   ): AuditLogEntry {
     if (!this.data.auditLogs) this.data.auditLogs = [];
+
+    // Sanitize any sensitive credentials from details & target
+    const knownSecrets = [
+      process.env.SUPER_ADMIN_PASSCODE,
+      process.env.ADMIN_PASSCODE,
+      "super*admin",
+      "PTUADMIN2025",
+      "superadminsaidislom*",
+    ].filter(Boolean) as string[];
+
+    let cleanDetails = details || "";
+    let cleanTarget = target || "";
+
+    for (const s of knownSecrets) {
+      if (s.length >= 4) {
+        cleanDetails = cleanDetails.split(s).join("[PROTECTED_CREDENTIAL]");
+        cleanTarget = cleanTarget.split(s).join("[PROTECTED_CREDENTIAL]");
+      }
+    }
+
+    const user = this.data.users[actorId];
+    const determinedRole =
+      actorRole || (user?.isSuperAdmin || user?.adminRole === "super_admin" ? "super_admin" : "admin");
+
     const entry: AuditLogEntry = {
       id: crypto.randomBytes(3).toString("hex").toUpperCase(),
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
-      adminId,
-      adminName: adminName || `Admin #${adminId}`,
+      actorId,
+      actorName: actorName || `User #${actorId}`,
+      actorRole: determinedRole,
       action,
-      target,
-      details,
+      target: cleanTarget || undefined,
+      details: cleanDetails,
+      status,
+      // Backward compatibility aliases
+      adminId: actorId,
+      adminName: actorName || `User #${actorId}`,
     };
+
     this.data.auditLogs.unshift(entry);
     // Keep max 500 audit logs
     if (this.data.auditLogs.length > 500) {

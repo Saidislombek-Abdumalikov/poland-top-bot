@@ -2,6 +2,13 @@ import { Bot, Context } from "grammy";
 import { db } from "../services/db";
 import { config } from "../config";
 import {
+  isAuthorizedAdmin,
+  isAuthorizedSuperAdmin,
+  authenticatePasscode,
+  startAdminSession,
+  endAdminSession,
+} from "../services/auth";
+import {
   getAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
   getAdminUserDetailKeyboard,
@@ -26,26 +33,25 @@ import { AppStage, DocStatus, Language } from "../types";
 import { escapeHtml } from "../utils/format";
 
 export function setupAdminHandler(bot: Bot) {
-  // Helper to check authorization
+  // Helper to check authorization server-side
   const checkAdminAuth = (userId?: number): boolean => {
-    if (!userId) return false;
-    const user = db.getUser(userId);
-    return Boolean(user.isAdmin || user.isSuperAdmin);
+    return isAuthorizedAdmin(userId);
   };
 
   const checkSuperAdminAuth = (userId?: number): boolean => {
-    if (!userId) return false;
-    const user = db.getUser(userId);
-    return Boolean(user.isSuperAdmin);
+    return isAuthorizedSuperAdmin(userId);
   };
 
   // Main admin dashboard render
   const renderAdminDashboard = async (ctx: Context) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) {
+    if (!userId) return;
+
+    if (!checkAdminAuth(userId)) {
+      db.setWaitingFor(userId, "admin_auth");
       await ctx.reply(
-        "🔒 <b>Admin Access Required</b>\n\n" +
-          "Please provide the admin passcode using:\n<code>/admin &lt;passcode&gt;</code>",
+        "🔒 <b>Administrator Authentication Required</b>\n\n" +
+          "Please enter the administration passcode to proceed:",
         { parse_mode: "HTML" }
       );
       return;
@@ -60,7 +66,7 @@ export function setupAdminHandler(bot: Bot) {
     const nawaApps = db.getAllNawaApplications();
     const allRevs = db.getAllReviews();
     const pendingRevs = db.getPendingReviews();
-    const isSuper = Boolean(user.isSuperAdmin);
+    const isSuper = checkSuperAdminAuth(userId);
 
     const text = isUz
       ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n` +
@@ -89,8 +95,8 @@ export function setupAdminHandler(bot: Bot) {
         pendingDocsCount: pendingDocs.length,
         nawaCount: nawaApps.length,
         reviewsCount: allRevs.length,
-        adminsCount: db.getAllAdmins().length,
-        auditLogsCount: db.getAuditLogs().length,
+        adminsCount: db.getAllAdmins(isSuper).length,
+        auditLogsCount: isSuper ? db.getAuditLogs().length : undefined,
       },
       user.lang,
       isSuper
@@ -116,13 +122,13 @@ export function setupAdminHandler(bot: Bot) {
   const renderSuperAdminHQ = async (ctx: Context) => {
     const userId = ctx.from?.id;
     if (!userId || !checkSuperAdminAuth(userId)) {
-      await ctx.reply("⛔ <b>Access Denied:</b> Super Admin privileges required.", { parse_mode: "HTML" });
+      await ctx.reply("⛔ <b>Access Denied:</b> You do not have permission to perform this action.", { parse_mode: "HTML" });
       return;
     }
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
-    const allAdmins = db.getAllAdmins();
+    const allAdmins = db.getAllAdmins(true);
     const auditLogs = db.getAuditLogs(100);
     const allUsers = db.getAllUsers();
 
@@ -132,7 +138,7 @@ export function setupAdminHandler(bot: Bot) {
         `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Sizning ID: <code>${userId}</code> (Tizim egasi)\n\n` +
         `📊 <b>Nazorat Ko'rsatkichlari:</b>\n` +
-        `• 🛡️ Faol Oddiy Adminlar: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b> ta\n` +
+        `• 🛡️ Faol Oddiy Adminlar: <b>${allAdmins.filter(a => !a.isSuperAdmin && a.adminRole !== "super_admin").length}</b> ta\n` +
         `• 📜 Yozilgan Audit Loglar: <b>${auditLogs.length}</b> ta\n` +
         `• 👥 Jami Talabalar Bazasi: <b>${allUsers.length}</b> ta\n` +
         `• 🗄️ Cloud DB Sync: <b>Supabase PostgreSQL (Live)</b>\n\n` +
@@ -142,7 +148,7 @@ export function setupAdminHandler(bot: Bot) {
         `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Your Telegram ID: <code>${userId}</code> (Master Owner)\n\n` +
         `📊 <b>System Master Overview:</b>\n` +
-        `• 🛡️ Active Regular Admins: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b>\n` +
+        `• 🛡️ Active Regular Admins: <b>${allAdmins.filter(a => !a.isSuperAdmin && a.adminRole !== "super_admin").length}</b>\n` +
         `• 📜 Recorded Audit Logs: <b>${auditLogs.length}</b>\n` +
         `• 👥 Total User Database: <b>${allUsers.length}</b>\n` +
         `• 🗄️ Cloud Storage: <b>Supabase PostgreSQL (Live)</b>\n\n` +
@@ -166,73 +172,125 @@ export function setupAdminHandler(bot: Bot) {
     await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
   };
 
-  // 1. Regular Admin Command: /admin <passcode>
+  // 1. Unified /admin Command
   bot.command("admin", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId) return;
+
+    // Immediately delete the message so passcode is never visible in chat history
     try {
       await ctx.deleteMessage();
     } catch {}
 
     const text = ctx.message?.text || "";
     const args = text.trim().split(/\s+/).slice(1);
-    const passedCode = args[0]?.trim();
+    const passedCode = args.join(" ").trim();
 
-    if (passedCode && (passedCode === config.adminPasscode || passedCode.toUpperCase() === config.adminPasscode.toUpperCase())) {
-      db.updateUser(userId, { isAdmin: true });
-      db.logAdminAction(
-        userId,
-        ctx.from?.first_name || "Admin",
-        "ADMIN_LOGIN",
-        `Logged into Regular Admin CRM via passcode`
-      );
-      await ctx.reply("✅ <b>Admin access unlocked successfully!</b>", { parse_mode: "HTML" });
+    if (passedCode) {
+      const role = authenticatePasscode(passedCode);
+      if (role === "super_admin") {
+        startAdminSession(userId, "super_admin");
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Super Admin",
+          "SUPER_ADMIN_LOGIN",
+          "Authenticated into Super Admin session via /admin command",
+          undefined,
+          "super_admin"
+        );
+        await ctx.reply("👑 <b>Super Admin Access Granted!</b>\n\nWelcome, Boss.", { parse_mode: "HTML" });
+        await renderAdminDashboard(ctx);
+        return;
+      } else if (role === "admin") {
+        startAdminSession(userId, "admin");
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Admin",
+          "ADMIN_LOGIN",
+          "Authenticated into Normal Admin session via /admin command",
+          undefined,
+          "admin"
+        );
+        await ctx.reply("✅ <b>Administrator Access Granted!</b>", { parse_mode: "HTML" });
+        await renderAdminDashboard(ctx);
+        return;
+      } else {
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Unknown",
+          "FAILED_LOGIN_ATTEMPT",
+          "Failed login attempt with invalid passcode",
+          undefined,
+          "admin",
+          "failure"
+        );
+        await ctx.reply("⛔ <b>Authentication Failed:</b> Invalid credentials.", { parse_mode: "HTML" });
+        return;
+      }
+    }
+
+    // No passcode in command: Check if session is already authenticated
+    if (checkAdminAuth(userId)) {
       await renderAdminDashboard(ctx);
     } else {
+      db.setWaitingFor(userId, "admin_auth");
       await ctx.reply(
-        "🔒 <b>Admin Access Required</b>\n\n" +
-          "Please provide the admin passcode using:\n<code>/admin PTUADMIN2025</code>",
+        "🔒 <b>Administrator Authentication Required</b>\n\n" +
+          "Please enter your administration passcode to proceed:",
         { parse_mode: "HTML" }
       );
     }
   });
 
-  // 2. Super Admin Command: /superadmin <passcode>
+  // 2. Secret /superadmin Command
   bot.command("superadmin", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId) return;
+
     try {
       await ctx.deleteMessage();
     } catch {}
 
     const text = ctx.message?.text || "";
     const args = text.trim().split(/\s+/).slice(1);
-    const passedCode = args[0]?.trim();
+    const passedCode = args.join(" ").trim();
 
-    const isMatch =
-      Boolean(passedCode) &&
-      (passedCode === config.superAdminPasscode ||
-        passedCode === "super*admin" ||
-        passedCode === "superadminsaidislom*");
+    if (passedCode) {
+      const role = authenticatePasscode(passedCode);
+      if (role === "super_admin") {
+        startAdminSession(userId, "super_admin");
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Super Admin",
+          "SUPER_ADMIN_LOGIN",
+          "Authenticated into Super Admin HQ via /superadmin command",
+          undefined,
+          "super_admin"
+        );
+        await ctx.reply("👑 <b>Super Admin Master Access Granted!</b>\n\nWelcome, Boss.", { parse_mode: "HTML" });
+        await renderSuperAdminHQ(ctx);
+        return;
+      } else {
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Unknown",
+          "FAILED_LOGIN_ATTEMPT",
+          "Failed superadmin login attempt",
+          undefined,
+          "super_admin",
+          "failure"
+        );
+        await ctx.reply("⛔ <b>Authentication Failed:</b> Invalid credentials.", { parse_mode: "HTML" });
+        return;
+      }
+    }
 
-    if (isMatch) {
-      db.updateUser(userId, { isAdmin: true, isSuperAdmin: true });
-      db.logAdminAction(
-        userId,
-        ctx.from?.first_name || "Super Admin",
-        "SUPERADMIN_LOGIN",
-        "Unlocked Master Super Admin access via /superadmin passcode"
-      );
-      await ctx.reply(
-        "👑 <b>Super Admin Master Access Granted!</b>\n\n" +
-          "Welcome, Boss! All master controls, activity audit logs, and cloud database features unlocked.",
-        { parse_mode: "HTML" }
-      );
+    if (checkSuperAdminAuth(userId)) {
       await renderSuperAdminHQ(ctx);
     } else {
+      db.setWaitingFor(userId, "admin_auth");
       await ctx.reply(
-        "👑 <b>Super Admin Access Required</b>\n\n" +
-          "Please provide the super admin passcode using:\n<code>/superadmin super*admin</code>",
+        "🔒 <b>Authentication Required</b>\n\nPlease enter your passcode:",
         { parse_mode: "HTML" }
       );
     }
@@ -341,7 +399,16 @@ export function setupAdminHandler(bot: Bot) {
     const user = db.getUser(targetUserId);
 
     const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const isSuper = checkSuperAdminAuth(adminId);
+
+    // Invisibility protection: Normal Admins CANNOT view Super Admin accounts
+    if (!isSuper && (user.isSuperAdmin || user.adminRole === "super_admin")) {
+      await ctx.answerCallbackQuery({ text: "User not found" });
+      return;
+    }
+
+    const adminUser = db.getUser(adminId);
     const isUz = adminUser?.lang === "uz";
 
     const apps = db.getUserApplications(targetUserId);
@@ -382,14 +449,14 @@ export function setupAdminHandler(bot: Bot) {
       try {
         await ctx.editMessageText(text, {
           parse_mode: "HTML",
-          reply_markup: getAdminUserDetailKeyboard(user, adminUser?.lang),
+          reply_markup: getAdminUserDetailKeyboard(user, adminUser?.lang, isSuper),
         });
         return;
       } catch {}
     }
     await ctx.reply(text, {
       parse_mode: "HTML",
-      reply_markup: getAdminUserDetailKeyboard(user, adminUser?.lang),
+      reply_markup: getAdminUserDetailKeyboard(user, adminUser?.lang, isSuper),
     });
   });
 
@@ -441,36 +508,42 @@ export function setupAdminHandler(bot: Bot) {
     );
   });
 
-  // Toggle Admin status
+  // Toggle Admin status (Strictly Super Admin ONLY)
   bot.callbackQuery(/^admin_toggle_admin_(\d+)$/, async (ctx) => {
+    const adminId = ctx.from?.id || 0;
+    if (!checkSuperAdminAuth(adminId)) {
+      await ctx.answerCallbackQuery({ text: "⛔ You do not have permission to perform this action." });
+      return;
+    }
+
     const match = ctx.callbackQuery?.data?.match(/^admin_toggle_admin_(\d+)$/);
     if (!match) return;
     const targetUserId = parseInt(match[1], 10);
     const user = db.getUser(targetUserId);
 
-    if (user.isSuperAdmin) {
-      await ctx.answerCallbackQuery({ text: "⛔ Super Admin role cannot be modified." });
+    if (user.isSuperAdmin || user.adminRole === "super_admin") {
+      await ctx.answerCallbackQuery({ text: "⛔ This account's role cannot be modified." });
       return;
     }
 
     const newStatus = !user.isAdmin;
-    db.updateUser(targetUserId, { isAdmin: newStatus });
+    db.updateUser(targetUserId, { isAdmin: newStatus, adminRole: newStatus ? "admin" : null });
 
-    const adminId = ctx.from?.id || 0;
     const adminUser = db.getUser(adminId);
     db.logAdminAction(
       adminId,
       adminUser.fullName || adminUser.username || `Admin #${adminId}`,
       newStatus ? "GRANT_ADMIN" : "REVOKE_ADMIN",
       `${newStatus ? "Granted" : "Revoked"} Admin role for User #${targetUserId} (${user.fullName || user.username || "User"})`,
-      `User #${targetUserId}`
+      `User #${targetUserId}`,
+      "super_admin"
     );
 
     await ctx.answerCallbackQuery({ text: `Admin role ${newStatus ? "granted" : "revoked"}` });
 
     const updatedUser = db.getUser(targetUserId);
     await ctx.editMessageReplyMarkup({
-      reply_markup: getAdminUserDetailKeyboard(updatedUser, adminUser?.lang),
+      reply_markup: getAdminUserDetailKeyboard(updatedUser, adminUser?.lang, true),
     });
   });
 

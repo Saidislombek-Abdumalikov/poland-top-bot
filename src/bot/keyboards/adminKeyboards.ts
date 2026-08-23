@@ -100,19 +100,26 @@ export function getAdminUsersListKeyboard(
   return kb;
 }
 
-export function getAdminUserDetailKeyboard(user: UserSessionData, lang: Language = "en"): InlineKeyboard {
+export function getAdminUserDetailKeyboard(
+  user: UserSessionData,
+  lang: Language = "en",
+  isSuperAdminUser: boolean = false
+): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
   kb.text(isUz ? "🎁 Bir Martalik VIP Promokod Berish" : "🎁 Assign VIP Single-Use Promo", `admin_assign_promo_${user.userId}`).row();
 
-  if (user.isAdmin) {
-    kb.text(isUz ? "🔴 Admin Huquqini Olish" : "🔴 Demote from Admin", `admin_toggle_admin_${user.userId}`);
-  } else {
-    kb.text(isUz ? "👑 Admin Huquqini Berish" : "👑 Promote to Admin", `admin_toggle_admin_${user.userId}`);
+  // ONLY Super Admin can promote or demote administrators
+  if (isSuperAdminUser && !user.isSuperAdmin) {
+    if (user.isAdmin) {
+      kb.text(isUz ? "🔴 Admin Huquqini Olish" : "🔴 Demote from Admin", `admin_toggle_admin_${user.userId}`).row();
+    } else {
+      kb.text(isUz ? "🛡️ Admin Huquqini Berish" : "🛡️ Promote to Admin", `admin_toggle_admin_${user.userId}`).row();
+    }
   }
 
-  kb.row().text(isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Users", "admin_menu_users");
+  kb.text(isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Users", "admin_menu_users");
   return kb;
 }
 

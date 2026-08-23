@@ -6,8 +6,7 @@
       "phone": "+998949480542",
       "userId": 5059829001,
       "country": "Uzbekistan",
-      "isAdmin": false,
-      "isSuperAdmin": false,
+      "isAdmin": true,
       "fullName": "Saidislom Abdumalikov",
       "lastName": "Abdumalikov",
       "username": "saidislom_a",
@@ -88,15 +87,120 @@
       "premiumCode": "PTU-PDKG-AR2P",
       "premiumTier": "Full Premium",
       "isRegistered": true,
+      "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
       "registeredAt": "2026-08-22",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "lastPromptMsgId": 492
+      "lastPromptMsgId": 615
+    },
+    "8383695828": {
+      "lang": "uz",
+      "phone": "+998336565688",
+      "userId": 8383695828,
+      "country": "Uzbekistan",
+      "isAdmin": false,
+      "fullName": "Mirzausmon Mansurov",
+      "lastName": "Mansurov",
+      "username": "polandM7",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "fileId": "BQACAgIAAxkBAAICWWqKmjwvGEFkARGIV0ZefUJyJx2CAALXqwACTCpQSJpFFo42hE64PQQ",
+          "status": "reviewing",
+          "fileName": "Mirzausmon.JPG",
+          "fileType": "document",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "firstName": "M7",
+      "isPremium": true,
+      "waitingFor": null,
+      "premiumCode": "PTU-567D-B00B",
+      "premiumTier": "Full Premium",
+      "isRegistered": true,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "lastPromptMsgId": 619
     }
   },
   "promoCodes": {
+    "PTU-567D-B00B": {
+      "code": "PTU-567D-B00B",
+      "tier": "Full Premium",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 8383695828,
+      "assignedUserId": 8383695828,
+      "usedByUserName": "Mirzausmon Mansurov",
+      "assignedUserName": "Mirzausmon Mansurov"
+    },
     "PTU-G7V4-9UCU": {
       "code": "PTU-G7V4-9UCU",
       "tier": "Full Premium",
@@ -601,6 +705,16 @@
       "program": "International Relations (M.A)",
       "university": "Jagiellonian University",
       "submittedAt": "2024-10-02"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "4AE700",
+      "action": "CLEAR_LOGS",
+      "adminId": 5059829001,
+      "details": "Cleared all previous audit logs.",
+      "adminName": "Super Admin",
+      "timestamp": "2026-08-23 07:04:20"
     }
   ]
 }

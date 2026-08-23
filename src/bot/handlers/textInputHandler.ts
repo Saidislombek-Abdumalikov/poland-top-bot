@@ -1,6 +1,11 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { getAdminUsersListKeyboard } from "../keyboards/adminKeyboards";
+import { authenticatePasscode, startAdminSession } from "../services/auth";
+import {
+  getAdminDashboardKeyboard,
+  getSuperAdminDashboardKeyboard,
+  getAdminUsersListKeyboard,
+} from "../keyboards/adminKeyboards";
 import { getMainMenuKeyboard, getOnboardingDegreeKeyboard } from "../keyboards/menuKeyboards";
 import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -195,6 +200,97 @@ export function setupTextInputHandler(bot: Bot) {
     }
 
     const user = db.getUser(userId);
+
+    // ================= SECURE ADMIN AUTHENTICATION INPUT =================
+    if (user.waitingFor === "admin_auth") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const secret = text.trim();
+      const authenticatedRole = authenticatePasscode(secret);
+
+      if (authenticatedRole === "super_admin") {
+        startAdminSession(userId, "super_admin");
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Super Admin",
+          "SUPER_ADMIN_LOGIN",
+          "Authenticated successfully into Super Admin Master session via prompt",
+          undefined,
+          "super_admin"
+        );
+        await ctx.reply(
+          `👑 <b>Super Admin Authentication Successful!</b>\n\n` +
+          `Welcome, Boss. Master Command HQ and complete audit logs are unlocked.`,
+          { parse_mode: "HTML" }
+        );
+        const allAdmins = db.getAllAdmins(true);
+        const auditLogs = db.getAuditLogs(100);
+        const allUsers = db.getAllUsers();
+        const kb = getSuperAdminDashboardKeyboard(
+          {
+            adminsCount: allAdmins.length,
+            auditLogsCount: auditLogs.length,
+            usersCount: allUsers.length,
+          },
+          user.lang
+        );
+        await ctx.reply(
+          user.lang === "uz"
+            ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>Peak Access Level:</b> Super Administrator (Boss)`
+            : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>Peak Access Level:</b> Super Administrator (Boss)`,
+          { parse_mode: "HTML", reply_markup: kb }
+        );
+      } else if (authenticatedRole === "admin") {
+        startAdminSession(userId, "admin");
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Admin",
+          "ADMIN_LOGIN",
+          "Authenticated successfully into Regular Admin session via prompt",
+          undefined,
+          "admin"
+        );
+        await ctx.reply(
+          `✅ <b>Administrator Authentication Successful!</b>\n\n` +
+          `Admin CRM panel unlocked.`,
+          { parse_mode: "HTML" }
+        );
+        const kb = getAdminDashboardKeyboard(
+          {
+            usersCount: db.getAllUsers().length,
+            appsCount: db.getAllApplications().length,
+            pendingDocsCount: db.getPendingDocuments().length,
+            nawaCount: db.getAllNawaApplications().length,
+            reviewsCount: db.getAllReviews().length,
+            adminsCount: db.getAllAdmins(false).length,
+          },
+          user.lang,
+          false
+        );
+        await ctx.reply(
+          user.lang === "uz"
+            ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n━━━━━━━━━━━━━━━━━━━━`
+            : `🎛️ <b>PTU Admin CRM Dashboard</b>\n━━━━━━━━━━━━━━━━━━━━`,
+          { parse_mode: "HTML", reply_markup: kb }
+        );
+      } else {
+        db.logAdminAction(
+          userId,
+          ctx.from?.first_name || "Unknown",
+          "FAILED_LOGIN_ATTEMPT",
+          "Failed authentication attempt with invalid passcode",
+          undefined,
+          "admin",
+          "failure"
+        );
+        await ctx.reply(
+          `⛔ <b>Authentication Failed:</b> Invalid credentials.`,
+          { parse_mode: "HTML" }
+        );
+      }
+      return;
+    }
 
     // ================= UPFRONT STUDENT ONBOARDING STEPS =================
     if (!user.isRegistered && !user.isAdmin) {

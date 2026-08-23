@@ -186,14 +186,21 @@ export interface PromoCodeRecord {
   isActive: boolean;
 }
 
+export type AdminRole = "super_admin" | "admin" | null;
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
-  adminId: number;
-  adminName: string;
+  actorId: number;
+  actorName: string;
+  actorRole: "super_admin" | "admin" | "system";
   action: string;
   target?: string;
   details: string;
+  status: "success" | "failure";
+  // Backward compatibility alias properties
+  adminId?: number;
+  adminName?: string;
 }
 
 export interface UserSessionData {
@@ -211,6 +218,8 @@ export interface UserSessionData {
   isRegistered: boolean;
   isAdmin: boolean;
   isSuperAdmin?: boolean;
+  adminRole?: AdminRole;
+  adminSessionExpiresAt?: number;
   isPremium: boolean;
   premiumTier: PremiumTier;
   premiumCode?: string;
@@ -231,6 +240,7 @@ export interface UserSessionData {
     | "premium_code"
     | "review_text"
     | "assistant_question"
+    | "admin_auth"
     | "admin_feedback_app"
     | "admin_feedback_doc"
     | "admin_create_promo"
@@ -244,6 +254,7 @@ export interface UserSessionData {
     | "student_review_program"
     | "admin_add_review"
     | "admin_edit_review_text"
+    | "admin_super_appoint_user"
     | null;
   waitingPayload?: any;
   lastPromptMsgId?: number;
