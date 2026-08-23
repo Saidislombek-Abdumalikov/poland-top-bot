@@ -1,0 +1,78 @@
+import { Bot, GrammyError, HttpError } from "grammy";
+import { config, validateConfig } from "./config";
+import { setupStartHandler } from "./handlers/startHandler";
+import { setupUniversityHandler } from "./handlers/universityHandler";
+import { setupProgramHandler } from "./handlers/programHandler";
+import { setupNawaHandler } from "./handlers/nawaHandler";
+import { setupDocumentHandler } from "./handlers/documentHandler";
+import { setupExamHandler } from "./handlers/examHandler";
+import { setupPremiumHandler } from "./handlers/premiumHandler";
+import { setupProfileHandler } from "./handlers/profileHandler";
+import { setupTextInputHandler } from "./handlers/textInputHandler";
+import { setupAdminHandler } from "./handlers/adminHandler";
+import { setupReviewHandler } from "./handlers/reviewHandler";
+
+export function createBot(token?: string) {
+  const activeToken = token || config.botToken;
+
+  if (!activeToken) {
+    throw new Error("Missing TELEGRAM_BOT_TOKEN. Please provide a valid token from @BotFather.");
+  }
+
+  const bot = new Bot(activeToken);
+
+  // Error handling
+  bot.catch((err) => {
+    const ctx = err.ctx;
+    console.error(`Error while handling update ${ctx.update.update_id}:`);
+    const e = err.error;
+    if (e instanceof GrammyError) {
+      console.error("Grammy error in request:", e.description);
+    } else if (e instanceof HttpError) {
+      console.error("Could not contact Telegram:", e);
+    } else {
+      console.error("Unknown error:", e);
+    }
+  });
+
+  // Setup all feature handlers
+  setupStartHandler(bot);
+  setupUniversityHandler(bot);
+  setupProgramHandler(bot);
+  setupNawaHandler(bot);
+  setupDocumentHandler(bot);
+  setupExamHandler(bot);
+  setupPremiumHandler(bot);
+  setupReviewHandler(bot);
+  setupProfileHandler(bot);
+  setupTextInputHandler(bot);
+  setupAdminHandler(bot);
+
+  return bot;
+}
+
+export async function startBot(token?: string) {
+  validateConfig();
+  const activeToken = token || config.botToken;
+
+  if (!activeToken) {
+    console.error("❌ Cannot start Telegram Bot: BOT_TOKEN is missing.");
+    console.log("👉 How to fix: Set BOT_TOKEN in your .env file or run with BOT_TOKEN=your_token");
+    return;
+  }
+
+  const bot = createBot(activeToken);
+
+  console.log("🚀 Starting Poland Top Universities (PTU) Telegram Bot...");
+  await bot.start({
+    onStart: (botInfo) => {
+      console.log(`✅ PTU Bot is running as @${botInfo.username} (ID: ${botInfo.id})`);
+      console.log("🇵🇱 Universities, Programs, NAWA, Exams & Document Tracker ready!");
+    },
+  });
+}
+
+// Auto-run if executed directly
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("index.ts") || process.argv[1]?.endsWith("index.js")) {
+  startBot();
+}

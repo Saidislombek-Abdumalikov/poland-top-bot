@@ -1,0 +1,10 @@
+{
+  "description": "Discover and apply to top universities in Poland with a user-friendly platform that helps students find degree programs, track applications, and access resources.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

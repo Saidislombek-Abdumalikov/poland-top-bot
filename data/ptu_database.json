@@ -1,0 +1,605 @@
+{
+  "users": {
+    "5059829001": {
+      "userId": 5059829001,
+      "username": "saidislom_a",
+      "firstName": "Saidislom",
+      "lastName": "Abdumalikov",
+      "fullName": "Saidislom Abdumalikov",
+      "lang": "uz",
+      "country": "Uzbekistan",
+      "phone": "+998949480542",
+      "email": "saidilom@",
+      "preferredLevel": "Bachelor",
+      "preferredCity": "Warsaw",
+      "isRegistered": true,
+      "isAdmin": true,
+      "isPremium": true,
+      "premiumTier": "Full Premium",
+      "savedPrograms": [],
+      "documents": {
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "Passport Copy",
+            "uz": "Xorijga chiqish pasporti"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "Secondary / Bachelor Diploma + Apostille",
+            "uz": "Attestat / Diplom + Apostil"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "transcripts": {
+          "id": "transcripts",
+          "name": {
+            "en": "Academic Transcripts",
+            "uz": "Baholar varaqasi (Transkript)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "english": {
+          "id": "english",
+          "name": {
+            "en": "English Proficiency Certificate",
+            "uz": "Ingliz tili sertifikati"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Passport Photo (35x45mm)",
+            "uz": "35x45mm o'lchamdagi rasm"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "motivation": {
+          "id": "motivation",
+          "name": {
+            "en": "Motivation Letter",
+            "uz": "Motivatsion xat"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        },
+        "insurance": {
+          "id": "insurance",
+          "name": {
+            "en": "Medical Insurance",
+            "uz": "Tibbiy sug'urta polisi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-22"
+        }
+      },
+      "registeredAt": "2026-08-22",
+      "lastActiveAt": "2026-08-23",
+      "waitingFor": null,
+      "premiumCode": "PTU-PDKG-AR2P",
+      "lastPromptMsgId": 481,
+      "activeQuiz": {
+        "examId": "pol-lang-b1",
+        "currentQ": 0,
+        "answers": {},
+        "score": 0
+      }
+    }
+  },
+  "promoCodes": {
+    "PTU-PDKG-AR2P": {
+      "code": "PTU-PDKG-AR2P",
+      "tier": "Full Premium",
+      "maxUses": 100,
+      "usedCount": 0,
+      "createdAt": "2026-08-22",
+      "isExpired": true,
+      "isActive": false
+    },
+    "PTU-K85P-CMN5": {
+      "code": "PTU-K85P-CMN5",
+      "tier": "Full Premium",
+      "maxUses": 1,
+      "usedCount": 0,
+      "assignedUserId": 5059829001,
+      "assignedUserName": "Saidislom",
+      "createdAt": "2026-08-22",
+      "isExpired": false,
+      "isActive": true
+    },
+    "PTU-G7V4-9UCU": {
+      "code": "PTU-G7V4-9UCU",
+      "tier": "Full Premium",
+      "maxUses": 1,
+      "usedCount": 0,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "isActive": true
+    }
+  },
+  "applications": {},
+  "nawaApplications": {},
+  "universities": {
+    "uw": {
+      "id": "uw",
+      "name": "University of Warsaw",
+      "abbr": "UW",
+      "city": "Warsaw",
+      "type": "Public",
+      "founded": 1816,
+      "website": "https://en.uw.edu.pl",
+      "programsCount": 214,
+      "students": 42000,
+      "internationalStudents": 3800,
+      "ranking": "Top 1 in Poland (#1 Perspektywy)",
+      "logo": "UW",
+      "description": {
+        "en": "The University of Warsaw is the largest and most prestigious research university in Poland. It offers a wide array of English-medium undergraduate and graduate programs.",
+        "uz": "Varshava universiteti Polshaning eng yirik va nufuzli ilmiy tadqiqot universitetidir. Ingliz tilidagi ko'plab bakalavr va magistratura dasturlarini taklif etadi."
+      },
+      "faculties": [
+        "Faculty of Mathematics, Informatics and Mechanics",
+        "Faculty of Economic Sciences",
+        "Faculty of Law and Administration",
+        "Faculty of Physics",
+        "Faculty of Political Science and International Studies",
+        "Faculty of Management"
+      ],
+      "tuition": {
+        "eu": "Free (for Polish-taught programs)",
+        "nonEu": "2,000 – 5,000 EUR / year",
+        "english": "3,000 – 5,200 EUR / year (8,500 – 22,000 PLN)"
+      },
+      "requirements": [
+        "High School Diploma (Matura equivalent) with Apostille",
+        "English proficiency B2 (IELTS 6.0+ / TOEFL iBT 87+)",
+        "Certified translation of documents into Polish",
+        "Passport scan & ID photos"
+      ],
+      "deadline": "May 31, 2025 (October 2025 intake)"
+    },
+    "uj": {
+      "id": "uj",
+      "name": "Jagiellonian University",
+      "abbr": "JU",
+      "city": "Kraków",
+      "type": "Public",
+      "founded": 1364,
+      "website": "https://en.uj.edu.pl",
+      "programsCount": 196,
+      "students": 38000,
+      "internationalStudents": 4200,
+      "ranking": "Top 2 in Poland (#2 Perspektywy)",
+      "logo": "JU",
+      "description": {
+        "en": "One of Europe's oldest universities, founded in 1364 by King Casimir the Great. Renowned for Medicine, Law, Philosophy, and International Studies.",
+        "uz": "Yevropaning eng qadimiy universitetlaridan biri, 1364-yilda tashkil etilgan. Tibbiyot, Huquq, Falsafa va Xalqaro munosabatlar yo'nalishlarida mashhur."
+      },
+      "faculties": [
+        "Faculty of Medicine (Collegium Medicum)",
+        "Faculty of Law and Administration",
+        "Faculty of International and Political Studies",
+        "Faculty of Physics, Astronomy and Applied CS",
+        "Faculty of Biochemistry, Biophysics and Biotechnology"
+      ],
+      "tuition": {
+        "eu": "Free (for Polish-taught programs)",
+        "nonEu": "2,200 – 4,500 EUR / year",
+        "english": "4,000 – 14,000 EUR / year (Medicine: ~15,000 EUR)"
+      },
+      "requirements": [
+        "Secondary school diploma with Apostille",
+        "English B2/C1 certificate",
+        "Medical checkup certificate (for Medicine)",
+        "Entrance examination / interview (for select programs)"
+      ],
+      "deadline": "June 15, 2025"
+    },
+    "pw": {
+      "id": "pw",
+      "name": "Warsaw University of Technology",
+      "abbr": "WUT",
+      "city": "Warsaw",
+      "type": "Public",
+      "founded": 1826,
+      "website": "https://www.pw.edu.pl/engpw",
+      "programsCount": 87,
+      "students": 32000,
+      "internationalStudents": 2500,
+      "ranking": "Top 1 Technical University in Poland",
+      "logo": "PW",
+      "description": {
+        "en": "The leading technical university in Central Europe, producing top software engineers, architects, data scientists, and robotics specialists.",
+        "uz": "Markaziy Yevropadagi yetakchi texnika universiteti bo'lib, eng yaxshi dasturchilar, arxitektorlar va muhandislarni tayyorlaydi."
+      },
+      "faculties": [
+        "Faculty of Electronics and Information Technology",
+        "Faculty of Mathematics and Information Science",
+        "Faculty of Civil Engineering",
+        "Faculty of Architecture",
+        "Faculty of Power and Aeronautical Engineering"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "3,000 – 4,500 EUR / year",
+        "english": "3,000 – 4,500 EUR / year (approx. 9,000 – 19,000 PLN)"
+      },
+      "requirements": [
+        "High school diploma with Mathematics & Physics grades",
+        "English B2 certificate (IELTS 6.0+)",
+        "Entrance math exam (online)",
+        "Apostille & certified Polish translation"
+      ],
+      "deadline": "June 30, 2025"
+    },
+    "agh": {
+      "id": "agh",
+      "name": "AGH University of Krakow",
+      "abbr": "AGH",
+      "city": "Kraków",
+      "type": "Public",
+      "founded": 1919,
+      "website": "https://www.agh.edu.pl/en",
+      "programsCount": 72,
+      "students": 27000,
+      "internationalStudents": 2100,
+      "ranking": "Top 2 Technical University in Poland",
+      "logo": "AGH",
+      "description": {
+        "en": "A modern technical university with world-class laboratories, computer science centers, and strong industry partnerships with global tech giants.",
+        "uz": "Zamonaviy laboratoriyalar, IT markazlari va jahon texnologiya gigantlari bilan mustahkam hamkorlikka ega nufuzli texnika universiteti."
+      },
+      "faculties": [
+        "Faculty of Computer Science, Electronics and Telecom",
+        "Faculty of Electrical Engineering and Robotics",
+        "Faculty of Mechanical Engineering",
+        "Faculty of Energy and Fuels"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "2,000 – 3,500 EUR / year",
+        "english": "2,500 – 3,800 EUR / year (approx. 7,000 – 16,000 PLN)"
+      },
+      "requirements": [
+        "High school diploma + Apostille",
+        "IELTS 6.0 / TOEFL 80 or equivalent",
+        "Strong background in STEM subjects"
+      ],
+      "deadline": "June 10, 2025"
+    },
+    "pwr": {
+      "id": "pwr",
+      "name": "Wrocław University of Science and Technology",
+      "abbr": "PWr",
+      "city": "Wrocław",
+      "type": "Public",
+      "founded": 1945,
+      "website": "https://pwr.edu.pl/en",
+      "programsCount": 63,
+      "students": 25000,
+      "internationalStudents": 1800,
+      "ranking": "Top 3 Technical University in Poland",
+      "logo": "PWr",
+      "description": {
+        "en": "Located in Poland's Silicon Valley (Wrocław), PWr offers exceptional technical education, high graduate employment, and modern campus facilities.",
+        "uz": "Polshaning IT markazi (Vrotslav) shahrida joylashgan bo'lib, yuqori ish bilan ta'minlanish darajasi va zamonaviy kampusga ega."
+      },
+      "faculties": [
+        "Faculty of Information and Communication Technology",
+        "Faculty of Mechanical and Power Engineering",
+        "Faculty of Chemistry",
+        "Faculty of Environmental Engineering"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "2,500 – 3,500 EUR / year",
+        "english": "3,000 – 4,000 EUR / year"
+      },
+      "requirements": [
+        "Secondary education certificate + Apostille",
+        "English B2 level certificate",
+        "Math and Physics proficiency"
+      ],
+      "deadline": "May 30, 2025"
+    },
+    "amu": {
+      "id": "amu",
+      "name": "Adam Mickiewicz University",
+      "abbr": "AMU",
+      "city": "Poznań",
+      "type": "Public",
+      "founded": 1919,
+      "website": "https://amu.edu.pl/en",
+      "programsCount": 158,
+      "students": 35000,
+      "internationalStudents": 2200,
+      "ranking": "Top 3 Comprehensive University",
+      "logo": "AMU",
+      "description": {
+        "en": "One of the largest Polish universities, offering outstanding programs in Humanities, Social Sciences, Natural Sciences, and Linguistics in Poznań.",
+        "uz": "Poznan shahrida joylashgan bo'lib, Gumanitar, Ijtimoiy, Tabiiy fanlar va Tilshunoslik bo'yicha yetakchi hisoblanadi."
+      },
+      "faculties": [
+        "Faculty of Psychology and Cognitive Science",
+        "Faculty of English & Modern Languages",
+        "Faculty of Law and Administration",
+        "Faculty of Biology"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "1,800 – 3,200 EUR / year",
+        "english": "2,200 – 4,000 EUR / year"
+      },
+      "requirements": [
+        "High school diploma + Apostille",
+        "English B2 or Polish B2 (depending on track)"
+      ],
+      "deadline": "May 20, 2025"
+    },
+    "kozminski": {
+      "id": "kozminski",
+      "name": "Kozminski University",
+      "abbr": "KU",
+      "city": "Warsaw",
+      "type": "Private",
+      "founded": 1993,
+      "website": "https://www.kozminski.edu.pl/en",
+      "programsCount": 28,
+      "students": 9000,
+      "internationalStudents": 2800,
+      "ranking": "#1 Private Business University in Central Europe (FT Ranked)",
+      "logo": "KU",
+      "description": {
+        "en": "Triple-crown accredited (EQUIS, AMBA, AACSB) top-ranked international business school offering premier degrees in Management, Finance, and AI.",
+        "uz": "Xalqaro 'Triple Crown' (EQUIS, AMBA, AACSB) akkreditatsiyasiga ega, Yevropadagi yetakchi xususiy biznes va moliya universiteti."
+      },
+      "faculties": [
+        "Kozminski Business School",
+        "Kozminski Law School",
+        "Department of Finance and Banking",
+        "Center for AI and Digital Transformation"
+      ],
+      "tuition": {
+        "eu": "4,500 – 8,000 EUR / year",
+        "nonEu": "4,500 – 9,000 EUR / year (18,000 – 36,000 PLN)",
+        "english": "4,500 – 9,000 EUR / year"
+      },
+      "requirements": [
+        "High school certificate",
+        "English B2/C1 (IELTS 6.5+ / TOEFL)",
+        "Online interview & motivation essay"
+      ],
+      "deadline": "Rolling admissions (early intake encouraged)"
+    },
+    "swps": {
+      "id": "swps",
+      "name": "SWPS University of Social Sciences and Humanities",
+      "abbr": "SWPS",
+      "city": "Warsaw",
+      "type": "Private",
+      "founded": 1996,
+      "website": "https://english.swps.pl",
+      "programsCount": 41,
+      "students": 17000,
+      "internationalStudents": 2000,
+      "ranking": "#1 Private Social Sciences & Psychology University",
+      "logo": "SWPS",
+      "description": {
+        "en": "Poland's top university for Psychology, Design, Law, and Social Sciences with campuses in Warsaw, Wrocław, Poznań, Kraków, and Katowice.",
+        "uz": "Polshaning Psixologiya, Dizayn va Ijtimoiy fanlar bo'yicha 1-raqamli xususiy universiteti."
+      },
+      "faculties": [
+        "Faculty of Psychology in Warsaw",
+        "Faculty of Arts and Social Sciences",
+        "School of Form (Design)",
+        "Faculty of Law"
+      ],
+      "tuition": {
+        "eu": "3,500 – 6,500 EUR / year",
+        "nonEu": "3,500 – 7,000 EUR / year (14,000 – 28,000 PLN)",
+        "english": "3,800 – 7,000 EUR / year"
+      },
+      "requirements": [
+        "Secondary school certificate",
+        "English B2 certificate",
+        "Portfolio (for Design programs)"
+      ],
+      "deadline": "July 15, 2025"
+    },
+    "sgh": {
+      "id": "sgh",
+      "name": "SGH Warsaw School of Economics",
+      "abbr": "SGH",
+      "city": "Warsaw",
+      "type": "Public",
+      "founded": 1906,
+      "website": "https://www.sgh.waw.pl/en",
+      "programsCount": 35,
+      "students": 13000,
+      "internationalStudents": 1400,
+      "ranking": "Top #1 Economics University in Poland",
+      "logo": "SGH",
+      "description": {
+        "en": "The oldest and most prestigious economics and business university in Poland, renowned for producing ministers, CEOs, and financial leaders.",
+        "uz": "Polshaning eng qadimiy va nufuzli iqtisodiyot universiteti bo'lib, yetakchi iqtisodchilar va moliyachilarni yetishtirib chiqaradi."
+      },
+      "faculties": [
+        "Collegium of World Economy",
+        "Collegium of Economic Analysis",
+        "Collegium of Management and Finance",
+        "Collegium of Socio-Economics"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "2,500 – 4,200 EUR / year",
+        "english": "3,000 – 4,800 EUR / year (12,000 – 20,000 PLN)"
+      },
+      "requirements": [
+        "High school diploma with Mathematics emphasis",
+        "English proficiency B2+",
+        "SGH online knowledge assessment"
+      ],
+      "deadline": "June 20, 2025"
+    },
+    "pg": {
+      "id": "pg",
+      "name": "Gdańsk University of Technology",
+      "abbr": "GUT",
+      "city": "Gdańsk",
+      "type": "Public",
+      "founded": 1904,
+      "website": "https://pg.edu.pl/en",
+      "programsCount": 54,
+      "students": 16000,
+      "internationalStudents": 1300,
+      "ranking": "Top Technical University on Baltic Coast",
+      "logo": "PG",
+      "description": {
+        "en": "A historic Baltic university offering strong engineering, architecture, electronics, and maritime technology programs.",
+        "uz": "Boltiq bo'yidagi qadimiy texnika universiteti; muhandislik, IT va dengiz texnologiyalari bo'yicha mashhur."
+      },
+      "faculties": [
+        "Faculty of Electronics, Telecom and Informatics",
+        "Faculty of Civil and Environmental Engineering",
+        "Faculty of Applied Physics and Mathematics"
+      ],
+      "tuition": {
+        "eu": "Free (Polish programs)",
+        "nonEu": "2,000 – 3,500 EUR / year",
+        "english": "2,800 – 4,000 EUR / year"
+      },
+      "requirements": [
+        "High school diploma + Apostille",
+        "English B2 certificate"
+      ],
+      "deadline": "July 1, 2025"
+    }
+  },
+  "documentDefinitions": {
+    "passport": {
+      "id": "passport",
+      "name": {
+        "en": "International Passport",
+        "uz": "Xorijga Chiqish Pasporti (Zagran)"
+      },
+      "desc": {
+        "en": "Color scan of the information page with photo, valid for at least 18 months from intended intake.",
+        "uz": "Suratli ma'lumot sahifasining rangli skaner nusxasi. Amal qilish muddati kamida 18 oy bo'lishi kerak."
+      },
+      "required": true
+    },
+    "diploma": {
+      "id": "diploma",
+      "name": {
+        "en": "High School Diploma / Bachelor Degree",
+        "uz": "Attestat yoki Bakalavr Diplomi"
+      },
+      "desc": {
+        "en": "Original diploma certificate along with full academic transcript and grade sheet.",
+        "uz": "Original attestat yoki diplom hamda barcha baholar ilovasi (transkript)."
+      },
+      "required": true
+    },
+    "apostille": {
+      "id": "apostille",
+      "name": {
+        "en": "Apostille Certificate / Legalization",
+        "uz": "Apostil Muhri / Legalizatsiya"
+      },
+      "desc": {
+        "en": "Official Apostille stamp on the original diploma issued by the Ministry of Justice / Education in home country.",
+        "uz": "Adliya vazirligi yoki Ta'lim inspeksiyasi tomonidan original diplomga qo'yilgan rasmiy Apostil muhri."
+      },
+      "required": true
+    },
+    "translation": {
+      "id": "translation",
+      "name": {
+        "en": "Sworn Polish Translation (Tłumacz)",
+        "uz": "Polsha Qasamyodli Tarjimasi"
+      },
+      "desc": {
+        "en": "Translation made by a Sworn Polish Translator registered with Polish Ministry of Justice or Embassy.",
+        "uz": "Polsha Adliya vazirligi ro'yxatidagi qasamyodli tarjimon (Tłumacz Przysięgły) yoki Elchixona tarjimasi."
+      },
+      "required": true
+    },
+    "language": {
+      "id": "language",
+      "name": {
+        "en": "English Language Certificate (IELTS/Duolingo)",
+        "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+      },
+      "desc": {
+        "en": "Official IELTS (min 6.0), TOEFL (min 75), PTE, Duolingo, or University Internal English Exam pass slip.",
+        "uz": "IELTS (kamida 6.0), TOEFL (kamida 75), Duolingo (105+) yoki ichki imtihon natijasi."
+      },
+      "required": true
+    },
+    "eligibility": {
+      "id": "eligibility",
+      "name": {
+        "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+        "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+      },
+      "desc": {
+        "en": "Official confirmation that your previous diploma grants right to continue higher education in the issuing country.",
+        "uz": "Oldingi ta'lim muassasasidan diplom keyingi bosqichda o'qish huquqini berishi haqidagi ma'lumotnoma."
+      },
+      "required": true
+    },
+    "photo": {
+      "id": "photo",
+      "name": {
+        "en": "Biometric ID Photos (35x45 mm)",
+        "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+      },
+      "desc": {
+        "en": "Recent white background biometric passport-sized photo in high resolution.",
+        "uz": "Oq fondagi so'nggi 3.5x4.5 sm o'lchamdagi sifatli biometrik fotosurat."
+      },
+      "required": true
+    }
+  },
+  "reviews": [
+    {
+      "id": 1,
+      "name": "Sanjarbek Rahimov",
+      "country": "Uzbekistan",
+      "university": "University of Warsaw",
+      "program": "Computer Science (B.Sc)",
+      "rating": 5,
+      "year": "2024",
+      "text": {
+        "en": "Maktabni bitirib polshaga kirdim",
+        "uz": "Maktabni bitirib polshaga kirdim"
+      },
+      "status": "approved",
+      "submittedAt": "2024-09-15"
+    },
+    {
+      "id": 2,
+      "name": "Malika Aliyeva",
+      "country": "Uzbekistan",
+      "university": "Jagiellonian University",
+      "program": "International Relations (M.A)",
+      "rating": 5,
+      "year": "2024",
+      "text": {
+        "en": "Krakow is such a magical student city. The NAWA recognition process was super smooth with PTU guidance.",
+        "uz": "Krakov talabalar uchun ajoyib shahar. NAWA nostrifikatsiya jarayoni PTU ko'rsatmalari bilan juda oson kechdi."
+      },
+      "status": "approved",
+      "submittedAt": "2024-10-02"
+    }
+  ]
+}
