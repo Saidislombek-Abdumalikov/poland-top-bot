@@ -4,7 +4,7 @@ import { db } from "../src/bot/services/db";
 
 // Initialize Grammy bot
 const bot = createBot();
-const handleTelegramUpdate = webhookCallback(bot, "node:http");
+const handleTelegramUpdate = webhookCallback(bot, "http");
 
 export default async function handler(req: any, res: any) {
   // Health check on GET

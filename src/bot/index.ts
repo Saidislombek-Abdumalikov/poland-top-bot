@@ -80,7 +80,17 @@ export async function startBot(token?: string) {
   });
 }
 
-// Auto-run if executed directly
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("index.ts") || process.argv[1]?.endsWith("index.js")) {
+// Auto-run only if executed directly via npm run bot or tsx src/bot/index.ts
+const isDirectRun =
+  process.env.npm_lifecycle_event === "bot" ||
+  process.env.npm_lifecycle_event === "bot:dev" ||
+  (Boolean(process.argv[1]) &&
+    (process.argv[1].endsWith("src/bot/index.ts") ||
+      process.argv[1].endsWith("src\\bot\\index.ts") ||
+      process.argv[1].endsWith("src/bot/index.js") ||
+      process.argv[1].endsWith("src\\bot\\index.js")));
+
+if (isDirectRun) {
   startBot();
 }
+
