@@ -163,7 +163,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "acceptedOfertaAt": "2026-08-23T14:02:57.004Z",
+      "acceptedOfertaAt": "2026-08-23T14:07:01.138Z",
       "acceptedOfertaVersion": 1
     },
     "777101": {
@@ -323,10 +323,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 14:02:49",
+      "premiumVerifiedAt": "2026-08-23 14:06:52",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-CA01D1"
+      "premiumTransactionId": "TXN-0B1539"
     },
     "777103": {
       "lang": "en",
@@ -400,7 +400,7 @@
       },
       "isPremium": true,
       "waitingFor": null,
-      "premiumCode": "JZXY4RC3",
+      "premiumCode": "LL6RYKN5",
       "premiumTier": "NAWA_FULL",
       "isRegistered": true,
       "isSuperAdmin": false,
@@ -408,10 +408,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "acceptedOfertaAt": "2026-08-23 14:02:49",
-      "premiumVerifiedAt": "2026-08-23 14:02:49",
+      "acceptedOfertaAt": "2026-08-23 14:06:52",
+      "premiumVerifiedAt": "2026-08-23 14:06:52",
       "premiumGrantReason": "PROMO_CODE",
-      "premiumTransactionId": "TXN-B022EA",
+      "premiumTransactionId": "TXN-89606C",
       "acceptedOfertaVersion": 1
     },
     "777104": {
@@ -492,10 +492,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 14:02:49",
+      "premiumVerifiedAt": "2026-08-23 14:06:52",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-48A28A"
+      "premiumTransactionId": "TXN-F47ED4"
     },
     "777701": {
       "lang": "en",
@@ -577,7 +577,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787536976994
+      "adminSessionExpiresAt": 1787537221123
     },
     "777702": {
       "lang": "en",
@@ -741,7 +741,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787536969887
+      "adminSessionExpiresAt": 1787537212951
     },
     "888801": {
       "lang": "en",
@@ -823,7 +823,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787536976966
+      "adminSessionExpiresAt": 1787537221084
     },
     "888802": {
       "lang": "en",
@@ -905,7 +905,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787536976970
+      "adminSessionExpiresAt": 1787537221090
     },
     "999901": {
       "lang": "en",
@@ -987,7 +987,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787536976942
+      "adminSessionExpiresAt": 1787537221042
     },
     "999902": {
       "lang": "en",
@@ -1069,7 +1069,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787536976949
+      "adminSessionExpiresAt": 1787537221051
     },
     "999903": {
       "lang": "en",
@@ -1316,12 +1316,12 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787536969841
+      "adminSessionExpiresAt": 1787537212884
     }
   },
   "promoCodes": {
-    "JZXY4RC3": {
-      "code": "JZXY4RC3",
+    "LL6RYKN5": {
+      "code": "LL6RYKN5",
       "tier": "NAWA_FULL",
       "usedAt": "2026-08-23",
       "maxUses": 1,
@@ -1334,49 +1334,8 @@
     }
   },
   "transactions": {
-    "TXN-48A28A": {
-      "id": "TXN-48A28A",
-      "notes": "Refunded: User requested refund",
-      "amount": 60,
-      "source": "EXTERNAL_TRANSFER",
-      "status": "REFUNDED",
-      "userId": 777104,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777104",
-      "createdAt": "2026-08-23 14:02:49",
-      "verifiedAt": "2026-08-23 14:02:49",
-      "verifiedBy": 5059829001,
-      "verifiedByName": "Super Admin"
-    },
-    "TXN-B022EA": {
-      "id": "TXN-B022EA",
-      "notes": "Access unlocked via promo code [JZXY4RC3]",
-      "amount": 60,
-      "source": "PROMO_CODE",
-      "status": "PAID",
-      "userId": 777103,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777103",
-      "createdAt": "2026-08-23 14:02:49",
-      "promoCode": "JZXY4RC3",
-      "verifiedAt": "2026-08-23 14:02:49"
-    },
-    "TXN-B3F2CE": {
-      "id": "TXN-B3F2CE",
-      "notes": "Student sent bank transfer receipt via Telegram",
-      "amount": 60,
-      "source": "EXTERNAL_TRANSFER",
-      "status": "UNVERIFIED",
-      "userId": 777101,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777101",
-      "createdAt": "2026-08-23 14:02:49"
-    },
-    "TXN-CA01D1": {
-      "id": "TXN-CA01D1",
+    "TXN-0B1539": {
+      "id": "TXN-0B1539",
       "notes": "Confirmed in bank statement",
       "amount": 15,
       "source": "EXTERNAL_TRANSFER",
@@ -1385,8 +1344,49 @@
       "product": "NAWA",
       "currency": "USD",
       "userName": "User #777102",
-      "createdAt": "2026-08-23 14:02:49",
-      "verifiedAt": "2026-08-23 14:02:49",
+      "createdAt": "2026-08-23 14:06:52",
+      "verifiedAt": "2026-08-23 14:06:52",
+      "verifiedBy": 5059829001,
+      "verifiedByName": "Super Admin"
+    },
+    "TXN-18B954": {
+      "id": "TXN-18B954",
+      "notes": "Student sent bank transfer receipt via Telegram",
+      "amount": 60,
+      "source": "EXTERNAL_TRANSFER",
+      "status": "UNVERIFIED",
+      "userId": 777101,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777101",
+      "createdAt": "2026-08-23 14:06:52"
+    },
+    "TXN-89606C": {
+      "id": "TXN-89606C",
+      "notes": "Access unlocked via promo code [LL6RYKN5]",
+      "amount": 60,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 777103,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777103",
+      "createdAt": "2026-08-23 14:06:52",
+      "promoCode": "LL6RYKN5",
+      "verifiedAt": "2026-08-23 14:06:52"
+    },
+    "TXN-F47ED4": {
+      "id": "TXN-F47ED4",
+      "notes": "Refunded: User requested refund",
+      "amount": 60,
+      "source": "EXTERNAL_TRANSFER",
+      "status": "REFUNDED",
+      "userId": 777104,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777104",
+      "createdAt": "2026-08-23 14:06:52",
+      "verifiedAt": "2026-08-23 14:06:52",
       "verifiedBy": 5059829001,
       "verifiedByName": "Super Admin"
     }
@@ -1920,7 +1920,7 @@
     "fullApplicationNawaCurrency": "USD"
   },
   "oferta": {
-    "text": "📄 <b>POLAND TOP UNIVERSITIES — OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\nOxirgi yangilanish: {{LAST_UPDATED_DATE}}\n\nHurmatli talaba va foydalanuvchi!\nUshbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:\n\n<b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>\nPoland TOP Universities Polsha universitetlariga o'qishga kirish jarayonida axborot-maslahat, hujjatlar nazorati va arizalar bo'yicha yordam ko'rsatadi:\n• 📦 <b>NAWA:</b> ${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).\n• 💎 <b>Full Application + NAWA:</b> ${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (admin/komandamiz tomonidan to'lanadi)</b>.\n• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA ($60) paketi ichida to'liq qoplangan; NAWA ($15) rejasida esa talaba tomonidan alohida to'lanadi.\n\n<b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>\nFoydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.\n\n<b>3. QABUL QARORI VA JAVOBGARLIK</b>\nPoland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.\n\n<b>4. TO'LOV VA PROMO-KODLAR</b>\nPromo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.\n\n<b>5. MAXFIYLIK VA ROZILIK</b>\nShaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.\n\n<b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>\n«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.",
+    "text": "📄 <b>POLAND TOP UNIVERSITIES — OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\nOxirgi yangilanish: {{LAST_UPDATED_DATE}}\n\nHurmatli talaba va foydalanuvchi!\nUshbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:\n\n<b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>\n<blockquote>• 📦 <b>NAWA:</b> ${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).\n• 💎 <b>Full Application + NAWA:</b> ${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (Biz to'laymiz)</b>.\n• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA paketi ichida to'liq qoplangan; NAWA rejasida alohida to'lanadi.</blockquote>\n\n<b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>\n<blockquote>Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.</blockquote>\n\n<b>3. QABUL QARORI VA JAVOBGARLIK</b>\n<blockquote>Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.</blockquote>\n\n<b>4. TO'LOV VA PROMO-KODLAR</b>\n<blockquote>Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.</blockquote>\n\n<b>5. MAXFIYLIK VA ROZILIK</b>\n<blockquote>Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.</blockquote>\n\n<b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>\n<blockquote>«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.</blockquote>",
     "status": "published",
     "version": 1,
     "publishedAt": "2026-08-23",
@@ -1940,7 +1940,7 @@
   "reviews": [],
   "auditLogs": [
     {
-      "id": "A34141",
+      "id": "FE4F1E",
       "action": "ADMIN_PERMISSION_REVOKED",
       "status": "success",
       "target": "777702",
@@ -1950,10 +1950,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 14:02:56"
+      "timestamp": "2026-08-23 14:07:01"
     },
     {
-      "id": "7287BA",
+      "id": "C18810",
       "action": "ADMIN_PERMISSION_GRANTED",
       "status": "success",
       "target": "777702",
@@ -1963,10 +1963,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 14:02:56"
+      "timestamp": "2026-08-23 14:07:01"
     },
     {
-      "id": "318BB2",
+      "id": "B504F5",
       "action": "TEST_ACTION",
       "status": "success",
       "target": "[PROTECTED_CREDENTIAL]",
@@ -1976,72 +1976,72 @@
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:02:56"
+      "timestamp": "2026-08-23 14:07:01"
     },
     {
-      "id": "AB59D4",
+      "id": "418E2E",
       "action": "PAYMENT_REFUNDED",
       "status": "success",
-      "target": "TXN-48A28A",
+      "target": "TXN-F47ED4",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin refunded Transaction TXN-48A28A ($60). Premium revoked for User #777104.",
+      "details": "Super Admin refunded Transaction TXN-F47ED4 ($60). Premium revoked for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:02:49"
+      "timestamp": "2026-08-23 14:06:52"
     },
     {
-      "id": "F4FD30",
+      "id": "4DEBE7",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-48A28A",
+      "target": "TXN-F47ED4",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-48A28A ($60 NAWA_FULL). Premium activated for User #777104.",
+      "details": "Super Admin manually verified payment for Transaction TXN-F47ED4 ($60 NAWA_FULL). Premium activated for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:02:49"
+      "timestamp": "2026-08-23 14:06:52"
     },
     {
-      "id": "408568",
+      "id": "129D95",
       "action": "PROMO_CODE_REDEEMED",
       "status": "success",
-      "target": "JZXY4RC3",
+      "target": "LL6RYKN5",
       "actorId": 777103,
       "adminId": 777103,
-      "details": "Student successfully redeemed promo code 'JZXY4RC3' granting [NAWA_FULL] package. Transaction TXN-B022EA recorded.",
+      "details": "Student successfully redeemed promo code 'LL6RYKN5' granting [NAWA_FULL] package. Transaction TXN-89606C recorded.",
       "actorName": "User #777103",
       "actorRole": "system",
       "adminName": "User #777103",
-      "timestamp": "2026-08-23 14:02:49"
+      "timestamp": "2026-08-23 14:06:52"
     },
     {
-      "id": "8515B0",
+      "id": "AB9618",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-CA01D1",
+      "target": "TXN-0B1539",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-CA01D1 ($15 NAWA). Premium activated for User #777102.",
+      "details": "Super Admin manually verified payment for Transaction TXN-0B1539 ($15 NAWA). Premium activated for User #777102.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:02:49"
+      "timestamp": "2026-08-23 14:06:52"
     },
     {
-      "id": "07F7F5",
+      "id": "9B094B",
       "action": "TRANSACTION_CREATED",
       "status": "success",
-      "target": "TXN-B3F2CE",
+      "target": "TXN-18B954",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Created private transaction record TXN-B3F2CE (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
+      "details": "Created private transaction record TXN-18B954 (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 14:02:49"
+      "timestamp": "2026-08-23 14:06:52"
     }
   ]
 }

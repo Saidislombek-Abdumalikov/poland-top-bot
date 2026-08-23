@@ -47,25 +47,24 @@ Hurmatli talaba va foydalanuvchi!
 Ushbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:
 
 <b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>
-Poland TOP Universities Polsha universitetlariga o'qishga kirish jarayonida axborot-maslahat, hujjatlar nazorati va arizalar bo'yicha yordam ko'rsatadi:
-• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).
-• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (admin/komandamiz tomonidan to'lanadi)</b>.
-• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA ($60) paketi ichida to'liq qoplangan; NAWA ($15) rejasida esa talaba tomonidan alohida to'lanadi.
+<blockquote>• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).
+• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (Biz to'laymiz)</b>.
+• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA paketi ichida to'liq qoplangan; NAWA rejasida alohida to'lanadi.</blockquote>
 
 <b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>
-Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.
+<blockquote>Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.</blockquote>
 
 <b>3. QABUL QARORI VA JAVOBGARLIK</b>
-Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.
+<blockquote>Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.</blockquote>
 
 <b>4. TO'LOV VA PROMO-KODLAR</b>
-Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.
+<blockquote>Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.</blockquote>
 
 <b>5. MAXFIYLIK VA ROZILIK</b>
-Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.
+<blockquote>Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.</blockquote>
 
 <b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>
-«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.`;
+<blockquote>«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.</blockquote>`;
 
 export function renderOfertaText(
   template: string,

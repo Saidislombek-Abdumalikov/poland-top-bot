@@ -250,11 +250,12 @@ export function setupAdminHandler(bot: Bot) {
       await renderAdminDashboard(ctx);
     } else {
       db.setWaitingFor(userId, "admin_auth");
-      await ctx.reply(
-        "🔒 <b>Administrator Authentication Required</b>\n\n" +
-          "Please enter your administration passcode to proceed:",
+      const msg = await ctx.reply(
+        "🔒 <b>Administrator & Super Admin Authentication Required</b>\n\n" +
+          "Please enter your administration or super admin passcode to proceed:",
         { parse_mode: "HTML" }
       );
+      db.setLastPromptMsgId(userId, msg.message_id);
     }
   });
 
@@ -305,10 +306,11 @@ export function setupAdminHandler(bot: Bot) {
       await renderSuperAdminHQ(ctx);
     } else {
       db.setWaitingFor(userId, "admin_auth");
-      await ctx.reply(
-        "🔒 <b>Authentication Required</b>\n\nPlease enter your passcode:",
+      const msg = await ctx.reply(
+        "🔒 <b>Super Admin Authentication Required</b>\n\nPlease enter your Super Admin passcode:",
         { parse_mode: "HTML" }
       );
+      db.setLastPromptMsgId(userId, msg.message_id);
     }
   });
 
@@ -1300,12 +1302,16 @@ export function setupAdminHandler(bot: Bot) {
     const text = isUz
       ? `➕ <b>Yangi Promokod Yaratish</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
         `Qaysi mahsulot/paket uchun tasodifiy 8 xonali promokod yaratmoqchisiz?\n\n` +
-        `• <b>1. NAWA — $${pricing.nawaPrice}:</b> Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
-        `• <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}:</b> To'liq hujjatlar tekshiruvi va universitet arizalari`
+        `📦 <b>1. NAWA — $${pricing.nawaPrice} USD</b>\n` +
+        `<blockquote>• Standart NAWA SYRENA arizasi va yo'riqnomasi\n• Nostrifikatsiya ma'lumotlar bazasi</blockquote>\n\n` +
+        `💎 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice} USD</b>\n` +
+        `<blockquote>• Barcha hujjatlarni to'liq tekshirish va tasdiqlash\n• Universitet arizalarini to'liq yuritish\n• €${pricing.applicationFee} EUR Rasmiy Ariza To'lovi kiritilgan</blockquote>`
       : `➕ <b>Create New Promo Code</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
         `Select the package to generate a secure random 8-character promo code for:\n\n` +
-        `• <b>1. NAWA — $${pricing.nawaPrice}:</b> Standard NAWA SYRENA guidance\n` +
-        `• <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}:</b> Full document verification & university admissions`;
+        `📦 <b>1. NAWA — $${pricing.nawaPrice} USD</b>\n` +
+        `<blockquote>• Standard NAWA SYRENA guidance\n• Recognition database access</blockquote>\n\n` +
+        `💎 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice} USD</b>\n` +
+        `<blockquote>• Complete document collection & verification\n• Direct university application management\n• €${pricing.applicationFee} EUR Official Application Fee included</blockquote>`;
 
     await ctx.answerCallbackQuery();
     const kb = getAdminPromoProductSelectKeyboard(adminUser.lang, pricing);
