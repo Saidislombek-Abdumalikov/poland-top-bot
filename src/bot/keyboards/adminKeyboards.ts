@@ -118,13 +118,14 @@ export function getAdminUserDetailKeyboard(
 
   kb.text(isUz ? "🎁 Bir Martalik VIP Promokod Berish" : "🎁 Assign VIP Single-Use Promo", `admin_assign_promo_${user.userId}`).row();
 
-  // ONLY Super Admin can promote or demote administrators
+  // ONLY Super Admin can promote/demote administrators or completely delete user records
   if (isSuperAdminUser && !user.isSuperAdmin) {
     if (user.isAdmin) {
       kb.text(isUz ? "🔴 Admin Huquqini Olish" : "🔴 Demote from Admin", `admin_toggle_admin_${user.userId}`).row();
     } else {
       kb.text(isUz ? "🛡️ Admin Huquqini Berish" : "🛡️ Promote to Admin", `admin_toggle_admin_${user.userId}`).row();
     }
+    kb.text(isUz ? "🗑️ Foydalanuvchini Butunlay O'chirish" : "🗑️ Delete User Record", `admin_delete_user_${user.userId}`).row();
   }
 
   kb.text(isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Users", "admin_menu_users");
@@ -537,8 +538,9 @@ export function getSuperAdminAdminsKeyboard(
   admins.forEach((adm) => {
     if (adm.isSuperAdmin || adm.adminRole === "super_admin" || adm.userId === currentUserId) return; // Hide Super Admin from list to maintain stealth
     const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `User #${adm.userId}`);
-    kb.text(`❌ [Bo'shatish] ${name.slice(0, 12)}`, `admin_super_demote_${adm.userId}`)
-      .text(`👻 [Ghost] ${name.slice(0, 10)}`, `admin_super_ghost_${adm.userId}`)
+    kb.text(`❌ [Bo'shatish]`, `admin_super_demote_${adm.userId}`)
+      .text(`👻 [Ghost]`, `admin_super_ghost_${adm.userId}`)
+      .text(`🗑️ [O'chirish]`, `admin_super_delete_admin_${adm.userId}`)
       .row();
   });
 
@@ -581,6 +583,8 @@ export function getSuperAdminDbStatusKeyboard(lang: Language = "en"): InlineKeyb
   const isUz = lang === "uz";
   return new InlineKeyboard()
     .text(isUz ? "🔄 Cloud Syncni Majburiy Qilish" : "🔄 Force Cloud Sync Now", "admin_super_force_sync")
+    .row()
+    .text(isUz ? "⚠️ Barcha Test Ma'lumotlarni 0 ga Qaytarish (Wipe)" : "⚠️ Wipe & Reset Database to 0", "admin_super_reset_db_confirm")
     .row()
     .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
 }

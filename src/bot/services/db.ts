@@ -263,55 +263,9 @@ export class DatabaseService {
       this.data.documentDefinitions = { ...defaultDocumentDefinitions };
     }
 
-    // Seed default reviews if empty
-    if (!this.data.reviews || this.data.reviews.length === 0) {
-      this.data.reviews = [
-        {
-          id: 1,
-          name: "Sanjarbek Rahimov",
-          country: "Uzbekistan",
-          university: "University of Warsaw",
-          program: "Computer Science (B.Sc)",
-          rating: 5,
-          year: "2024",
-          text: {
-            en: "The PTU admissions roadmap was a lifesaver! Got all my documents apostilled and received my Polish visa in 3 weeks. Studying CS at UW now!",
-            uz: "PTU jamoasining yordami bilan barcha hujjatlarimni apostil qildirib, 3 haftada viza oldim. Hozir Varshava universitetida CS bo'yicha o'qiyapman!",
-          },
-          status: "approved",
-          submittedAt: "2024-09-15",
-        },
-        {
-          id: 2,
-          name: "Malika Aliyeva",
-          country: "Uzbekistan",
-          university: "Jagiellonian University",
-          program: "International Relations (M.A)",
-          rating: 5,
-          year: "2024",
-          text: {
-            en: "Krakow is such a magical student city. The NAWA recognition process was super smooth with PTU guidance.",
-            uz: "Krakov talabalar uchun ajoyib shahar. NAWA nostrifikatsiya jarayoni PTU ko'rsatmalari bilan juda oson kechdi.",
-          },
-          status: "approved",
-          submittedAt: "2024-10-02",
-        },
-        {
-          id: 3,
-          name: "Azizbek Tursunov",
-          country: "Uzbekistan",
-          university: "Warsaw University of Technology",
-          program: "Civil Engineering (B.Sc)",
-          rating: 5,
-          year: "2025",
-          text: {
-            en: "The practice exams helped me pass the technical university entrance test with an 88% score. Highly recommend!",
-            uz: "Mashq imtihonlari Polsha texnika universiteti kirish testidan 88% ball olishimga yordam berdi. Barchaga tavsiya qilaman!",
-          },
-          status: "approved",
-          submittedAt: "2025-02-10",
-        },
-      ];
+    // Initialize empty reviews array if not present
+    if (!this.data.reviews) {
+      this.data.reviews = [];
     }
 
     this.saveToDisk();
@@ -478,6 +432,96 @@ export class DatabaseService {
         (u.fullName && u.fullName.toLowerCase().includes(q)) ||
         (u.phone && u.phone.includes(q))
     );
+  }
+
+  public deleteUser(userId: number, actorId?: number): boolean {
+    if (!this.data.users[userId]) return false;
+    const targetUser = this.data.users[userId];
+    const targetName = targetUser.fullName || targetUser.username || `User #${userId}`;
+
+    // Delete user profile
+    delete this.data.users[userId];
+
+    // Delete user applications
+    for (const [appId, app] of Object.entries(this.data.applications)) {
+      if (app.userId === userId) {
+        delete this.data.applications[appId];
+      }
+    }
+
+    // Delete user NAWA applications
+    for (const [nawaId, nawa] of Object.entries(this.data.nawaApplications)) {
+      if (nawa.userId === userId) {
+        delete this.data.nawaApplications[nawaId];
+      }
+    }
+
+    // Delete user transactions
+    for (const [txnId, txn] of Object.entries(this.data.transactions)) {
+      if (txn.userId === userId) {
+        delete this.data.transactions[txnId];
+      }
+    }
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        "Super Admin",
+        "USER_DELETED",
+        `Super Admin completely deleted user ${targetName} (${userId}) and associated records.`,
+        String(userId),
+        "super_admin"
+      );
+    }
+
+    this.saveDatabase();
+    return true;
+  }
+
+  public deleteAdmin(adminUserId: number, actorId: number): { success: boolean; error?: string } {
+    if (adminUserId === config.superAdminTelegramId) {
+      return { success: false, error: "Root Super Admin cannot be deleted." };
+    }
+    const adminUser = this.data.users[adminUserId];
+    if (!adminUser) {
+      return { success: false, error: "Admin record not found." };
+    }
+
+    // Completely delete the user record from database
+    this.deleteUser(adminUserId, actorId);
+
+    this.logAdminAction(
+      actorId,
+      "Super Admin",
+      "ADMIN_DELETED",
+      `Super Admin permanently deleted administrator #${adminUserId} from system.`,
+      String(adminUserId),
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return { success: true };
+  }
+
+  public resetDatabaseToZero(superAdminId: number): boolean {
+    // Wipe all sample, test, and operational records
+    this.data.users = {};
+    this.data.applications = {};
+    this.data.nawaApplications = {};
+    this.data.promoCodes = {};
+    this.data.transactions = {};
+    this.data.reviews = [];
+    this.data.auditLogs = [];
+
+    // Re-seed essential catalog definitions
+    this.data.universities = {};
+    defaultUniversities.forEach((u) => {
+      this.data.universities[u.id] = u;
+    });
+    this.data.documentDefinitions = { ...defaultDocumentDefinitions };
+
+    this.saveDatabase();
+    return true;
   }
 
   // ================= AUDIT LOGS =================

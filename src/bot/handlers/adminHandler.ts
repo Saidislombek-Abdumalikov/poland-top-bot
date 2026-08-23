@@ -1845,6 +1845,61 @@ export function setupAdminHandler(bot: Bot) {
     } catch {}
   });
 
+  // Super Admin Delete Admin Record
+  bot.callbackQuery(/^admin_super_delete_admin_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_delete_admin_(\d+)$/);
+    if (!match) return;
+    const targetAdminId = parseInt(match[1], 10);
+
+    const res = db.deleteAdmin(targetAdminId, userId);
+    if (!res.success) {
+      await ctx.answerCallbackQuery({ text: res.error || "Cannot delete this admin." });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: `Admin #${targetAdminId} permanently deleted!` });
+    const allAdmins = db.getAllAdmins(true);
+    const kb = getSuperAdminAdminsKeyboard(allAdmins, userId, db.getUser(userId).lang);
+    try {
+      await ctx.editMessageReplyMarkup({ reply_markup: kb });
+    } catch {}
+  });
+
+  // Super Admin Delete User Record
+  bot.callbackQuery(/^admin_delete_user_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied: Only Super Admin can delete users." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_delete_user_(\d+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+
+    if (targetUserId === config.superAdminTelegramId) {
+      await ctx.answerCallbackQuery({ text: "Root Super Admin cannot be deleted." });
+      return;
+    }
+
+    const ok = db.deleteUser(targetUserId, userId);
+    if (ok) {
+      await ctx.answerCallbackQuery({ text: `User #${targetUserId} completely deleted!` });
+      await ctx.reply(`🗑️ <b>User #${targetUserId} and all associated records have been deleted permanently.</b>`, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "◀️ Talabalar Ro'yxatiga / Users List", callback_data: "admin_menu_users" }]],
+        },
+      });
+    } else {
+      await ctx.answerCallbackQuery({ text: "User not found or already deleted." });
+    }
+  });
+
   // Ghost Mode Menu: Select regular admin to impersonate
   bot.callbackQuery("admin_super_ghost_menu", async (ctx) => {
     const userId = ctx.from?.id;
@@ -2025,6 +2080,62 @@ export function setupAdminHandler(bot: Bot) {
     if (!userId || !checkSuperAdminAuth(userId)) return;
     await db.syncToCloud();
     await ctx.answerCallbackQuery({ text: "✅ Forced Supabase Cloud Sync completed!" });
+  });
+
+  // Super Admin Reset/Wipe Database to 0
+  bot.callbackQuery("admin_super_reset_db_confirm", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const text = isUz
+      ? `⚠️ <b>DIQQAT: BARCHA MA'LUMOTLARNI 0 GA TOZALASH (WIPE)</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `Bu amal barcha talabalar, adminlar, arizalar, promokodlar, tranzaksiyalar va sharhlarni <b>BUTUNLAY O'CHIRADI</b>.\n\n` +
+        `Universitetlar katalogi va hujjatlar ro'yxati saqlab qolinadi.\n\n` +
+        `<i>Haqiqatan ham barcha test ma'lumotlarni o'chirib, botni toza 0-data holatiga keltirmoqchimisiz?</i>`
+      : `⚠️ <b>WARNING: RESET ALL DATA TO ZERO (WIPE DATABASE)</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `This action will <b>PERMANENTLY DELETE</b> all users, secondary admins, applications, promo codes, financial transactions, and reviews.\n\n` +
+        `University catalogs and document definitions will be preserved.\n\n` +
+        `<i>Are you sure you want to wipe all test data and reset the bot to a clean 0-data state?</i>`;
+
+    await ctx.answerCallbackQuery();
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: isUz ? "🔴 HA, BARCHASINI O'CHIRISH (RESET)" : "🔴 YES, WIPE ALL DATA TO ZERO", callback_data: "admin_super_reset_db_execute" }],
+          [{ text: isUz ? "◀️ Bekor Qilish" : "◀️ Cancel", callback_data: "admin_super_hq" }],
+        ],
+      },
+    });
+  });
+
+  bot.callbackQuery("admin_super_reset_db_execute", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+
+    db.resetDatabaseToZero(userId);
+    await ctx.answerCallbackQuery({ text: "Database wiped and reset to 0!" });
+
+    await ctx.reply(
+      `✅ <b>0-DATA REJIMI: Barcha test ma'lumotlari muvaffaqiyatli tozalandi!</b>\n\n` +
+        `• Barcha talabalar, qo'shimcha adminlar va arizalar o'chirildi.\n` +
+        `• Tranzaksiyalar, promokodlar va audit loglar tozalandi.\n` +
+        `• Bot yangi va toza production holatida ishga tayyor.`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "◀️ Super Admin HQ", callback_data: "admin_super_hq" }]],
+        },
+      }
+    );
   });
 
   // ================= PRIVATE SUPER ADMIN FINANCIAL HQ HANDLERS =================

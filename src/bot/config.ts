@@ -8,6 +8,7 @@ export const config = {
     process.env.TELEGRAM_BOT_TOKEN ||
     "8387916648:AAG1elnfEXLhEwtOYX1r64S52vG0AECCnK0",
   superAdminPasscode: process.env.SUPER_ADMIN_PASSCODE || "super*admin",
+  superAdminTelegramId: parseInt(process.env.SUPER_ADMIN_TELEGRAM_ID || "5059829001", 10),
   advisorUsername: process.env.ADVISOR_USERNAME || "poland_admissions_bot",
   adminPasscode: process.env.ADMIN_PASSCODE || "PTUADMIN2025",
   adminIds: (process.env.ADMIN_IDS || "")
