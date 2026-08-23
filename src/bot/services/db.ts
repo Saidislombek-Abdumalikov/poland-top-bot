@@ -1597,6 +1597,93 @@ export class DatabaseService {
     return results;
   }
 
+  public getStudentsWithDocumentsInQueue(): {
+    user: UserSessionData;
+    pendingCount: number;
+    approvedCount: number;
+    correctionCount: number;
+    totalUploadedCount: number;
+    totalRequiredCount: number;
+  }[] {
+    const totalRequired = Object.keys(this.data.documentDefinitions || {}).length || 7;
+    const studentMap = new Map<
+      number,
+      {
+        user: UserSessionData;
+        pendingCount: number;
+        approvedCount: number;
+        correctionCount: number;
+        totalUploadedCount: number;
+        totalRequiredCount: number;
+      }
+    >();
+
+    Object.values(this.data.users || {}).forEach((u) => {
+      const docs = Object.values(u.documents || {});
+      const pendingCount = docs.filter((d) => d.status === "reviewing").length;
+      const approvedCount = docs.filter((d) => d.status === "approved").length;
+      const correctionCount = docs.filter((d) => d.status === "needs_correction").length;
+      const totalUploadedCount = docs.filter(
+        (d) => d.status === "reviewing" || d.status === "approved" || d.status === "needs_correction" || !!d.fileId || !!d.link
+      ).length;
+
+      // Include if student has any uploaded/reviewed documents
+      if (totalUploadedCount > 0) {
+        studentMap.set(u.userId, {
+          user: u,
+          pendingCount,
+          approvedCount,
+          correctionCount,
+          totalUploadedCount,
+          totalRequiredCount: totalRequired,
+        });
+      }
+    });
+
+    // Sort: students with pending documents first (highest pending count first), then recently active
+    return Array.from(studentMap.values()).sort((a, b) => {
+      if (b.pendingCount !== a.pendingCount) return b.pendingCount - a.pendingCount;
+      return (b.user.lastActiveAt || "").localeCompare(a.user.lastActiveAt || "");
+    });
+  }
+
+  public approveAllStudentDocuments(
+    userId: number,
+    actorId?: number,
+    actorName?: string
+  ): { approvedCount: number } {
+    const user = this.data.users[userId];
+    if (!user || !user.documents) return { approvedCount: 0 };
+
+    let count = 0;
+    const now = new Date().toISOString().split("T")[0];
+
+    Object.keys(user.documents).forEach((docKey) => {
+      const doc = user.documents[docKey];
+      if (doc.status === "reviewing" || doc.status === "needs_correction") {
+        doc.status = "approved";
+        doc.feedbackNote = undefined;
+        doc.updatedAt = now;
+        count++;
+      }
+    });
+
+    if (count > 0) {
+      if (actorId) {
+        this.logAdminAction(
+          actorId,
+          actorName || "Admin",
+          "APPROVE_ALL_DOCUMENTS",
+          `Approved all ${count} documents for student: ${user.fullName || user.username || userId}`,
+          `User #${userId}`
+        );
+      }
+      this.saveDatabase();
+    }
+
+    return { approvedCount: count };
+  }
+
   // ================= APPLICATIONS CRUD =================
   public createApplication(
     userId: number,

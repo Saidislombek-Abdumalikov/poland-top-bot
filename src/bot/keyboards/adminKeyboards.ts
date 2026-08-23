@@ -183,27 +183,129 @@ export function getAdminApplicationDetailKeyboard(app: ApplicationRecord, lang: 
 }
 
 export function getAdminPendingDocsKeyboard(
-  pendingList: { userId: number; user: UserSessionData; doc: DocumentRecord }[],
+  studentsQueue: {
+    user: UserSessionData;
+    pendingCount: number;
+    approvedCount: number;
+    correctionCount: number;
+    totalUploadedCount: number;
+    totalRequiredCount: number;
+  }[],
+  page: number = 0,
+  pageSize: number = 6,
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  if (pendingList.length === 0) {
-    kb.text(isUz ? "🎉 Tekshirish kutilayotgan hujjatlar yo'q" : "🎉 No pending documents to review", "admin_main").row();
+  if (studentsQueue.length === 0) {
+    kb.text(
+      isUz
+        ? "🎉 Tekshirish kutilayotgan talabalar yo'q"
+        : "🎉 No pending student reviews in queue",
+      "admin_menu_users"
+    ).row();
   } else {
-    pendingList.forEach((item) => {
-      const name = item.user.fullName || item.user.firstName || `User #${item.userId}`;
-      const docName = item.doc.name[lang] || item.doc.name.en;
-      kb.text(`📄 ${name.slice(0, 14)}: ${docName}`, `admin_review_doc_${item.userId}_${item.doc.id}`).row();
+    const start = page * pageSize;
+    const pageItems = studentsQueue.slice(start, start + pageSize);
+
+    pageItems.forEach((item) => {
+      const u = item.user;
+      const name = u.fullName || u.firstName || `User #${u.userId}`;
+      const badge = item.pendingCount > 0 ? "🟡" : item.correctionCount > 0 ? "🔴" : "✅";
+      const pendingLabel = item.pendingCount > 0 ? ` (${item.pendingCount} ta kutilmoqda)` : ` (${item.approvedCount}/${item.totalRequiredCount})`;
+
+      kb.text(
+        `${badge} ${name.slice(0, 16)}${pendingLabel}`,
+        `admin_review_student_docs_${u.userId}`
+      ).row();
     });
+
+    const totalPages = Math.ceil(studentsQueue.length / pageSize) || 1;
+    if (page > 0) kb.text("⬅️ Prev", `admin_queue_page_${page - 1}`);
+    if (page < totalPages - 1) kb.text("Next ➡️", `admin_queue_page_${page + 1}`);
+    if (page > 0 || page < totalPages - 1) kb.row();
   }
 
-  kb.text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+  kb.text(
+    isUz ? "👥 Barcha Talabalar Ro'yxati" : "👥 All Students Directory",
+    "admin_menu_users"
+  )
+    .row()
+    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+
   return kb;
 }
 
-export function getAdminDocReviewKeyboard(userId: number, docKey: string, lang: Language = "en"): InlineKeyboard {
+export function getAdminStudentDossierKeyboard(
+  userId: number,
+  userDocs: Record<string, DocumentRecord>,
+  docDefs: Record<string, DocumentDefinition>,
+  applications: ApplicationRecord[],
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  const docKeys = Object.keys(docDefs);
+  let hasPending = false;
+
+  docKeys.forEach((key) => {
+    const def = docDefs[key];
+    const doc = userDocs[key];
+    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 20);
+
+    if (doc && doc.status !== "missing") {
+      if (doc.status === "reviewing") {
+        hasPending = true;
+        kb.text(`🟡 [Tekshirish] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
+      } else if (doc.status === "approved") {
+        kb.text(`✅ [Tasdiqlangan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
+      } else if (doc.status === "needs_correction") {
+        kb.text(`🔴 [Tuzatishda] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
+      } else {
+        kb.text(`⚪ [Yuklanmagan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
+      }
+    } else {
+      kb.text(`⚪ [Yuklanmagan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
+    }
+  });
+
+  if (hasPending) {
+    kb.text(
+      isUz ? "⚡ Barcha Hujjatlarni Tasdiqlash" : "⚡ Approve All Pending Documents",
+      `admin_approve_all_student_docs_${userId}`
+    ).row();
+  }
+
+  if (applications.length > 0) {
+    kb.text(
+      isUz
+        ? `📋 Topshirilgan Ariza: ${applications[0].programName.slice(0, 18)}`
+        : `📋 View Application: ${applications[0].programName.slice(0, 18)}`,
+      `admin_view_app_${applications[0].id}`
+    ).row();
+  }
+
+  kb.text(
+    isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Review Queue",
+    "admin_menu_docs"
+  )
+    .text(
+      isUz ? "👤 Talaba Profiliga" : "👤 Student Profile",
+      `admin_view_user_${userId}`
+    )
+    .row()
+    .text(isUz ? "🏠 Admin Panel" : "🏠 Admin Panel", "admin_main");
+
+  return kb;
+}
+
+export function getAdminDocReviewKeyboard(
+  userId: number,
+  docKey: string,
+  lang: Language = "en"
+): InlineKeyboard {
   const isUz = lang === "uz";
   return new InlineKeyboard()
     .text(isUz ? "✅ Tasdiqlash (Qabul)" : "✅ Approve (Verified)", `admin_doc_decision_${userId}_${docKey}_approved`)
@@ -211,7 +313,8 @@ export function getAdminDocReviewKeyboard(userId: number, docKey: string, lang: 
     .row()
     .text(isUz ? "💬 Sabab Izohi Bilan Rad Etish" : "💬 Reject with Custom Reason Note", `admin_doc_reject_note_${userId}_${docKey}`)
     .row()
-    .text(isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Documents", "admin_menu_docs");
+    .text(isUz ? "📁 Talaba Dossieriga Qaytish" : "📁 Back to Student Dossier", `admin_review_student_docs_${userId}`)
+    .text(isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Queue", "admin_menu_docs");
 }
 
 export function getAdminPromoCodesKeyboard(

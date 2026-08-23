@@ -93,6 +93,7 @@ export function setupTextInputHandler(bot: Bot) {
     const document = ctx.message?.document;
     if (!userId || !document) return;
 
+    await cleanUpInput(ctx, userId);
     const user = db.getUser(userId);
 
     if (user.waitingFor === "admin_add_test_file") {
@@ -237,6 +238,7 @@ export function setupTextInputHandler(bot: Bot) {
     const photos = ctx.message?.photo;
     if (!userId || !photos || photos.length === 0) return;
 
+    await cleanUpInput(ctx, userId);
     const user = db.getUser(userId);
 
     if (user.waitingFor === "document_upload") {
@@ -696,6 +698,12 @@ export function setupTextInputHandler(bot: Bot) {
 
         await ctx.reply(`✅ Rejection note saved and sent to student for <b>${escapeHtml(docKey)}</b>!`, {
           parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "📁 Talaba Dossieriga Qaytish", callback_data: `admin_review_student_docs_${targetUserId}` }],
+              [{ text: "◀️ Hujjatlar Navbatiga", callback_data: "admin_menu_docs" }],
+            ],
+          },
         });
         return;
       }

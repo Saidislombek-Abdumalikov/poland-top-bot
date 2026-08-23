@@ -1,4 +1,4 @@
-import { Bot, Context } from "grammy";
+import { Bot, Context, InlineKeyboard } from "grammy";
 import { db } from "../services/db";
 import { config } from "../config";
 import {
@@ -18,6 +18,7 @@ import {
   getAdminApplicationsListKeyboard,
   getAdminApplicationDetailKeyboard,
   getAdminPendingDocsKeyboard,
+  getAdminStudentDossierKeyboard,
   getAdminDocReviewKeyboard,
   getAdminPromoCodesKeyboard,
   getAdminPromoProductSelectKeyboard,
@@ -813,23 +814,157 @@ export function setupAdminHandler(bot: Bot) {
     db.setLastPromptMsgId(userId, msg.message_id);
   });
 
-  // ================= 3. DOCUMENTS REVIEW =================
+  // ================= 3. DOCUMENTS REVIEW (STUDENT DOSSIER & QUEUE) =================
+  // Helper to render student dossier view
+  const renderStudentDossier = async (ctx: Context, targetUserId: number) => {
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
+    const isUz = adminUser.lang === "uz";
+
+    const student = db.getUser(targetUserId);
+    if (!student) {
+      await ctx.reply(isUz ? "Talaba topilmadi." : "Student not found.");
+      return;
+    }
+
+    const docDefs = db.getDocumentDefinitions();
+    const userDocs = student.documents || {};
+    const applications = db.getUserApplications(targetUserId);
+    const totalRequired = Object.keys(docDefs).length || 7;
+
+    const approvedList = Object.values(userDocs).filter((d) => d.status === "approved");
+    const pendingList = Object.values(userDocs).filter((d) => d.status === "reviewing");
+    const correctionList = Object.values(userDocs).filter((d) => d.status === "needs_correction");
+    const uploadedCount = Object.keys(userDocs).length;
+    const missingCount = Math.max(0, totalRequired - uploadedCount);
+    const progressPercent = Math.round((approvedList.length / totalRequired) * 100);
+
+    let appStatusText = isUz
+      ? "<i>Hozircha dastur bo'yicha ariza topshirilmagan.</i>"
+      : "<i>No degree application submitted yet.</i>";
+
+    if (applications.length > 0) {
+      appStatusText = applications
+        .map((a) => {
+          const stageBadge =
+            a.stage === "Accepted"
+              ? "✅ Qabul qilindi"
+              : a.stage === "University Review"
+              ? "🏛️ Universitet ko'rib chiqmoqda"
+              : a.stage === "Processing"
+              ? "🟡 Jarayonda"
+              : a.stage === "Action Needed"
+              ? "🔴 Harakat talab etiladi"
+              : "⚪ Topshirilgan";
+
+          return (
+            `• 🎓 <b>${escapeHtml(a.university)}</b>\n` +
+            `  📚 Dastur: <i>${escapeHtml(a.programName)}</i>\n` +
+            `  📌 Bosqich: <b>${stageBadge}</b>` +
+            (a.counselorNote ? `\n  💬 Maslahatchi izohi: <i>${escapeHtml(a.counselorNote)}</i>` : "")
+          );
+        })
+        .join("\n\n");
+    }
+
+    let checklistText = "";
+    Object.keys(docDefs).forEach((k, idx) => {
+      const def = docDefs[k];
+      const doc = userDocs[k];
+      const name = def.name[adminUser.lang] || def.name.en || k;
+
+      if (!doc || doc.status === "missing") {
+        checklistText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ⚪ Yuklanmagan (Yetishmayapti)" : "Status: ⚪ Not Uploaded (Missing)"}\n`;
+      } else if (doc.status === "approved") {
+        checklistText += `\n<b>${idx + 1}. ✅ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ✅ Tasdiqlangan" : "Status: ✅ Approved"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "") + `\n`;
+      } else if (doc.status === "reviewing") {
+        checklistText += `\n<b>${idx + 1}. 🟡 ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: 🟡 Tekshiruv Kutilmoqda" : "Status: 🟡 Under Review"}` +
+          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "") + `\n`;
+      } else if (doc.status === "needs_correction") {
+        checklistText += `\n<b>${idx + 1}. 🔴 ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: 🔴 Qayta yuklash kerak (Tuzatishda)" : "Status: 🔴 Needs Correction"}` +
+          (doc.feedbackNote ? `\n   • 💬 Izoh: <i>${escapeHtml(doc.feedbackNote)}</i>` : "") + `\n`;
+      } else {
+        checklistText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>\n   • ${isUz ? "Holati: ⚪ Yuklanmagan (Yetishmayapti)" : "Status: ⚪ Not Uploaded (Missing)"}\n`;
+      }
+    });
+
+    const text = isUz
+      ? `📁 <b>TALABA HUJJATLAR TAYYORGARLIGI (DOSSIER)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 <b>Talaba:</b> <b>${escapeHtml(student.fullName || student.firstName || "Talaba")}</b>\n` +
+        `🆔 <b>Telegram ID:</b> <code>${targetUserId}</code>\n` +
+        `📞 <b>Telefon:</b> <code>${escapeHtml(student.phone || "yo'q")}</code>\n` +
+        `🎓 <b>Daraja:</b> ${escapeHtml(student.preferredLevel || "Bakalavr")} | 💎 <b>Paket:</b> ${student.isPremium ? "Full Application + NAWA 💎" : "Oddiy ⚪"}\n\n` +
+        `📋 <b>TOPSHIRILGAN ARIZALAR:</b>\n${appStatusText}\n\n` +
+        `📊 <b>HUJJATLAR TAYYORGARLIK KO'RSATKICHI:</b>\n` +
+        `• 🎯 Umumiy tayyorgarlik: <b>${approvedList.length} / ${totalRequired} ta hujjat (${progressPercent}%)</b>\n` +
+        `• ✅ Tasdiqlangan: <b>${approvedList.length}</b> ta\n` +
+        `• 🟡 Tekshirish kutilmoqda: <b>${pendingList.length}</b> ta\n` +
+        `• 🔴 Qayta yuklash talab qilingan: <b>${correctionList.length}</b> ta\n` +
+        `• ⚪ Hali yuklanmagan: <b>${missingCount}</b> ta\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📑 <b>HUJJATLAR NAZORAT RO'YXATI:</b>${checklistText}\n` +
+        `<i>Hujjat faylini ko'rish, tasdiqlash yoki kamchilik izohini yozish uchun quyidagi tugmalardan birini bosing:</i>`
+      : `📁 <b>STUDENT DOCUMENT PREPAREDNESS (DOSSIER)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 <b>Student:</b> <b>${escapeHtml(student.fullName || student.firstName || "Student")}</b>\n` +
+        `🆔 <b>Telegram ID:</b> <code>${targetUserId}</code>\n` +
+        `📞 <b>Phone:</b> <code>${escapeHtml(student.phone || "N/A")}</code>\n` +
+        `🎓 <b>Level:</b> ${escapeHtml(student.preferredLevel || "Bachelor")} | 💎 <b>Tier:</b> ${student.isPremium ? "Full Application + NAWA 💎" : "Standard ⚪"}\n\n` +
+        `📋 <b>SUBMITTED APPLICATIONS:</b>\n${appStatusText}\n\n` +
+        `📊 <b>DOCUMENT PREPAREDNESS METRICS:</b>\n` +
+        `• 🎯 Verified readiness: <b>${approvedList.length} / ${totalRequired} documents (${progressPercent}%)</b>\n` +
+        `• ✅ Approved: <b>${approvedList.length}</b>\n` +
+        `• 🟡 Pending Review: <b>${pendingList.length}</b>\n` +
+        `• 🔴 Correction Needed: <b>${correctionList.length}</b>\n` +
+        `• ⚪ Missing / Not Uploaded: <b>${missingCount}</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📑 <b>DOCUMENT CHECKLIST:</b>${checklistText}\n` +
+        `<i>Select any document button below to inspect files or update status:</i>`;
+
+    const kb = getAdminStudentDossierKeyboard(
+      targetUserId,
+      userDocs,
+      docDefs,
+      applications,
+      adminUser.lang
+    );
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  };
+
+  // Review Queue: List of Students
   bot.callbackQuery("admin_menu_docs", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !checkAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
-    const pendingList = db.getPendingDocuments();
+    const studentsQueue = db.getStudentsWithDocumentsInQueue();
+    const totalPending = studentsQueue.reduce((acc, s) => acc + s.pendingCount, 0);
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `📁 <b>Hujjatlarni Tekshirish Navbati (${pendingList.length} ta kutilmoqda)</b>\n\n` +
-        `<i>Hujjatni ko'rish, tasdiqlash yoki qayta yuklash talab qilish uchun tanlang:</i>`
-      : `📁 <b>Documents Verification Queue (${pendingList.length} pending review)</b>\n\n` +
-        `<i>Tap any document below to view submitted files, approve, or request corrections:</i>`;
+      ? `📁 <b>Hujjatlarni Tekshirish Navbati (${studentsQueue.length} ta talaba, ${totalPending} ta kutilmoqda)</b>\n\n` +
+        `<i>Har bir talabaning hujjatlar tayyorgarligi (dossier), yuklangan va yetishmayotgan hujjatlarini ko'rish uchun talabani tanlang:</i>`
+      : `📁 <b>Document Verification Queue (${studentsQueue.length} students, ${totalPending} pending)</b>\n\n` +
+        `<i>Select a student below to view their full document preparedness, uploaded files, and missing items:</i>`;
 
-    const kb = getAdminPendingDocsKeyboard(pendingList, adminUser.lang);
+    const kb = getAdminPendingDocsKeyboard(studentsQueue, 0, 6, adminUser.lang);
 
     if (ctx.callbackQuery?.message) {
       try {
@@ -846,7 +981,94 @@ export function setupAdminHandler(bot: Bot) {
     });
   });
 
-  // View single submitted document
+  // Queue Pagination
+  bot.callbackQuery(/^admin_queue_page_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_queue_page_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const studentsQueue = db.getStudentsWithDocumentsInQueue();
+    const totalPending = studentsQueue.reduce((acc, s) => acc + s.pendingCount, 0);
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `📁 <b>Hujjatlarni Tekshirish Navbati (${studentsQueue.length} ta talaba, ${totalPending} ta kutilmoqda)</b>\n\n` +
+        `<i>Har bir talabaning hujjatlar tayyorgarligi (dossier), yuklangan va yetishmayotgan hujjatlarini ko'rish uchun talabani tanlang:</i>`
+      : `📁 <b>Document Verification Queue (${studentsQueue.length} students, ${totalPending} pending)</b>\n\n` +
+        `<i>Select a student below to view their full document preparedness, uploaded files, and missing items:</i>`;
+
+    const kb = getAdminPendingDocsKeyboard(studentsQueue, page, 6, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  // Open Student Dossier from Queue
+  bot.callbackQuery(/^admin_review_student_docs_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_review_student_docs_(\d+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    await ctx.answerCallbackQuery();
+    await renderStudentDossier(ctx, targetUserId);
+  });
+
+  // Approve All Pending Documents for Student
+  bot.callbackQuery(/^admin_approve_all_student_docs_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_approve_all_student_docs_(\d+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+
+    const { approvedCount } = db.approveAllStudentDocuments(
+      targetUserId,
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`
+    );
+
+    const student = db.getUser(targetUserId);
+    await ctx.answerCallbackQuery({
+      text: `✅ ${approvedCount} ta hujjat tasdiqlandi!`,
+    });
+
+    // Notify student in their language
+    try {
+      const isUz = student.lang === "uz";
+      const studentMsg = isUz
+        ? `🎉 <b>Barcha Hujjatlaringiz Tasdiqlandi!</b>\n\n` +
+          `Qabul komissiyasi siz topshirgan barcha hujjatlarni to'liq tekshirib, muvaffaqiyatli tasdiqladi.`
+        : `🎉 <b>All Your Documents Have Been Approved!</b>\n\n` +
+          `The admissions committee has verified and approved all your submitted documents.`;
+
+      await bot.api.sendMessage(targetUserId, studentMsg, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+          ],
+        },
+      });
+    } catch {}
+
+    await renderStudentDossier(ctx, targetUserId);
+  });
+
+  // View single document details & review
   bot.callbackQuery(/^admin_review_doc_(\d+)_(.+)$/, async (ctx) => {
     const match = ctx.callbackQuery?.data?.match(/^admin_review_doc_(\d+)_(.+)$/);
     if (!match) return;
@@ -855,11 +1077,54 @@ export function setupAdminHandler(bot: Bot) {
 
     const student = db.getUser(targetUserId);
     const doc = student.documents?.[docKey];
-    if (!doc) return;
+    const docDef = db.getDocumentDefinition(docKey);
 
     const adminId = ctx.from?.id;
     const adminUser = adminId ? db.getUser(adminId) : undefined;
     const isUz = adminUser?.lang === "uz";
+    const docDisplayName = docDef ? (docDef.name[adminUser?.lang || "en"] || docDef.name.en) : docKey;
+
+    await ctx.answerCallbackQuery();
+
+    if (!doc) {
+      // Document is missing / not uploaded yet
+      const missingText = isUz
+        ? `📁 <b>Hujjat: ${escapeHtml(docDisplayName)}</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `• 👤 Talaba: <b>${escapeHtml(student.fullName || student.firstName || "")}</b> (<code>${targetUserId}</code>)\n` +
+          `• 📞 Tel: <code>${escapeHtml(student.phone || "yo'q")}</code>\n` +
+          `• 📌 Holati: <b>⚪ HALI YUKLANMAGAN (YETISHMAYAPTI)</b>\n\n` +
+          `<i>Ushbu hujjat talaba tomonidan hali topshirilmagan.</i>`
+        : `📁 <b>Document: ${escapeHtml(docDisplayName)}</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `• 👤 Student: <b>${escapeHtml(student.fullName || student.firstName || "")}</b> (<code>${targetUserId}</code>)\n` +
+          `• 📞 Phone: <code>${escapeHtml(student.phone || "N/A")}</code>\n` +
+          `• 📌 Status: <b>⚪ NOT UPLOADED (MISSING)</b>\n\n` +
+          `<i>This document has not been submitted by the student yet.</i>`;
+
+      const missingKb = new InlineKeyboard()
+        .text(
+          isUz ? "📁 Talaba Dossieriga Qaytish" : "📁 Back to Student Dossier",
+          `admin_review_student_docs_${targetUserId}`
+        )
+        .row()
+        .text(isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Queue", "admin_menu_docs");
+
+      if (ctx.callbackQuery?.message) {
+        try {
+          await ctx.editMessageText(missingText, {
+            parse_mode: "HTML",
+            reply_markup: missingKb,
+          });
+          return;
+        } catch {}
+      }
+      await ctx.reply(missingText, {
+        parse_mode: "HTML",
+        reply_markup: missingKb,
+      });
+      return;
+    }
 
     let fileContentDesc = isUz ? "Fayl biriktirilmagan" : "No file attached";
     if (doc.link) {
@@ -869,27 +1134,26 @@ export function setupAdminHandler(bot: Bot) {
     }
 
     const text =
-      `📁 <b>Review Document: ${escapeHtml(docKey.toUpperCase())}</b>\n` +
+      `📁 <b>Review Document: ${escapeHtml(docDisplayName)}</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `• 👤 Student: <b>${escapeHtml(student.fullName || student.firstName || "")}</b> (<code>${targetUserId}</code>)\n` +
       `• 📞 Phone: <code>${escapeHtml(student.phone || "not set")}</code>\n` +
       `• 📌 Status: <b>${escapeHtml(doc.status.toUpperCase())}</b>\n` +
-      `• 📅 Updated: ${escapeHtml(doc.updatedAt)}\n\n` +
+      `• 📅 Updated: ${escapeHtml(doc.updatedAt)}` +
+      (doc.feedbackNote ? `\n• 💬 Note: <i>${escapeHtml(doc.feedbackNote)}</i>` : "") + `\n\n` +
       `${fileContentDesc}\n\n` +
       `<i>Choose an action below:</i>`;
-
-    await ctx.answerCallbackQuery();
 
     if (doc.fileId) {
       try {
         if (doc.fileType === "photo") {
           await ctx.replyWithPhoto(doc.fileId, {
-            caption: `📷 Photo for ${escapeHtml(docKey)} from ${escapeHtml(student.fullName || "")}`,
+            caption: `📷 Photo for ${escapeHtml(docDisplayName)} from ${escapeHtml(student.fullName || "")}`,
             parse_mode: "HTML",
           });
         } else {
           await ctx.replyWithDocument(doc.fileId, {
-            caption: `📄 Document ${escapeHtml(doc.fileName || "")} for ${escapeHtml(docKey)}`,
+            caption: `📄 Document ${escapeHtml(doc.fileName || "")} for ${escapeHtml(docDisplayName)}`,
             parse_mode: "HTML",
           });
         }
@@ -925,7 +1189,9 @@ export function setupAdminHandler(bot: Bot) {
       `User #${targetUserId}`
     );
 
-    await ctx.answerCallbackQuery({ text: isApproved ? "Document Approved!" : "Correction requested" });
+    await ctx.answerCallbackQuery({
+      text: isApproved ? "✅ Hujjat tasdiqlandi!" : "🔴 Qayta yuklash talab qilindi",
+    });
 
     // Notify student in their native language
     try {
@@ -967,10 +1233,8 @@ export function setupAdminHandler(bot: Bot) {
       }
     } catch {}
 
-    await ctx.editMessageText(
-      `✅ Document <b>${escapeHtml(docKey)}</b> for student <code>${targetUserId}</code> marked as <b>${decision.toUpperCase()}</b>!`,
-      { parse_mode: "HTML" }
-    );
+    // Return right back to the student's dossier view
+    await renderStudentDossier(ctx, targetUserId);
   });
 
   // Rejection with custom note
