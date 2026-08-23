@@ -784,6 +784,8 @@ export function getSuperAdminAdminsKeyboard(
 
   kb.text(isUz ? "➕ Yangi Admin Tayinlash (ID/User orqali)" : "➕ Appoint New Admin", "admin_super_appoint_prompt")
     .row()
+    .text(isUz ? "🔐 Admin Parolini O'zgartirish" : "🔐 Change Admin Password", "admin_super_change_admin_passcode_prompt")
+    .row()
     .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
 
   return kb;

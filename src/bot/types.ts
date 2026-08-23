@@ -315,6 +315,7 @@ export interface UserSessionData {
     | "admin_add_review"
     | "admin_edit_review_text"
     | "admin_super_appoint_user"
+    | "admin_super_change_admin_passcode"
     | "admin_super_create_txn_user"
     | "admin_edit_price_nawa"
     | "admin_edit_price_full"

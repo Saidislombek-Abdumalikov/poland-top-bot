@@ -3125,6 +3125,37 @@ export function setupAdminHandler(bot: Bot) {
     db.setLastPromptMsgId(userId, msg.message_id);
   });
 
+  bot.callbackQuery("admin_super_change_admin_passcode_prompt", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied: Super Admin Only" });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_super_change_admin_passcode");
+    await ctx.answerCallbackQuery();
+    const msg = await ctx.reply(
+      isUz
+        ? `🔐 <b>Admin Parolini O'zgartirish (Super Admin HQ)</b>\n\n` +
+          `Oddiy adminlar uchun <b>yangi parolni</b> kiriting (kamida 6 ta belgi):\n\n` +
+          `<i>⚠️ Eslatma: Yangi parol kiritilgandan so'ng, barcha amaldagi oddiy admin sessiyalari darhol bekor qilinadi va ular faqat yangi parol bilan kira oladilar. Xavfsizlik maqsadida kiritgan parolingiz chatdan darhol o'chiriladi.</i>`
+        : `🔐 <b>Change Admin Passcode (Super Admin HQ)</b>\n\n` +
+          `Enter the <b>new passcode</b> for standard administrators (minimum 6 characters):\n\n` +
+          `<i>⚠️ Notice: Updating the admin passcode will instantly invalidate all active normal admin sessions. For security, your input message will be immediately deleted from chat history.</i>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "◀️ Bekor Qilish / Orqaga" : "◀️ Cancel / Back", callback_data: "admin_super_admins_list" }],
+          ],
+        },
+      }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
   bot.callbackQuery("admin_super_confirm_clear_logs", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !checkSuperAdminAuth(userId)) return;

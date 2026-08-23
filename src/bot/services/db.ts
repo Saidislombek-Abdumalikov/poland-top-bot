@@ -255,6 +255,9 @@ interface DatabaseSchema {
   ofertaHistory: OfertaRecord[];
   reviews: StudentReview[];
   auditLogs: AuditLogEntry[];
+  adminPasscodeHash?: string;
+  adminPasscodeUpdatedAt?: string;
+  adminPasscodeUpdatedBy?: number;
 }
 
 export class DatabaseService {
@@ -736,6 +739,9 @@ export class DatabaseService {
     this.data.transactions = {};
     this.data.reviews = [];
     this.data.auditLogs = [];
+    this.data.adminPasscodeHash = undefined;
+    this.data.adminPasscodeUpdatedAt = undefined;
+    this.data.adminPasscodeUpdatedBy = undefined;
 
     // Re-seed essential catalog definitions
     this.data.universities = {};
@@ -1812,6 +1818,44 @@ export class DatabaseService {
 
   public getUserNawaApplications(userId: number): NawaApplicationRecord[] {
     return Object.values(this.data.nawaApplications || {}).filter((n) => n.userId === userId);
+  }
+
+  // ================= ADMIN PASSCODE MANAGEMENT =================
+  public getAdminPasscodeHash(): string | undefined {
+    return this.data.adminPasscodeHash;
+  }
+
+  public setAdminPasscode(
+    newPasscode: string,
+    actorId: number,
+    actorName: string
+  ): { success: boolean; updatedAt: string } {
+    const hash = crypto.createHash("sha256").update(newPasscode.trim()).digest("hex");
+    const now = new Date().toISOString();
+    this.data.adminPasscodeHash = hash;
+    this.data.adminPasscodeUpdatedAt = now;
+    this.data.adminPasscodeUpdatedBy = actorId;
+
+    // Invalidate all active sessions for normal admins so they must log in with new password
+    Object.values(this.data.users || {}).forEach((u) => {
+      if (!this.isSuperAdminUser(u) && (u.isAdmin || u.adminRole === "admin")) {
+        u.adminSessionExpiresAt = 0;
+        u.adminRole = null;
+        u.isAdmin = false;
+        u.sessionVersion = (u.sessionVersion || 1) + 1;
+      }
+    });
+
+    this.logAdminAction(
+      actorId,
+      actorName,
+      "CHANGE_ADMIN_PASSWORD",
+      "Super Admin updated the normal admin access password. All active normal admin sessions have been invalidated.",
+      "Security: Admin Passcode"
+    );
+
+    this.saveDatabase();
+    return { success: true, updatedAt: now };
   }
 
   // ================= TEST MATERIALS CRUD =================

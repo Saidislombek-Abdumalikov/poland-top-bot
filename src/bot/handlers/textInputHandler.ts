@@ -1383,6 +1383,61 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
+    // 11b. Super Admin Change Admin Passcode
+    if (user.waitingFor === "admin_super_change_admin_passcode") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+      if (!user.isSuperAdmin && user.adminRole !== "super_admin") return;
+
+      const isUz = user.lang === "uz";
+      const newPasscode = text.trim();
+
+      if (newPasscode.length < 6) {
+        await ctx.reply(
+          isUz
+            ? `⚠️ <b>Parol juda qisqa!</b>\nXavfsizlik talablariga ko'ra yangi parol kamida <b>6 ta belgidan</b> iborat bo'lishi kerak.`
+            : `⚠️ <b>Passcode too short!</b>\nFor security reasons, the new admin passcode must be at least <b>6 characters</b> long.`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "🔄 Qaytadan Urinib Ko'rish" : "🔄 Try Again", callback_data: "admin_super_change_admin_passcode_prompt" }],
+                [{ text: isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", callback_data: "admin_super_hq" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+
+      db.setAdminPasscode(newPasscode, userId, user.fullName || user.username || "Super Admin");
+
+      const successMsg = isUz
+        ? `✅ <b>ADMIN PAROLI MUAFFAQIYATLI O'ZGARTIRILDI!</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `• 🔐 <b>Yangi Parol:</b> <code>${escapeHtml(newPasscode)}</code>\n` +
+          `• 🛡️ <b>Amal Qilish Doirasi:</b> Barcha oddiy administratorlar\n` +
+          `• ⚠️ <b>Xavfsizlik:</b> Barcha amaldagi oddiy admin sessiyalari bekor qilindi.\n\n` +
+          `<i>Oddiy adminlar endi faqat ushbu yangi parol yordamida /admin paneliga kira oladilar.</i>`
+        : `✅ <b>ADMIN PASSCODE SUCCESSFULLY UPDATED!</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `• 🔐 <b>New Passcode:</b> <code>${escapeHtml(newPasscode)}</code>\n` +
+          `• 🛡️ <b>Scope:</b> Standard Administrators\n` +
+          `• ⚠️ <b>Security Action:</b> All active normal admin sessions have been invalidated.\n\n` +
+          `<i>Normal admins can now access /admin only using this new passcode.</i>`;
+
+      await ctx.reply(successMsg, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "🛡️ Adminlar Boshqaruvi" : "🛡️ Manage Admins", callback_data: "admin_super_admins_list" }],
+            [{ text: isUz ? "👑 Super Admin HQ" : "👑 Super Admin HQ", callback_data: "admin_super_hq" }],
+          ],
+        },
+      });
+      return;
+    }
+
     // 12. Super Admin Record External Payment / Transaction
     if (user.waitingFor === ("admin_super_create_txn_user" as any)) {
       await cleanUpInput(ctx, userId);

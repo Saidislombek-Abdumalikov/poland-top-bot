@@ -67,6 +67,40 @@ async function runSecurityTestSuite() {
     assert.equal(authenticatePasscode(""), null);
   });
 
+  test("Super Admin can change normal admin passcode, invalidating old password and sessions", () => {
+    const superAdminId = 888801;
+    const normalAdminId = 888802;
+
+    // Normal admin starts session with default password
+    assert.equal(authenticatePasscode("PTUADMIN2025"), "admin");
+    startAdminSession(normalAdminId, "admin");
+    assert.equal(isAuthorizedAdmin(normalAdminId), true);
+
+    // Super admin updates admin passcode
+    const newPasscode = "WarszawaAdmin2026!";
+    const res = db.setAdminPasscode(newPasscode, superAdminId, "Super Admin");
+    assert.equal(res.success, true);
+
+    // Old password fails
+    assert.equal(authenticatePasscode("PTUADMIN2025"), null, "Old admin passcode MUST fail");
+
+    // New password succeeds
+    assert.equal(authenticatePasscode(newPasscode), "admin", "New admin passcode MUST authenticate as admin");
+
+    // Normal admin active session was invalidated
+    assert.equal(isAuthorizedAdmin(normalAdminId), false, "Active sessions MUST be invalidated on password change");
+
+    // Normal admin can log back in with new password
+    const reauthRole = authenticatePasscode(newPasscode);
+    assert.equal(reauthRole, "admin");
+    startAdminSession(normalAdminId, "admin");
+    assert.equal(isAuthorizedAdmin(normalAdminId), true);
+
+    // Reset password back for subsequent tests
+    db.setAdminPasscode("PTUADMIN2025", superAdminId, "Super Admin");
+    assert.equal(authenticatePasscode("PTUADMIN2025"), "admin");
+  });
+
   // 3. Server-Side Session Management Tests
   test("Starting Normal Admin session grants only normal admin privileges", () => {
     const testUserId = 999901;

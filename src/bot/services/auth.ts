@@ -53,8 +53,10 @@ export function authenticatePasscode(passcode: string): AdminRole | null {
     return "super_admin";
   }
 
-  // 2. Check Normal Admin Hash
+  // 2. Check Normal Admin Hash (Dynamic DB Hash takes precedence over ENV/Default)
+  const dynamicAdminHash = db.getAdminPasscodeHash();
   const adminHash =
+    dynamicAdminHash ||
     process.env.ADMIN_PASSCODE_HASH ||
     (process.env.ADMIN_PASSCODE
       ? sha256Hash(process.env.ADMIN_PASSCODE)
