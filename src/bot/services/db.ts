@@ -142,7 +142,12 @@ export class DatabaseService {
   private initSupabase() {
     if (config.supabaseUrl && config.supabaseKey) {
       try {
-        this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
+        this.supabase = createClient(config.supabaseUrl, config.supabaseKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          },
+        });
         this.syncFromCloud().catch(() => {});
       } catch (e) {
         console.error("Supabase init error:", e);
