@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { config } from "../config";
+import { config, isSuperAdmin } from "../config";
 import {
   UserSessionData,
   PromoCodeRecord,
@@ -16,6 +16,7 @@ import {
   PremiumTier,
   AppStage,
   DocStatus,
+  AuditLogEntry,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
 
@@ -117,6 +118,7 @@ interface DatabaseSchema {
   universities: Record<string, University>;
   documentDefinitions: Record<string, DocumentDefinition>;
   reviews: StudentReview[];
+  auditLogs: AuditLogEntry[];
 }
 
 export class DatabaseService {
@@ -128,6 +130,7 @@ export class DatabaseService {
     universities: {},
     documentDefinitions: {},
     reviews: [],
+    auditLogs: [],
   };
 
   private supabase: SupabaseClient | null = null;
@@ -173,6 +176,7 @@ export class DatabaseService {
           universities: data.data.universities || this.data.universities || {},
           documentDefinitions: data.data.documentDefinitions || this.data.documentDefinitions || {},
           reviews: data.data.reviews || this.data.reviews || [],
+          auditLogs: data.data.auditLogs || this.data.auditLogs || [],
         };
         this.saveToDisk();
       } else if (error && (error.code === "PGRST116" || error.message?.includes("0 rows"))) {
@@ -232,6 +236,7 @@ export class DatabaseService {
           universities: parsed.universities || {},
           documentDefinitions: parsed.documentDefinitions || {},
           reviews: parsed.reviews || [],
+          auditLogs: parsed.auditLogs || [],
         };
       }
     } catch (e) {
@@ -362,6 +367,9 @@ export class DatabaseService {
 
   // ================= USERS CRUD =================
   public getUser(userId: number, defaults?: Partial<UserSessionData>): UserSessionData {
+    const isSuper = isSuperAdmin(userId);
+    const isAdmin = isSuper || Boolean(defaults?.isAdmin) || config.adminIds.includes(userId);
+
     if (!this.data.users[userId]) {
       const now = new Date().toISOString().split("T")[0];
       const initialDocs: Record<string, DocumentRecord> = {};
@@ -389,7 +397,8 @@ export class DatabaseService {
         preferredLevel: defaults?.preferredLevel || "Bachelor",
         preferredCity: defaults?.preferredCity || "Warsaw",
         isRegistered: false,
-        isAdmin: defaults?.isAdmin || false,
+        isAdmin: isAdmin,
+        isSuperAdmin: isSuper,
         isPremium: false,
         premiumTier: "Free",
         savedPrograms: [],
@@ -401,9 +410,18 @@ export class DatabaseService {
       this.data.users[userId] = newUser;
       this.saveDatabase();
     } else {
+      let changed = false;
+      const current = this.data.users[userId];
+
+      if (isSuper) {
+        if (!current.isAdmin || !current.isSuperAdmin) {
+          current.isAdmin = true;
+          current.isSuperAdmin = true;
+          changed = true;
+        }
+      }
+
       if (defaults) {
-        let changed = false;
-        const current = this.data.users[userId];
         if (defaults.username && current.username !== defaults.username) {
           current.username = defaults.username;
           changed = true;
@@ -416,8 +434,9 @@ export class DatabaseService {
           current.lastName = defaults.lastName;
           changed = true;
         }
-        if (changed) this.saveDatabase();
       }
+
+      if (changed) this.saveDatabase();
     }
 
     return this.data.users[userId];
@@ -435,6 +454,12 @@ export class DatabaseService {
     return Object.values(this.data.users);
   }
 
+  public getAllAdmins(): UserSessionData[] {
+    return Object.values(this.data.users).filter(
+      (u) => u.isAdmin || isSuperAdmin(u.userId) || config.adminIds.includes(u.userId)
+    );
+  }
+
   public searchUsers(query: string): UserSessionData[] {
     const q = query.toLowerCase();
     return Object.values(this.data.users).filter(
@@ -444,6 +469,42 @@ export class DatabaseService {
         (u.fullName && u.fullName.toLowerCase().includes(q)) ||
         (u.phone && u.phone.includes(q))
     );
+  }
+
+  // ================= AUDIT LOGS =================
+  public logAdminAction(
+    adminId: number,
+    adminName: string,
+    action: string,
+    details: string,
+    target?: string
+  ): AuditLogEntry {
+    if (!this.data.auditLogs) this.data.auditLogs = [];
+    const entry: AuditLogEntry = {
+      id: crypto.randomBytes(3).toString("hex").toUpperCase(),
+      timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
+      adminId,
+      adminName: adminName || `Admin #${adminId}`,
+      action,
+      target,
+      details,
+    };
+    this.data.auditLogs.unshift(entry);
+    // Keep max 500 audit logs
+    if (this.data.auditLogs.length > 500) {
+      this.data.auditLogs = this.data.auditLogs.slice(0, 500);
+    }
+    this.saveDatabase();
+    return entry;
+  }
+
+  public getAuditLogs(limit: number = 50): AuditLogEntry[] {
+    return (this.data.auditLogs || []).slice(0, limit);
+  }
+
+  public clearAuditLogs(): void {
+    this.data.auditLogs = [];
+    this.saveDatabase();
   }
 
   // ================= PROMO CODES CRUD =================

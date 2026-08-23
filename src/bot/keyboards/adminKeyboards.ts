@@ -1,5 +1,15 @@
 import { InlineKeyboard } from "grammy";
-import { UserSessionData, ApplicationRecord, PromoCodeRecord, DocumentRecord, University, DocumentDefinition, StudentReview, Language } from "../types";
+import {
+  UserSessionData,
+  ApplicationRecord,
+  PromoCodeRecord,
+  DocumentRecord,
+  University,
+  DocumentDefinition,
+  StudentReview,
+  AuditLogEntry,
+  Language,
+} from "../types";
 
 export function getAdminDashboardKeyboard(
   stats: {
@@ -8,13 +18,24 @@ export function getAdminDashboardKeyboard(
     pendingDocsCount: number;
     nawaCount: number;
     reviewsCount?: number;
+    adminsCount?: number;
+    auditLogsCount?: number;
   },
-  lang: Language = "en"
+  lang: Language = "en",
+  isSuperAdminUser: boolean = false
 ): InlineKeyboard {
   const isUz = lang === "uz";
 
-  return new InlineKeyboard()
-    .text(isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Users CRM (${stats.usersCount})`, "admin_menu_users")
+  const kb = new InlineKeyboard();
+
+  if (isSuperAdminUser) {
+    kb.text(
+      isUz ? `👑 SUPER ADMIN HQ (Master Loglar & Boshqaruv)` : `👑 SUPER ADMIN HQ (Logs & Master Control)`,
+      "admin_super_hq"
+    ).row();
+  }
+
+  kb.text(isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Users CRM (${stats.usersCount})`, "admin_menu_users")
     .text(isUz ? `📋 Arizalar (${stats.appsCount})` : `📋 Applications (${stats.appsCount})`, "admin_menu_apps")
     .row()
     .text(isUz ? `📁 Hujjatlar (${stats.pendingDocsCount} ta kutilmoqda)` : `📁 Review Queue (${stats.pendingDocsCount})`, "admin_menu_docs")
@@ -31,6 +52,8 @@ export function getAdminDashboardKeyboard(
     .row()
     .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Stats`, "admin_refresh")
     .text(isUz ? `🏠 Talaba Menyusi` : `🏠 Student Menu`, "go_main_menu");
+
+  return kb;
 }
 
 export function getAdminUsersListKeyboard(
@@ -338,4 +361,88 @@ export function getAdminReviewEditKeyboard(review: StudentReview, lang: Language
     .text(isUz ? "◀️ Sharhlar Ro'yxatiga" : "◀️ Back to Reviews", "admin_menu_reviews");
 
   return kb;
+}
+
+// ================= SUPER ADMIN KEYBOARDS =================
+export function getSuperAdminDashboardKeyboard(
+  stats: {
+    adminsCount: number;
+    auditLogsCount: number;
+    usersCount: number;
+  },
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+
+  return new InlineKeyboard()
+    .text(
+      isUz ? `📜 Barcha Admin Loglari (${stats.auditLogsCount})` : `📜 All Admin Audit Logs (${stats.auditLogsCount})`,
+      "admin_super_logs_0"
+    )
+    .row()
+    .text(
+      isUz ? `🛡️ Adminlar Boshqaruvi (${stats.adminsCount})` : `🛡️ Manage Admins (${stats.adminsCount})`,
+      "admin_super_admins_list"
+    )
+    .row()
+    .text(
+      isUz ? `🗄️ Supabase Cloud DB Holati` : `🗄️ Supabase Cloud DB Status`,
+      "admin_super_db_status"
+    )
+    .text(
+      isUz ? `🧹 Loglarni Tozalash` : `🧹 Purge Audit Logs`,
+      "admin_super_confirm_clear_logs"
+    )
+    .row()
+    .text(isUz ? `◀️ Asosiy Admin Dashboard` : `◀️ Back to Admin Dashboard`, "admin_refresh");
+}
+
+export function getSuperAdminLogsKeyboard(
+  logs: AuditLogEntry[],
+  page: number = 0,
+  pageSize: number = 5,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+  const totalPages = Math.ceil(logs.length / pageSize) || 1;
+
+  if (page > 0) kb.text("⬅️ Prev", `admin_super_logs_${page - 1}`);
+  if (page < totalPages - 1) kb.text("Next ➡️", `admin_super_logs_${page + 1}`);
+  if (page > 0 || page < totalPages - 1) kb.row();
+
+  kb.text(isUz ? `🔄 Yangilash` : `🔄 Refresh Logs`, `admin_super_logs_${page}`)
+    .row()
+    .text(isUz ? `◀️ Super Admin HQ` : `◀️ Super Admin HQ`, "admin_super_hq");
+
+  return kb;
+}
+
+export function getSuperAdminAdminsKeyboard(
+  admins: UserSessionData[],
+  superAdminId: number,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  admins.forEach((adm) => {
+    if (adm.userId === superAdminId) return; // Hide Super Admin from list to maintain stealth
+    const name = adm.fullName || adm.firstName || `@${adm.username}` || `User #${adm.userId}`;
+    kb.text(`❌ [Bo'shatish] ${name.slice(0, 16)}`, `admin_super_demote_${adm.userId}`).row();
+  });
+
+  kb.text(isUz ? "➕ Yangi Admin Tayinlash (ID/User orqali)" : "➕ Appoint New Admin", "admin_super_appoint_prompt")
+    .row()
+    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
+
+  return kb;
+}
+
+export function getSuperAdminDbStatusKeyboard(lang: Language = "en"): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "🔄 Cloud Syncni Majburiy Qilish" : "🔄 Force Cloud Sync Now", "admin_super_force_sync")
+    .row()
+    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
 }

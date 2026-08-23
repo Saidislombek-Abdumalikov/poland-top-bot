@@ -186,6 +186,16 @@ export interface PromoCodeRecord {
   isActive: boolean;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  adminId: number;
+  adminName: string;
+  action: string;
+  target?: string;
+  details: string;
+}
+
 export interface UserSessionData {
   userId: number;
   username?: string;
@@ -200,6 +210,7 @@ export interface UserSessionData {
   preferredCity?: string;
   isRegistered: boolean;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
   isPremium: boolean;
   premiumTier: PremiumTier;
   premiumCode?: string;

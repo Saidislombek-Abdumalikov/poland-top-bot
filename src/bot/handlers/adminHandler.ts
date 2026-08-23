@@ -1,6 +1,6 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { config, isAdminUser } from "../config";
+import { config, isAdminUser, isSuperAdmin } from "../config";
 import {
   getAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
@@ -17,6 +17,10 @@ import {
   getAdminDocDefEditKeyboard,
   getAdminReviewsListKeyboard,
   getAdminReviewEditKeyboard,
+  getSuperAdminDashboardKeyboard,
+  getSuperAdminLogsKeyboard,
+  getSuperAdminAdminsKeyboard,
+  getSuperAdminDbStatusKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -25,6 +29,7 @@ export function setupAdminHandler(bot: Bot) {
   // Helper to check authorization
   const checkAdminAuth = (userId?: number): boolean => {
     if (!userId) return false;
+    if (isSuperAdmin(userId)) return true;
     const user = db.getUser(userId);
     return user.isAdmin || isAdminUser(userId);
   };
@@ -50,6 +55,7 @@ export function setupAdminHandler(bot: Bot) {
     const nawaApps = db.getAllNawaApplications();
     const allRevs = db.getAllReviews();
     const pendingRevs = db.getPendingReviews();
+    const isSuper = isSuperAdmin(userId);
 
     const text = isUz
       ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n` +
@@ -78,8 +84,11 @@ export function setupAdminHandler(bot: Bot) {
         pendingDocsCount: pendingDocs.length,
         nawaCount: nawaApps.length,
         reviewsCount: allRevs.length,
+        adminsCount: db.getAllAdmins().length,
+        auditLogsCount: db.getAuditLogs().length,
       },
-      user.lang
+      user.lang,
+      isSuper
     );
 
     if (ctx.callbackQuery?.message) {
@@ -110,8 +119,11 @@ export function setupAdminHandler(bot: Bot) {
     const args = text.split(" ").slice(1);
     const passedCode = args[0]?.trim();
 
-    if (passedCode && passedCode === config.adminPasscode) {
+    if (isSuperAdmin(userId)) {
+      db.updateUser(userId, { isAdmin: true, isSuperAdmin: true });
+    } else if (passedCode && passedCode === config.adminPasscode) {
       db.updateUser(userId, { isAdmin: true });
+      db.logAdminAction(userId, ctx.from?.first_name || "Admin", "LOGIN", "Logged into Admin CRM using passcode");
       await ctx.reply("✅ <b>Admin access unlocked successfully!</b>", { parse_mode: "HTML" });
     }
 
@@ -1265,5 +1277,268 @@ export function setupAdminHandler(bot: Bot) {
       { parse_mode: "HTML" }
     );
     db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  // ================= 9. SUPER ADMIN HQ & AUDIT LOGS =================
+  bot.callbackQuery("admin_super_hq", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "⛔ Access Denied: Super Admin Only" });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const allAdmins = db.getAllAdmins();
+    const auditLogs = db.getAuditLogs(100);
+    const allUsers = db.getAllUsers();
+
+    const text = isUz
+      ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🆔 Sizning ID: <code>${userId}</code> (Tizim egasi)\n\n` +
+        `📊 <b>Nazorat Ko'rsatkichlari:</b>\n` +
+        `• 🛡️ Faol Oddiy Adminlar: <b>${Math.max(0, allAdmins.length - 1)}</b> ta\n` +
+        `• 📜 Yozilgan Audit Loglar: <b>${auditLogs.length}</b> ta\n` +
+        `• 👥 Jami Talabalar Bazasi: <b>${allUsers.length}</b> ta\n` +
+        `• 🗄️ Cloud DB Sync: <b>Supabase PostgreSQL (Live)</b>\n\n` +
+        `<i>Bu bo'lim faqat sizga ko'rinadi. Oddiy adminlar sizning mavjudligingizni bilmaydi.</i>`
+      : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🆔 Your Telegram ID: <code>${userId}</code> (Master Owner)\n\n` +
+        `📊 <b>System Master Overview:</b>\n` +
+        `• 🛡️ Active Regular Admins: <b>${Math.max(0, allAdmins.length - 1)}</b>\n` +
+        `• 📜 Recorded Audit Logs: <b>${auditLogs.length}</b>\n` +
+        `• 👥 Total User Database: <b>${allUsers.length}</b>\n` +
+        `• 🗄️ Cloud Storage: <b>Supabase PostgreSQL (Live)</b>\n\n` +
+        `<i>This command center is 100% invisible to regular admins.</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminDashboardKeyboard(
+      {
+        adminsCount: allAdmins.length,
+        auditLogsCount: auditLogs.length,
+        usersCount: allUsers.length,
+      },
+      adminUser.lang
+    );
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery(/^admin_super_logs_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "⛔ Access Denied" });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_logs_(\d+)$/);
+    const page = match ? parseInt(match[1], 10) : 0;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const allLogs = db.getAuditLogs(200);
+    const pageSize = 5;
+    const totalPages = Math.ceil(allLogs.length / pageSize) || 1;
+    const start = page * pageSize;
+    const pageLogs = allLogs.slice(start, start + pageSize);
+
+    let logsText = "";
+    if (pageLogs.length === 0) {
+      logsText = isUz ? "<i>Hozircha audit loglari mavjud emas.</i>" : "<i>No audit logs recorded yet.</i>";
+    } else {
+      logsText = pageLogs
+        .map(
+          (l, i) =>
+            `<b>${start + i + 1}. [${l.timestamp}]</b>\n` +
+            `👤 <b>Admin:</b> ${escapeHtml(l.adminName)} (<code>${l.adminId}</code>)\n` +
+            `⚡ <b>Harakat / Action:</b> <code>${escapeHtml(l.action)}</code>\n` +
+            (l.target ? `🎯 <b>Nishon / Target:</b> <code>${escapeHtml(l.target)}</code>\n` : "") +
+            `📝 <b>Tafsilot / Details:</b> ${escapeHtml(l.details)}`
+        )
+        .join("\n\n━━━━━━━━━━━━━━━━━━━━\n\n");
+    }
+
+    const header = isUz
+      ? `📜 <b>ADMIN AUDIT VA XAVFSIZLIK LOGLARI (Sahifa ${page + 1}/${totalPages})</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `<i>Adminlar tomonidan qilingan barcha harakatlar:</i>\n\n`
+      : `📜 <b>ADMIN AUDIT & SECURITY LOGS (Page ${page + 1}/${totalPages})</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `<i>Full chronological timeline of all admin actions across the bot:</i>\n\n`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminLogsKeyboard(allLogs, page, pageSize, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(header + logsText, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(header + logsText, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery("admin_super_admins_list", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const allAdmins = db.getAllAdmins();
+    const regularAdmins = allAdmins.filter((a) => a.userId !== config.superAdminId);
+
+    const text = isUz
+      ? `🛡️ <b>ADMINLAR BOSHQARUVI</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👑 Super Admin: <code>${config.superAdminId}</code> (Siz - Maxfiy)\n` +
+        `• 👤 Faol Oddiy Adminlar: <b>${regularAdmins.length}</b> ta\n\n` +
+        `<i>Adminlikdan bo'shatish uchun pastdagi tugmani bosing yoki yangi admin qo'shing:</i>`
+      : `🛡️ <b>ADMIN MANAGEMENT</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👑 Super Admin: <code>${config.superAdminId}</code> (You - Master)\n` +
+        `• 👤 Active Regular Admins: <b>${regularAdmins.length}</b>\n\n` +
+        `<i>Tap an admin to revoke access, or appoint a new admin:</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminAdminsKeyboard(allAdmins, config.superAdminId, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery(/^admin_super_demote_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_demote_(\d+)$/);
+    if (!match) return;
+    const targetAdminId = parseInt(match[1], 10);
+
+    if (targetAdminId === config.superAdminId) {
+      await ctx.answerCallbackQuery({ text: "Cannot demote Super Admin" });
+      return;
+    }
+
+    const targetUser = db.getUser(targetAdminId);
+    db.updateUser(targetAdminId, { isAdmin: false });
+
+    db.logAdminAction(
+      userId,
+      "Super Admin",
+      "REVOKE_ADMIN",
+      `Revoked admin privileges from User #${targetAdminId} (${targetUser.fullName || targetUser.username || "Unknown"})`,
+      targetAdminId.toString()
+    );
+
+    await ctx.answerCallbackQuery({ text: `Admin #${targetAdminId} privileges revoked!` });
+    const allAdmins = db.getAllAdmins();
+    const kb = getSuperAdminAdminsKeyboard(allAdmins, config.superAdminId, db.getUser(userId).lang);
+    try {
+      await ctx.editMessageReplyMarkup({ reply_markup: kb });
+    } catch {}
+  });
+
+  bot.callbackQuery("admin_super_appoint_prompt", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    const adminUser = db.getUser(userId);
+
+    db.setWaitingFor(userId, "admin_super_appoint_user" as any);
+    await ctx.answerCallbackQuery();
+    const msg = await ctx.reply(
+      adminUser.lang === "uz"
+        ? "➕ <b>Yangi Admin Tayinlash:</b>\nAdmin qilmoqchi bo'lgan foydalanuvchining <b>Telegram User ID</b> raqamini yoki <b>@username</b> ini yuboring:"
+        : "➕ <b>Appoint New Admin:</b>\nPlease send the <b>Telegram User ID</b> or <b>@username</b> of the user:",
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery("admin_super_confirm_clear_logs", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    db.clearAuditLogs();
+    db.logAdminAction(userId, "Super Admin", "CLEAR_LOGS", "Cleared all previous audit logs.");
+    await ctx.answerCallbackQuery({ text: "All audit logs cleared!" });
+    const allAdmins = db.getAllAdmins();
+    const allUsers = db.getAllUsers();
+    const kb = getSuperAdminDashboardKeyboard(
+      {
+        adminsCount: allAdmins.length,
+        auditLogsCount: 1,
+        usersCount: allUsers.length,
+      },
+      db.getUser(userId).lang
+    );
+    try {
+      await ctx.editMessageReplyMarkup({ reply_markup: kb });
+    } catch {}
+  });
+
+  bot.callbackQuery("admin_super_db_status", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const users = db.getAllUsers();
+    const apps = db.getAllApplications();
+    const nawa = db.getAllNawaApplications();
+    const revs = db.getAllReviews();
+
+    const text = isUz
+      ? `🗄️ <b>SUPABASE CLOUD DATABASE HOLATI</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 🌐 Provider: <b>Supabase Cloud (PostgreSQL)</b>\n` +
+        `• 🔗 URL: <code>${config.supabaseUrl}</code>\n` +
+        `• 🟢 Cloud Sync: <b>Faol (Real-time auto-sync)</b>\n\n` +
+        `📊 <b>Saqlangan Yozuvlar:</b>\n` +
+        `• 👥 Foydalanuvchilar: <b>${users.length}</b> ta\n` +
+        `• 📋 Arizalar: <b>${apps.length}</b> ta\n` +
+        `• 🏛️ NAWA Arizalari: <b>${nawa.length}</b> ta\n` +
+        `• ⭐ Sharhlar: <b>${revs.length}</b> ta\n` +
+        `• 📜 Audit Loglar: <b>${db.getAuditLogs().length}</b> ta\n\n` +
+        `<i>Ma'lumotlar har qanday o'zgarishda darhol Supabase bulutiga zaxiralanadi.</i>`
+      : `🗄️ <b>SUPABASE CLOUD DATABASE STATUS</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 🌐 Provider: <b>Supabase Cloud (PostgreSQL)</b>\n` +
+        `• 🔗 URL: <code>${config.supabaseUrl}</code>\n` +
+        `• 🟢 Cloud Sync: <b>Active (Real-time auto-sync)</b>\n\n` +
+        `📊 <b>Stored Data Entities:</b>\n` +
+        `• 👥 Users: <b>${users.length}</b>\n` +
+        `• 📋 Applications: <b>${apps.length}</b>\n` +
+        `• 🏛️ NAWA Applications: <b>${nawa.length}</b>\n` +
+        `• ⭐ Reviews: <b>${revs.length}</b>\n` +
+        `• 📜 Audit Logs: <b>${db.getAuditLogs().length}</b>\n\n` +
+        `<i>All records are synchronized to Supabase Cloud on every write.</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminDbStatusKeyboard(adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery("admin_super_force_sync", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !isSuperAdmin(userId)) return;
+    await db.syncToCloud();
+    await ctx.answerCallbackQuery({ text: "✅ Forced Supabase Cloud Sync completed!" });
   });
 }

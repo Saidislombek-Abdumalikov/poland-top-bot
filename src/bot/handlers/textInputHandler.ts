@@ -1,8 +1,9 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
+import { isSuperAdmin } from "../config";
 import { getAdminUsersListKeyboard } from "../keyboards/adminKeyboards";
 import { getMainMenuKeyboard, getOnboardingDegreeKeyboard } from "../keyboards/menuKeyboards";
-import { DegreeLevel, PremiumTier } from "../types";
+import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
 import { escapeHtml } from "../utils/format";
 
 export function setupTextInputHandler(bot: Bot) {
@@ -740,6 +741,49 @@ export function setupTextInputHandler(bot: Bot) {
             ],
           },
         });
+      }
+      return;
+    }
+
+    // 11. Super Admin Appoint User
+    if (user.waitingFor === ("admin_super_appoint_user" as any)) {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+      if (!isSuperAdmin(userId)) return;
+
+      const q = text.replace("@", "").trim();
+      let targetUser: UserSessionData | undefined;
+
+      if (/^\d+$/.test(q)) {
+        targetUser = db.getUser(parseInt(q, 10));
+      } else {
+        const found = db.searchUsers(q);
+        targetUser = found[0];
+      }
+
+      if (targetUser) {
+        db.updateUser(targetUser.userId, { isAdmin: true });
+        db.logAdminAction(
+          userId,
+          "Super Admin",
+          "APPOINT_ADMIN",
+          `Appointed User #${targetUser.userId} (${targetUser.fullName || targetUser.username || "User"}) as Admin`,
+          targetUser.userId.toString()
+        );
+
+        await ctx.reply(
+          `✅ <b>Admin Successfully Appointed!</b>\n\n` +
+            `• 👤 <b>User:</b> ${escapeHtml(targetUser.fullName || targetUser.username || "User")}\n` +
+            `• 🆔 <b>Telegram ID:</b> <code>${targetUser.userId}</code>\n` +
+            `• 🛡️ <b>Role:</b> Regular Administrator\n\n` +
+            `<i>They can now use <code>/admin</code> to access the admin dashboard.</i>`,
+          { parse_mode: "HTML" }
+        );
+      } else {
+        await ctx.reply(
+          `⚠️ <b>User Not Found.</b> Make sure they have interacted with the bot at least once or enter their exact numeric Telegram ID.`,
+          { parse_mode: "HTML" }
+        );
       }
       return;
     }
