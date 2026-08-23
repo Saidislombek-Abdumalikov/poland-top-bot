@@ -1,8 +1,16 @@
-import { InlineKeyboard } from "grammy";
+import { InlineKeyboard, Keyboard } from "grammy";
 import { Language, University, Program, ExamSubject, StudentReview } from "../types";
 import { t } from "../locales";
 import { universities } from "../data/universities";
 import { programs } from "../data/programs";
+
+export function getPhoneRequestKeyboard(lang: Language): Keyboard {
+  const isUz = lang === "uz";
+  return new Keyboard()
+    .requestContact(isUz ? "📱 Telefon raqamni yuborish" : "📱 Share Phone Number")
+    .resized()
+    .oneTime();
+}
 
 export function getMainMenuKeyboard(lang: Language): InlineKeyboard {
   return new InlineKeyboard()

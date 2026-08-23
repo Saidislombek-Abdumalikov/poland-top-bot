@@ -39,103 +39,32 @@ export const defaultPricingConfig: PricingConfig = {
   lastUpdatedByName: "System",
 };
 
-export const defaultOfertaTemplate = `📄 <b>POLAND TOP UNIVERSITIES — FOYDALANISH SHARTLARI VA OMMAVIY OFERTA</b>
-
+export const defaultOfertaTemplate = `📄 <b>POLAND TOP UNIVERSITIES — OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>
 Oxirgi yangilanish: {{LAST_UPDATED_DATE}}
 
-Hurmatli foydalanuvchi!
+Hurmatli talaba va foydalanuvchi!
+Ushbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:
 
-Poland TOP Universities boti orqali xizmatlardan foydalanish, buyurtma berish, promo-koddan foydalanish yoki to‘lovni amalga oshirish orqali Siz quyidagi Foydalanish shartlari va ommaviy oferta bilan tanishganingizni, ularni tushunganingizni va qabul qilganingizni tasdiqlaysiz.
+<b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>
+Poland TOP Universities Polsha universitetlariga o'qishga kirish jarayonida axborot-maslahat, hujjatlar nazorati va arizalar bo'yicha yordam ko'rsatadi:
+• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi.
+• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima va 1-ga-1 shaxsiy koordinator.
+• 💶 <b>Rasmiy Ariza To'lovi:</b> €{{APPLICATION_FEE}} EUR (universitet yoki platforma talabiga binoan).
 
-<b>1. UMUMIY QOIDALAR</b>
+<b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>
+Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.
 
-Poland TOP Universities Polsha universitetlariga hujjat topshirish jarayonida foydalanuvchilarga hujjatlar bilan ishlash, ariza topshirish va ushbu jarayon bilan bog‘liq tashkiliy hamda texnik yordam ko‘rsatadi.
+<b>3. QABUL QARORI VA JAVOBGARLIK</b>
+Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.
 
-Xizmatlar quyidagi paketlarga bo‘linadi:
+<b>4. TO'LOV VA PROMO-KODLAR</b>
+Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.
 
-• <b>NAWA</b> — \${{NAWA_PRICE}}
-• <b>Full Application + NAWA</b> — \${{FULL_APPLICATION_NAWA_PRICE}}
+<b>5. MAXFIYLIK VA ROZILIK</b>
+Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.
 
-Ayrim ariza topshirish jarayonlarida €{{APPLICATION_FEE}} miqdorida alohida ariza to‘lovi mavjud bo‘lishi mumkin. Ushbu to‘lov xizmat narxidan alohida hisoblanadi va tegishli ariza yoki tashkilotga bog‘liq bo‘ladi.
-
-Poland TOP Universities xizmat shartlari, paketlar tarkibi va narxlariga o‘zgartirish kiritish huquqini o‘zida saqlab qoladi. Yangi shartlar e’lon qilinganidan keyingi yangi buyurtmalarga nisbatan qo‘llaniladi.
-
-<b>2. XIZMAT PAKETLARI</b>
-
-🔹 <b>NAWA — \${{NAWA_PRICE}}</b>
-NAWA paketi NAWA bilan bog‘liq hujjatlar va xizmatlarni o‘z ichiga oladi.
-
-🔹 <b>Full Application + NAWA — \${{FULL_APPLICATION_NAWA_PRICE}}</b>
-Ushbu paket NAWA xizmatlari bilan bir qatorda foydalanuvchining hujjatlarini qabul qilish va ular bilan ishlash hamda universitetga ariza topshirish jarayonida yordam ko‘rsatishni o‘z ichiga oladi.
-
-Paket tarkibi va xizmat ko‘rsatish tartibi foydalanuvchiga buyurtma berishdan oldin ko‘rsatiladi.
-
-<b>3. BUYURTMA VA TO‘LOV</b>
-
-Buyurtma foydalanuvchi tomonidan tegishli xizmat paketi tanlangan va to‘lov tasdiqlangandan so‘ng rasmiylashtiriladi.
-
-Foydalanuvchi tomonidan taqdim etilgan barcha ma’lumotlar, jumladan:
-• ism-familiya;
-• aloqa ma’lumotlari;
-• pasport va shaxsni tasdiqlovchi hujjatlar;
-• ta’limga oid ma’lumotlar;
-• sertifikatlar;
-• universitetga ariza topshirish uchun zarur bo‘lgan boshqa ma’lumot va hujjatlar
-to‘g‘ri va haqqoniy bo‘lishi kerak.
-
-Foydalanuvchi taqdim etgan ma’lumotlarning to‘g‘riligi uchun shaxsan javobgar hisoblanadi.
-
-<b>4. HUJJATLAR BILAN ISHLASH</b>
-
-Foydalanuvchi xizmatdan foydalanish uchun zarur hujjatlarni bot orqali yoki Poland TOP Universities tomonidan ko‘rsatilgan boshqa usulda taqdim etadi.
-Foydalanuvchi taqdim etayotgan hujjatlarning haqiqiyligi, to‘g‘riligi va ulardan foydalanish huquqiga ega ekanligini kafolatlaydi. Soxta yoki qalbakilashtirilgan hujjatlarni taqdim etish taqiqlanadi.
-
-<b>5. UNIVERSITETLARGA ARIZA TOPSHIRISH</b>
-
-Poland TOP Universities foydalanuvchiga Polsha universitetlariga hujjat topshirish jarayonida tashkiliy, texnik va hujjat bilan bog‘liq yordam ko‘rsatadi.
-Biroq universitet tomonidan qabul qilish yoki rad etish haqidagi yakuniy qaror Poland TOP Universities tomonidan qabul qilinmaydi.
-Shuning uchun Poland TOP Universities xizmatidan foydalanish universitetga qabul qilinishni kafolatlamaydi.
-
-<b>6. UCHINCHI TOMONLAR</b>
-
-Ariza topshirish jarayonida universitetlar, NAWA, davlat tashkilotlari, elektron platformalar yoki boshqa uchinchi tomon xizmatlaridan foydalanilishi mumkin.
-Ushbu tashkilotlarning texnik nosozliklari yoki muddatlari Poland TOP Universities tomonidan to‘liq nazorat qilinmaydi.
-
-<b>7. FOYDALANUVCHINING MAJBURIYATLARI</b>
-
-Foydalanuvchi to‘g‘ri va haqqoniy ma’lumot taqdim etishi, haqiqiy hujjatlardan foydalanishi, zarur hujjatlarni o‘z vaqtida taqdim etishi va bot ko‘rsatmalariga rioya qilishi shart.
-
-<b>8. TO‘LOV VA QAYTARISH SIYOSATI</b>
-
-Foydalanuvchi to‘lovni amalga oshirishdan oldin tanlangan xizmat paketi, uning tarkibi va narxi bilan tanishadi.
-Xizmat ko‘rsatish jarayoni boshlanganidan yoki buyurtma bo‘yicha ishlar bajarilganidan keyin to‘lovni qaytarish imkoniyati cheklanishi mumkin.
-
-<b>9. PROMO-KODLAR</b>
-
-Promo-kodlar muayyan xizmat paketiga biriktiriladi.
-NAWA promo-kodi faqat NAWA xizmatiga tegishli bo‘ladi.
-Full Application + NAWA promo-kodi esa Full Application + NAWA xizmatiga tegishli bo‘ladi.
-Foydalanuvchi promo-kod paketini mustaqil ravishda o‘zgartira olmaydi.
-
-<b>10. SHAXSIY MA’LUMOTLAR</b>
-
-Ma’lumotlar amaldagi qonunchilik va Poland TOP Universities maxfiylik siyosatiga muvofiq qayta ishlanadi.
-
-<b>11. JAVOBGARLIKNI CHEKLASH</b>
-
-Poland TOP Universities o‘z nazoratidan tashqaridagi holatlar uchun javobgar bo‘lmaydi.
-
-<b>12. XIZMAT KO‘RSATISH MUDDATI</b>
-
-Buyurtma imkon qadar qisqa muddatda bajariladi.
-
-<b>13. SHARTLARNI QABUL QILISH</b>
-
-Foydalanuvchi «✅ Roziman» tugmasini bosish orqali ushbu Foydalanish shartlari va ommaviy ofertani o‘qiganini, tushunganini va elektron shaklda qabul qilganini tasdiqlaydi.
-
-<b>14. YAKUNIY QOIDA</b>
-
-Ushbu oferta foydalanuvchi tomonidan elektron shaklda qabul qilingan paytdan boshlab xizmat ko‘rsatish shartlarining bir qismi hisoblanadi.`;
+<b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>
+«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.`;
 
 export function renderOfertaText(
   template: string,
@@ -427,15 +356,15 @@ export class DatabaseService {
       this.data.pricingConfig = { ...defaultPricingConfig };
     }
 
-    // Seed default published oferta if empty
-    if (!this.data.oferta) {
+    // Seed default published oferta if empty or oversized
+    if (!this.data.oferta || !this.data.oferta.text || this.data.oferta.text.length > 3500) {
       this.data.oferta = {
-        version: 1,
+        version: this.data.oferta?.version || 1,
         text: defaultOfertaTemplate,
         publishedAt: "2026-08-23",
         publishedByName: "System",
         status: "published",
-        pricingSnapshot: { ...defaultPricingConfig },
+        pricingSnapshot: { ...(this.data.pricingConfig || defaultPricingConfig) },
       };
     }
 

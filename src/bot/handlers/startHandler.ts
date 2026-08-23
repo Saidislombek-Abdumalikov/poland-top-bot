@@ -1,10 +1,12 @@
-import { Bot, Context } from "grammy";
+import { Bot, Context, InlineKeyboard } from "grammy";
 import { db } from "../services/db";
 import { t } from "../locales";
 import {
   getMainMenuKeyboard,
   getLanguageInlineKeyboard,
   getOnboardingLanguageKeyboard,
+  getOnboardingDegreeKeyboard,
+  getPhoneRequestKeyboard,
   getOfertaKeyboard,
 } from "../keyboards/menuKeyboards";
 import { Language } from "../types";
@@ -16,36 +18,25 @@ export function setupStartHandler(bot: Bot) {
     const userId = ctx.from?.id;
     if (!userId) return;
 
-    // Auto-clean user command if possible
-    try {
-      await ctx.deleteMessage();
-    } catch {}
-
     const user = db.getUser(userId, {
       username: ctx.from.username,
       firstName: ctx.from.first_name,
       lastName: ctx.from.last_name,
     });
 
-    // Delete old prompt message if present
-    if (user.lastPromptMsgId && ctx.chat) {
-      try {
-        await ctx.api.deleteMessage(ctx.chat.id, user.lastPromptMsgId);
-      } catch {}
-    }
-
-    // If user is not yet registered, enforce upfront onboarding with NO menu buttons open!
+    // If user is not yet registered, guide them to their current onboarding step without flickering!
     if (!user.isRegistered) {
+      const isUz = user.lang === "uz";
+
+      // 1. If info is complete, show Oferta with [ ✅ Roziman ]
       if (user.fullName && user.phone && user.preferredLevel) {
-        // User finished entering info, but hasn't accepted Oferta yet -> Show Oferta
+        db.setWaitingFor(userId, "waiting_oferta_acceptance");
         const renderedOferta = db.getRenderedOferta();
-        const isUz = user.lang === "uz";
         const ofertaMessage = isUz
           ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
             `• 👤 <b>Ism:</b> ${escapeHtml(user.fullName)}\n` +
             `• 📞 <b>Telefon:</b> ${escapeHtml(user.phone)}\n` +
             `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
-            `📄 <b>OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `${renderedOferta}\n` +
             `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -54,7 +45,6 @@ export function setupStartHandler(bot: Bot) {
             `• 👤 <b>Name:</b> ${escapeHtml(user.fullName)}\n` +
             `• 📞 <b>Phone:</b> ${escapeHtml(user.phone)}\n` +
             `• 🎓 <b>Target Degree:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
-            `📄 <b>PUBLIC OFFER & TERMS OF SERVICE</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `${renderedOferta}\n` +
             `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -68,6 +58,43 @@ export function setupStartHandler(bot: Bot) {
         return;
       }
 
+      // 2. If name is entered and waiting for phone -> Show phone request button
+      if (user.fullName && !user.phone) {
+        db.setWaitingFor(userId, "registration_phone");
+        const phonePrompt = isUz
+          ? `👋 <b>Assalomu alaykum, ${escapeHtml(user.fullName)}!</b>\n\n` +
+            `📞 <b>2-Qadam (3 tadan): Telefon Raqamingiz</b>\n` +
+            `Pastdagi <b>[ 📱 Telefon raqamni yuborish ]</b> tugmasini bosing yoki telefon raqamingizni yozib yuboring (masalan: <code>+998901234567</code>):`
+          : `👋 <b>Welcome, ${escapeHtml(user.fullName)}!</b>\n\n` +
+            `📞 <b>Step 2 of 3: Phone Number</b>\n` +
+            `Tap the <b>[ 📱 Share Phone Number ]</b> button below or type your phone number (e.g. <code>+998901234567</code>):`;
+
+        const msg = await ctx.reply(phonePrompt, {
+          parse_mode: "HTML",
+          reply_markup: getPhoneRequestKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      // 3. If phone is entered and waiting for degree level
+      if (user.fullName && user.phone && !user.preferredLevel) {
+        db.setWaitingFor(userId, "registration_level");
+        const levelPrompt = isUz
+          ? `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
+            `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
+          : `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
+            `Please choose the degree level you plan to study in Poland:`;
+
+        const msg = await ctx.reply(levelPrompt, {
+          parse_mode: "HTML",
+          reply_markup: getOnboardingDegreeKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      // 4. Initial start -> Select Language
       const welcomeText =
         `🇵🇱 <b>Welcome to Poland Top Universities (PTU)!</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -88,8 +115,8 @@ export function setupStartHandler(bot: Bot) {
     const welcomeMsg =
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
       `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>Welcome back, ${escapeHtml(firstName)}!</b>\n` +
-      `💎 Membership: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
+      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
+      `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
 
     const msg = await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",
@@ -285,13 +312,19 @@ export function setupStartHandler(bot: Bot) {
     const user = db.getUser(userId);
     const renderedOferta = db.getRenderedOferta();
     const isUz = user.lang === "uz";
+    const isRegistered = user.isRegistered;
 
-    const text =
-      `${renderedOferta}\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `👇 <b>${isUz ? "Davom etish uchun shartlarni qabul qiling" : "Please accept terms to continue"}:</b>`;
+    const text = isRegistered
+      ? `${renderedOferta}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `✅ <b>${isUz ? "Siz ushbu Ommaviy Ofertani qabul qilgansiz." : "You have previously accepted this Oferta."}</b>`
+      : `${renderedOferta}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `👇 <b>${isUz ? "Davom etish uchun shartlarni qabul qiling" : "Please accept terms to continue"}:</b>`;
 
-    const kb = getOfertaKeyboard(user.lang);
+    const kb = isRegistered
+      ? new InlineKeyboard().text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu")
+      : getOfertaKeyboard(user.lang);
 
     if (ctx.callbackQuery?.message) {
       try {

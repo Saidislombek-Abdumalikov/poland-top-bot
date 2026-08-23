@@ -6,7 +6,12 @@ import {
   getSuperAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
 } from "../keyboards/adminKeyboards";
-import { getMainMenuKeyboard, getOnboardingDegreeKeyboard, getOfertaKeyboard } from "../keyboards/menuKeyboards";
+import {
+  getMainMenuKeyboard,
+  getOnboardingDegreeKeyboard,
+  getPhoneRequestKeyboard,
+  getOfertaKeyboard,
+} from "../keyboards/menuKeyboards";
 import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
 import { escapeHtml } from "../utils/format";
 
@@ -44,9 +49,11 @@ export function setupTextInputHandler(bot: Bot) {
 
       const levelPrompt =
         user.lang === "uz"
-          ? `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
+          ? `✅ <b>Telefon raqamingiz qabul qilindi:</b> <code>${escapeHtml(phoneNumber)}</code>\n\n` +
+            `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
             `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-          : `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
+          : `✅ <b>Phone number received:</b> <code>${escapeHtml(phoneNumber)}</code>\n\n` +
+            `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
             `Please choose the degree level you plan to study in Poland:`;
 
       const msg = await ctx.reply(levelPrompt, {
@@ -158,7 +165,6 @@ export function setupTextInputHandler(bot: Bot) {
         `• 👤 <b>Ism:</b> ${escapeHtml(fullName)}\n` +
         `• 📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
         `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(level)}\n\n` +
-        `📄 <b>OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${renderedOferta}\n` +
         `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -167,7 +173,6 @@ export function setupTextInputHandler(bot: Bot) {
         `• 👤 <b>Name:</b> ${escapeHtml(fullName)}\n` +
         `• 📞 <b>Phone:</b> ${escapeHtml(phone)}\n` +
         `• 🎓 <b>Target Degree:</b> ${escapeHtml(level)}\n\n` +
-        `📄 <b>PUBLIC OFFER & TERMS OF SERVICE</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${renderedOferta}\n` +
         `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -178,11 +183,15 @@ export function setupTextInputHandler(bot: Bot) {
         parse_mode: "HTML",
         reply_markup: getOfertaKeyboard(user.lang),
       });
+      if (ctx.callbackQuery?.message?.message_id) {
+        db.setLastPromptMsgId(userId, ctx.callbackQuery.message.message_id);
+      }
     } catch {
-      await ctx.reply(ofertaMessage, {
+      const msg = await ctx.reply(ofertaMessage, {
         parse_mode: "HTML",
         reply_markup: getOfertaKeyboard(user.lang),
       });
+      db.setLastPromptMsgId(userId, msg.message_id);
     }
   });
 
@@ -303,7 +312,7 @@ export function setupTextInputHandler(bot: Bot) {
     if (!user.isRegistered && !user.isAdmin) {
       await cleanUpInput(ctx, userId);
 
-      // Step 1: Full Name -> Prompt Phone
+      // Step 1: Full Name -> Prompt Phone with native share button
       if (user.waitingFor === "registration_name") {
         const parts = text.split(" ");
         const firstName = parts[0] || text;
@@ -316,14 +325,14 @@ export function setupTextInputHandler(bot: Bot) {
           user.lang === "uz"
             ? `👋 Tanishganimdan xursandman, <b>${escapeHtml(text)}</b>!\n\n` +
               `📞 <b>2-Qadam (3 tadan): Telefon Raqamingiz</b>\n` +
-              `Iltimos, telefon raqamingizni yozib yuboring (masalan: <code>+998901234567</code>):`
+              `Pastdagi <b>[ 📱 Telefon raqamni yuborish ]</b> tugmasini bosing yoki telefon raqamingizni yozib yuboring (masalan: <code>+998901234567</code>):`
             : `👋 Nice to meet you, <b>${escapeHtml(text)}</b>!\n\n` +
               `📞 <b>Step 2 of 3: Phone Number</b>\n` +
-              `Please reply with your phone number (e.g. <code>+998901234567</code>):`;
+              `Tap the <b>[ 📱 Share Phone Number ]</b> button below or type your phone number (e.g. <code>+998901234567</code>):`;
 
         const msg = await ctx.reply(phonePrompt, {
           parse_mode: "HTML",
-          reply_markup: { remove_keyboard: true },
+          reply_markup: getPhoneRequestKeyboard(user.lang),
         });
         db.setLastPromptMsgId(userId, msg.message_id);
         return;
@@ -331,14 +340,19 @@ export function setupTextInputHandler(bot: Bot) {
 
       // Step 2: Phone -> Prompt Degree Level Directly
       if (user.waitingFor === "registration_phone") {
-        db.updateUser(userId, { phone: text });
+        const cleanPhone = text.replace(/[^0-9+]/g, "");
+        const formattedPhone = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
+
+        db.updateUser(userId, { phone: formattedPhone });
         db.setWaitingFor(userId, "registration_level");
 
         const levelPrompt =
           user.lang === "uz"
-            ? `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
+            ? `✅ <b>Telefon raqamingiz qabul qilindi:</b> <code>${escapeHtml(formattedPhone)}</code>\n\n` +
+              `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
               `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-            : `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
+            : `✅ <b>Phone number received:</b> <code>${escapeHtml(formattedPhone)}</code>\n\n` +
+              `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
               `Please choose the degree level you plan to study in Poland:`;
 
         const msg = await ctx.reply(levelPrompt, {
