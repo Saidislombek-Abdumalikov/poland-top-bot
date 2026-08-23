@@ -7,7 +7,6 @@ export const config = {
     process.env.BOT_TOKEN ||
     process.env.TELEGRAM_BOT_TOKEN ||
     "8387916648:AAG1elnfEXLhEwtOYX1r64S52vG0AECCnK0",
-  superAdminId: Number(process.env.SUPER_ADMIN_ID) || 5059829001,
   superAdminPasscode: process.env.SUPER_ADMIN_PASSCODE || "superadminsaidislom*",
   advisorUsername: process.env.ADVISOR_USERNAME || "poland_admissions_bot",
   adminPasscode: process.env.ADMIN_PASSCODE || "PTUADMIN2025",
@@ -25,17 +24,6 @@ export const config = {
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2ZGttYnh4aHd0YWpneHB4bXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDg4NDAsImV4cCI6MjEwMzAyNDg0MH0.-TK8p3wrcMgt2MDfE3rszqvSc0GdZfXxlF0QtGiCGSc",
 };
-
-export function isSuperAdmin(userId?: number): boolean {
-  if (!userId) return false;
-  return userId === config.superAdminId;
-}
-
-export function isAdminUser(userId: number): boolean {
-  if (isSuperAdmin(userId)) return true;
-  if (config.adminIds.includes(userId)) return true;
-  return false;
-}
 
 export function validateConfig() {
   if (!config.botToken) {

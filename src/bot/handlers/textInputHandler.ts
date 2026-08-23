@@ -1,6 +1,5 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { isSuperAdmin } from "../config";
 import { getAdminUsersListKeyboard } from "../keyboards/adminKeyboards";
 import { getMainMenuKeyboard, getOnboardingDegreeKeyboard } from "../keyboards/menuKeyboards";
 import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
@@ -285,6 +284,14 @@ export function setupTextInputHandler(bot: Bot) {
         const app = db.updateApplicationStage(appId, "Action Needed", text);
         db.setWaitingFor(userId, null);
 
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "APP_FEEDBACK",
+          `Sent counselor feedback on Application #${appId}: "${text}"`,
+          `App #${appId}`
+        );
+
         if (app) {
           try {
             await bot.api.sendMessage(
@@ -313,6 +320,14 @@ export function setupTextInputHandler(bot: Bot) {
       if (targetUserId && docKey) {
         db.verifyDocument(targetUserId, docKey, "needs_correction", text);
         db.setWaitingFor(userId, null);
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "DOC_FEEDBACK",
+          `Sent revision feedback for document '${docKey}' to Student #${targetUserId}: "${text}"`,
+          `User #${targetUserId}`
+        );
 
         try {
           await bot.api.sendMessage(
@@ -346,6 +361,14 @@ export function setupTextInputHandler(bot: Bot) {
           tier,
           maxUses,
         });
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "CREATE_PROMO",
+          `Created custom promo code '${created.code}' (${created.tier}, max uses: ${created.maxUses})`,
+          created.code
+        );
 
         await ctx.reply(
           `✅ <b>Promo Code Created!</b>\n\n` +
@@ -394,6 +417,13 @@ export function setupTextInputHandler(bot: Bot) {
           sentCount++;
         } catch {}
       }
+
+      db.logAdminAction(
+        userId,
+        user.fullName || user.username || `Admin #${userId}`,
+        "GLOBAL_BROADCAST",
+        `Sent broadcast announcement to ${sentCount}/${allUsers.length} students. Message: "${text.slice(0, 100)}..."`
+      );
 
       await ctx.reply(`✅ Broadcast complete! Delivered to <b>${sentCount}</b> / <b>${allUsers.length}</b> students.`, {
         parse_mode: "HTML",
@@ -445,6 +475,14 @@ export function setupTextInputHandler(bot: Bot) {
 
         db.saveUniversity(newUni);
 
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "ADD_UNIVERSITY",
+          `Added university '${newUni.name}' (${newUni.abbr}) in ${newUni.city} with tuition ${newUni.tuition.english} and website ${newUni.website}`,
+          newUni.id
+        );
+
         await ctx.reply(
           `✅ <b>New University Added Successfully!</b>\n\n` +
             `• 🏛️ <b>Name:</b> ${escapeHtml(newUni.name)} (${escapeHtml(newUni.abbr)})\n` +
@@ -473,6 +511,15 @@ export function setupTextInputHandler(bot: Bot) {
         if (uni) {
           uni.website = text;
           db.saveUniversity(uni);
+
+          db.logAdminAction(
+            userId,
+            user.fullName || user.username || `Admin #${userId}`,
+            "EDIT_UNI_WEBSITE",
+            `Changed website URL of ${uni.name} to: ${text}`,
+            uni.id
+          );
+
           await ctx.reply(
             `✅ <b>Website Link Updated for ${escapeHtml(uni.name)}!</b>\n\n` +
               `🌐 <b>New Link:</b> <a href="${escapeHtml(text)}">${escapeHtml(text)}</a>`,
@@ -494,6 +541,15 @@ export function setupTextInputHandler(bot: Bot) {
           uni.tuition.english = text;
           uni.tuition.nonEu = text;
           db.saveUniversity(uni);
+
+          db.logAdminAction(
+            userId,
+            user.fullName || user.username || `Admin #${userId}`,
+            "EDIT_UNI_TUITION",
+            `Changed tuition fee of ${uni.name} to: ${text}`,
+            uni.id
+          );
+
           await ctx.reply(
             `✅ <b>Tuition Updated for ${escapeHtml(uni.name)}!</b>\n\n` +
               `💰 <b>New Fee:</b> <code>${escapeHtml(text)}</code>`,
@@ -525,6 +581,14 @@ export function setupTextInputHandler(bot: Bot) {
         };
 
         db.saveDocumentDefinition(newDef);
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "ADD_DOCDEF",
+          `Added document requirement '${newDef.id}' (${newDef.name.en} / ${newDef.name.uz}, required: ${newDef.required})`,
+          newDef.id
+        );
 
         await ctx.reply(
           `✅ <b>New Document Requirement Added!</b>\n\n` +
@@ -568,6 +632,14 @@ export function setupTextInputHandler(bot: Bot) {
           status: "approved",
         });
 
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "ADD_REVIEW",
+          `Published student review for '${rev.name}' (${rev.university}, ${rev.rating}⭐)`,
+          `Review #${rev.id}`
+        );
+
         await ctx.reply(
           `✅ <b>Review Published Live!</b>\n\n` +
             `• 👤 <b>Student:</b> ${escapeHtml(rev.name)} (${escapeHtml(rev.country)})\n` +
@@ -592,6 +664,15 @@ export function setupTextInputHandler(bot: Bot) {
       db.setWaitingFor(userId, null);
       if (revId) {
         db.updateReview(revId, { text: { en: text, uz: text } });
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "EDIT_REVIEW_TEXT",
+          `Updated text for Review #${revId}: "${text.slice(0, 100)}..."`,
+          `Review #${revId}`
+        );
+
         await ctx.reply(`✅ <b>Review #${revId} text updated successfully!</b>`, { parse_mode: "HTML" });
       }
       return;
@@ -749,7 +830,7 @@ export function setupTextInputHandler(bot: Bot) {
     if (user.waitingFor === ("admin_super_appoint_user" as any)) {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
-      if (!isSuperAdmin(userId)) return;
+      if (!user.isSuperAdmin) return;
 
       const q = text.replace("@", "").trim();
       let targetUser: UserSessionData | undefined;

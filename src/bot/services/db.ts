@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { config, isSuperAdmin } from "../config";
+import { config } from "../config";
 import {
   UserSessionData,
   PromoCodeRecord,
@@ -367,8 +367,8 @@ export class DatabaseService {
 
   // ================= USERS CRUD =================
   public getUser(userId: number, defaults?: Partial<UserSessionData>): UserSessionData {
-    const isSuper = isSuperAdmin(userId);
-    const isAdmin = isSuper || Boolean(defaults?.isAdmin) || config.adminIds.includes(userId);
+    const isAdmin = Boolean(defaults?.isAdmin) || (config.adminIds && config.adminIds.includes(userId));
+    const isSuper = Boolean(defaults?.isSuperAdmin);
 
     if (!this.data.users[userId]) {
       const now = new Date().toISOString().split("T")[0];
@@ -413,14 +413,6 @@ export class DatabaseService {
       let changed = false;
       const current = this.data.users[userId];
 
-      if (isSuper) {
-        if (!current.isAdmin || !current.isSuperAdmin) {
-          current.isAdmin = true;
-          current.isSuperAdmin = true;
-          changed = true;
-        }
-      }
-
       if (defaults) {
         if (defaults.username && current.username !== defaults.username) {
           current.username = defaults.username;
@@ -455,9 +447,7 @@ export class DatabaseService {
   }
 
   public getAllAdmins(): UserSessionData[] {
-    return Object.values(this.data.users).filter(
-      (u) => u.isAdmin || isSuperAdmin(u.userId) || config.adminIds.includes(u.userId)
-    );
+    return Object.values(this.data.users).filter((u) => u.isAdmin || u.isSuperAdmin);
   }
 
   public searchUsers(query: string): UserSessionData[] {

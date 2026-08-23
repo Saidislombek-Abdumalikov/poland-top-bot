@@ -1,6 +1,6 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { config, isAdminUser, isSuperAdmin } from "../config";
+import { config } from "../config";
 import {
   getAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
@@ -29,9 +29,14 @@ export function setupAdminHandler(bot: Bot) {
   // Helper to check authorization
   const checkAdminAuth = (userId?: number): boolean => {
     if (!userId) return false;
-    if (isSuperAdmin(userId)) return true;
     const user = db.getUser(userId);
-    return user.isAdmin || isAdminUser(userId);
+    return Boolean(user.isAdmin || user.isSuperAdmin);
+  };
+
+  const checkSuperAdminAuth = (userId?: number): boolean => {
+    if (!userId) return false;
+    const user = db.getUser(userId);
+    return Boolean(user.isSuperAdmin);
   };
 
   // Main admin dashboard render
@@ -55,7 +60,7 @@ export function setupAdminHandler(bot: Bot) {
     const nawaApps = db.getAllNawaApplications();
     const allRevs = db.getAllReviews();
     const pendingRevs = db.getPendingReviews();
-    const isSuper = isSuperAdmin(userId);
+    const isSuper = Boolean(user.isSuperAdmin);
 
     const text = isUz
       ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n` +
@@ -110,7 +115,7 @@ export function setupAdminHandler(bot: Bot) {
   // Super Admin Headquarters render helper
   const renderSuperAdminHQ = async (ctx: Context) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) {
+    if (!userId || !checkSuperAdminAuth(userId)) {
       await ctx.reply("⛔ <b>Access Denied:</b> Super Admin privileges required.", { parse_mode: "HTML" });
       return;
     }
@@ -124,20 +129,20 @@ export function setupAdminHandler(bot: Bot) {
     const text = isUz
       ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Sizning ID: <code>${userId}</code> (Tizim egasi)\n\n` +
         `📊 <b>Nazorat Ko'rsatkichlari:</b>\n` +
-        `• 🛡️ Faol Oddiy Adminlar: <b>${Math.max(0, allAdmins.length - 1)}</b> ta\n` +
+        `• 🛡️ Faol Oddiy Adminlar: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b> ta\n` +
         `• 📜 Yozilgan Audit Loglar: <b>${auditLogs.length}</b> ta\n` +
         `• 👥 Jami Talabalar Bazasi: <b>${allUsers.length}</b> ta\n` +
         `• 🗄️ Cloud DB Sync: <b>Supabase PostgreSQL (Live)</b>\n\n` +
         `<i>Bu bo'lim faqat sizga ko'rinadi. Oddiy adminlar sizning mavjudligingizni bilmaydi.</i>`
       : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Your Telegram ID: <code>${userId}</code> (Master Owner)\n\n` +
         `📊 <b>System Master Overview:</b>\n` +
-        `• 🛡️ Active Regular Admins: <b>${Math.max(0, allAdmins.length - 1)}</b>\n` +
+        `• 🛡️ Active Regular Admins: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b>\n` +
         `• 📜 Recorded Audit Logs: <b>${auditLogs.length}</b>\n` +
         `• 👥 Total User Database: <b>${allUsers.length}</b>\n` +
         `• 🗄️ Cloud Storage: <b>Supabase PostgreSQL (Live)</b>\n\n` +
@@ -173,15 +178,27 @@ export function setupAdminHandler(bot: Bot) {
     const args = text.split(" ").slice(1);
     const passedCode = args[0]?.trim();
 
-    if (isSuperAdmin(userId)) {
-      db.updateUser(userId, { isAdmin: true, isSuperAdmin: true });
-    } else if (passedCode && passedCode === config.adminPasscode) {
-      db.updateUser(userId, { isAdmin: true });
-      db.logAdminAction(userId, ctx.from?.first_name || "Admin", "LOGIN", "Logged into Admin CRM using passcode");
-      await ctx.reply("✅ <b>Admin access unlocked successfully!</b>", { parse_mode: "HTML" });
-    }
+    const user = db.getUser(userId);
 
-    await renderAdminDashboard(ctx);
+    if (passedCode && passedCode === config.adminPasscode) {
+      db.updateUser(userId, { isAdmin: true });
+      db.logAdminAction(
+        userId,
+        ctx.from?.first_name || "Admin",
+        "ADMIN_LOGIN",
+        `Logged into Regular Admin CRM via passcode`
+      );
+      await ctx.reply("✅ <b>Admin access unlocked successfully!</b>", { parse_mode: "HTML" });
+      await renderAdminDashboard(ctx);
+    } else if (user.isAdmin || user.isSuperAdmin) {
+      await renderAdminDashboard(ctx);
+    } else {
+      await ctx.reply(
+        "🔒 <b>Admin Access Required</b>\n\n" +
+          "Please provide the admin passcode using:\n<code>/admin &lt;passcode&gt;</code>",
+        { parse_mode: "HTML" }
+      );
+    }
   });
 
   // 2. Super Admin Command: /superadmin <passcode>
@@ -196,28 +213,28 @@ export function setupAdminHandler(bot: Bot) {
     const args = text.split(" ").slice(1);
     const passedCode = args[0]?.trim();
 
-    const isMatch =
-      isSuperAdmin(userId) ||
-      Boolean(passedCode && (passedCode === config.superAdminPasscode || passedCode === "superadminsaidislom*"));
+    const user = db.getUser(userId);
 
-    if (isMatch) {
+    if (passedCode && (passedCode === config.superAdminPasscode || passedCode === "superadminsaidislom*")) {
       db.updateUser(userId, { isAdmin: true, isSuperAdmin: true });
       db.logAdminAction(
         userId,
         ctx.from?.first_name || "Super Admin",
         "SUPERADMIN_LOGIN",
-        "Unlocked Master Super Admin access via /superadmin"
+        "Unlocked Master Super Admin access via /superadmin passcode"
       );
       await ctx.reply(
         "👑 <b>Super Admin Master Access Granted!</b>\n\n" +
-          "Welcome, Master! All logs, admin controls, and cloud database features unlocked.",
+          "Welcome, Boss! All master controls, activity audit logs, and cloud database features unlocked.",
         { parse_mode: "HTML" }
       );
       await renderSuperAdminHQ(ctx);
+    } else if (user.isSuperAdmin) {
+      await renderSuperAdminHQ(ctx);
     } else {
       await ctx.reply(
-        "⛔ <b>Access Denied:</b> Invalid Super Admin credentials.\n" +
-          "Usage: <code>/superadmin &lt;passcode&gt;</code>",
+        "👑 <b>Super Admin Access Required</b>\n\n" +
+          "Please provide the super admin passcode using:\n<code>/superadmin &lt;passcode&gt;</code>",
         { parse_mode: "HTML" }
       );
     }
@@ -391,6 +408,16 @@ export function setupAdminHandler(bot: Bot) {
       "Full Premium"
     );
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "CREATE_VIP_PROMO",
+      `Generated VIP Promo Code '${promo.code}' (${promo.tier}) for Student #${targetUserId} (${user.fullName || user.username || "Student"})`,
+      promo.code
+    );
+
     await ctx.answerCallbackQuery({ text: `VIP Code ${promo.code} created!` });
 
     // Send code notification to student directly
@@ -422,14 +449,28 @@ export function setupAdminHandler(bot: Bot) {
     if (!match) return;
     const targetUserId = parseInt(match[1], 10);
     const user = db.getUser(targetUserId);
-    const newStatus = !user.isAdmin;
 
+    if (user.isSuperAdmin) {
+      await ctx.answerCallbackQuery({ text: "⛔ Super Admin role cannot be modified." });
+      return;
+    }
+
+    const newStatus = !user.isAdmin;
     db.updateUser(targetUserId, { isAdmin: newStatus });
+
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      newStatus ? "GRANT_ADMIN" : "REVOKE_ADMIN",
+      `${newStatus ? "Granted" : "Revoked"} Admin role for User #${targetUserId} (${user.fullName || user.username || "User"})`,
+      `User #${targetUserId}`
+    );
+
     await ctx.answerCallbackQuery({ text: `Admin role ${newStatus ? "granted" : "revoked"}` });
 
     const updatedUser = db.getUser(targetUserId);
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
     await ctx.editMessageReplyMarkup({
       reply_markup: getAdminUserDetailKeyboard(updatedUser, adminUser?.lang),
     });
@@ -552,6 +593,16 @@ export function setupAdminHandler(bot: Bot) {
     await ctx.answerCallbackQuery({ text: `Stage updated to ${newStage}` });
 
     if (app) {
+      const adminId = ctx.from?.id || 0;
+      const adminUser = db.getUser(adminId);
+      db.logAdminAction(
+        adminId,
+        adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+        "UPDATE_APP_STAGE",
+        `Changed Application #${appId} (${app.programName} at ${app.university}) stage to '${newStage}' for Student #${app.userId}`,
+        `App #${appId}`
+      );
+
       // Notify student in Telegram
       try {
         await bot.api.sendMessage(
@@ -564,8 +615,6 @@ export function setupAdminHandler(bot: Bot) {
         );
       } catch {}
 
-      const adminId = ctx.from?.id;
-      const adminUser = adminId ? db.getUser(adminId) : undefined;
       await ctx.editMessageText(
         `✅ Application <b>${escapeHtml(app.id)}</b> updated to <b>${escapeHtml(newStage)}</b> and student notified!`,
         {
@@ -694,6 +743,18 @@ export function setupAdminHandler(bot: Bot) {
     db.verifyDocument(targetUserId, docKey, decision);
     const isApproved = decision === "approved";
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    const student = db.getUser(targetUserId);
+
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "REVIEW_DOCUMENT",
+      `Document '${docKey}' for Student #${targetUserId} (${student.fullName || student.username || "Student"}) marked as '${decision.toUpperCase()}'`,
+      `User #${targetUserId}`
+    );
+
     await ctx.answerCallbackQuery({ text: isApproved ? "Document Approved!" : "Correction requested" });
 
     // Notify student
@@ -781,6 +842,16 @@ export function setupAdminHandler(bot: Bot) {
       maxUses: 1, // Strictly 1 person
     });
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "CREATE_PROMO",
+      `Generated single-use VIP promo code '${promo.code}' (${promo.tier})`,
+      promo.code
+    );
+
     await ctx.answerCallbackQuery({ text: `Single-use code ${promo.code} generated!` });
     await ctx.reply(
       `⚡ <b>New Single-Use Promo Code Generated!</b>\n\n` +
@@ -843,6 +914,16 @@ export function setupAdminHandler(bot: Bot) {
     db.expirePromoCode(codeKey);
     const promo = db.getPromoCode(codeKey);
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "EXPIRE_PROMO",
+      `Deactivated/Expired promo code '${codeKey}'`,
+      codeKey
+    );
+
     await ctx.answerCallbackQuery({ text: `Code ${codeKey} expired!` });
     await ctx.reply(`🔴 Code <code>${escapeHtml(codeKey)}</code> is now <b>EXPIRED / DEACTIVATED</b>. Students can no longer redeem it.`, {
       parse_mode: "HTML",
@@ -858,6 +939,16 @@ export function setupAdminHandler(bot: Bot) {
     db.reactivatePromoCode(codeKey);
     const promo = db.getPromoCode(codeKey);
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "REACTIVATE_PROMO",
+      `Reactivated promo code '${codeKey}'`,
+      codeKey
+    );
+
     await ctx.answerCallbackQuery({ text: `Code ${codeKey} reactivated!` });
     await ctx.reply(`🟢 Code <code>${escapeHtml(codeKey)}</code> is now <b>ACTIVE</b> again and can be redeemed by students.`, {
       parse_mode: "HTML",
@@ -872,19 +963,28 @@ export function setupAdminHandler(bot: Bot) {
 
     db.deletePromoCode(codeKey);
 
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "DELETE_PROMO",
+      `Permanently deleted promo code '${codeKey}'`,
+      codeKey
+    );
+
     await ctx.answerCallbackQuery({ text: `Code ${codeKey} deleted permanently!` });
     await ctx.reply(`🗑️ Promo code <code>${escapeHtml(codeKey)}</code> has been <b>permanently deleted</b> from the database.`, {
       parse_mode: "HTML",
     });
 
     const promos = db.getAllPromoCodes();
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const adminUserUpdated = db.getUser(adminId);
     await ctx.reply(
       `⚡ <b>Promo Codes & Grants Manager (${promos.length} codes)</b>`,
       {
         parse_mode: "HTML",
-        reply_markup: getAdminPromoCodesKeyboard(promos, 0, 6, adminUser?.lang),
+        reply_markup: getAdminPromoCodesKeyboard(promos, 0, 6, adminUserUpdated?.lang),
       }
     );
   });
@@ -1042,15 +1142,25 @@ export function setupAdminHandler(bot: Bot) {
     const uniId = match[1];
 
     db.deleteUniversity(uniId);
+
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "DELETE_UNIVERSITY",
+      `Deleted university '${uniId}' from system catalog`,
+      uniId
+    );
+
     await ctx.answerCallbackQuery({ text: `University ${uniId} deleted!` });
     await ctx.reply(`🗑️ University <code>${escapeHtml(uniId)}</code> has been deleted.`, { parse_mode: "HTML" });
 
     const unis = db.getAllUniversities();
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const adminUserUpdated = db.getUser(adminId);
     await ctx.reply(`🏛️ <b>Polish Universities Database (${unis.length} institutions)</b>`, {
       parse_mode: "HTML",
-      reply_markup: getAdminUniversitiesKeyboard(unis, 0, 6, adminUser?.lang),
+      reply_markup: getAdminUniversitiesKeyboard(unis, 0, 6, adminUserUpdated?.lang),
     });
   });
 
@@ -1127,8 +1237,15 @@ export function setupAdminHandler(bot: Bot) {
     def.required = !def.required;
     db.saveDocumentDefinition(def);
 
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "TOGGLE_DOCDEF",
+      `Toggled document '${docKey}' requirement status to: ${def.required ? "MANDATORY" : "OPTIONAL"}`,
+      docKey
+    );
 
     await ctx.answerCallbackQuery({ text: `Requirement set to ${def.required ? "Required" : "Optional"}` });
     await ctx.editMessageReplyMarkup({
@@ -1142,15 +1259,25 @@ export function setupAdminHandler(bot: Bot) {
     const docKey = match[1];
 
     db.deleteDocumentDefinition(docKey);
+
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "DELETE_DOCDEF",
+      `Deleted document requirement '${docKey}' from system checklist`,
+      docKey
+    );
+
     await ctx.answerCallbackQuery({ text: `Document type ${docKey} deleted!` });
     await ctx.reply(`🗑️ Document type <code>${escapeHtml(docKey)}</code> deleted.`, { parse_mode: "HTML" });
 
     const docDefs = db.getDocumentDefinitions();
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const adminUserUpdated = db.getUser(adminId);
     await ctx.reply(`📑 <b>Document Checklist Requirements (${Object.keys(docDefs).length} types)</b>`, {
       parse_mode: "HTML",
-      reply_markup: getAdminDocDefsKeyboard(docDefs, adminUser?.lang),
+      reply_markup: getAdminDocDefsKeyboard(docDefs, adminUserUpdated?.lang),
     });
   });
 
@@ -1263,11 +1390,20 @@ export function setupAdminHandler(bot: Bot) {
     const isApprove = match[2] === "approve";
 
     db.moderateReview(revId, isApprove);
+
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "MODERATE_REVIEW",
+      `Student Review #${revId} was ${isApprove ? "APPROVED & PUBLISHED" : "REJECTED & REMOVED"}`,
+      `Review #${revId}`
+    );
+
     await ctx.answerCallbackQuery({ text: isApprove ? "Review Published!" : "Review Rejected & Deleted" });
 
     const rev = db.getReview(revId);
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
 
     if (rev && isApprove) {
       await ctx.editMessageText(
@@ -1330,8 +1466,15 @@ export function setupAdminHandler(bot: Bot) {
     rev.rating = rev.rating <= 1 ? 5 : rev.rating - 1;
     db.updateReview(revId, { rating: rev.rating });
 
-    const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    const adminId = ctx.from?.id || 0;
+    const adminUser = db.getUser(adminId);
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "EDIT_REVIEW_RATING",
+      `Changed rating of Review #${revId} to ${rev.rating}⭐`,
+      `Review #${revId}`
+    );
 
     await ctx.answerCallbackQuery({ text: `Rating set to ${rev.rating}⭐` });
     await ctx.editMessageReplyMarkup({
@@ -1375,7 +1518,7 @@ export function setupAdminHandler(bot: Bot) {
   // ================= 9. SUPER ADMIN HQ & AUDIT LOGS =================
   bot.callbackQuery("admin_super_hq", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) {
+    if (!userId || !checkSuperAdminAuth(userId)) {
       await ctx.answerCallbackQuery({ text: "⛔ Access Denied: Super Admin Only" });
       return;
     }
@@ -1389,20 +1532,20 @@ export function setupAdminHandler(bot: Bot) {
     const text = isUz
       ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Sizning ID: <code>${userId}</code> (Tizim egasi)\n\n` +
         `📊 <b>Nazorat Ko'rsatkichlari:</b>\n` +
-        `• 🛡️ Faol Oddiy Adminlar: <b>${Math.max(0, allAdmins.length - 1)}</b> ta\n` +
+        `• 🛡️ Faol Oddiy Adminlar: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b> ta\n` +
         `• 📜 Yozilgan Audit Loglar: <b>${auditLogs.length}</b> ta\n` +
         `• 👥 Jami Talabalar Bazasi: <b>${allUsers.length}</b> ta\n` +
         `• 🗄️ Cloud DB Sync: <b>Supabase PostgreSQL (Live)</b>\n\n` +
         `<i>Bu bo'lim faqat sizga ko'rinadi. Oddiy adminlar sizning mavjudligingizni bilmaydi.</i>`
       : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `🔒 <b>Peak Access Level:</b> Super Administrator\n` +
+        `🔒 <b>Peak Access Level:</b> Super Administrator (Boss)\n` +
         `🆔 Your Telegram ID: <code>${userId}</code> (Master Owner)\n\n` +
         `📊 <b>System Master Overview:</b>\n` +
-        `• 🛡️ Active Regular Admins: <b>${Math.max(0, allAdmins.length - 1)}</b>\n` +
+        `• 🛡️ Active Regular Admins: <b>${allAdmins.filter(a => !a.isSuperAdmin).length}</b>\n` +
         `• 📜 Recorded Audit Logs: <b>${auditLogs.length}</b>\n` +
         `• 👥 Total User Database: <b>${allUsers.length}</b>\n` +
         `• 🗄️ Cloud Storage: <b>Supabase PostgreSQL (Live)</b>\n\n` +
@@ -1429,7 +1572,7 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery(/^admin_super_logs_(\d+)$/, async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) {
+    if (!userId || !checkSuperAdminAuth(userId)) {
       await ctx.answerCallbackQuery({ text: "⛔ Access Denied" });
       return;
     }
@@ -1482,27 +1625,27 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_super_admins_list", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
     const allAdmins = db.getAllAdmins();
-    const regularAdmins = allAdmins.filter((a) => a.userId !== config.superAdminId);
+    const regularAdmins = allAdmins.filter((a) => !a.isSuperAdmin);
 
     const text = isUz
       ? `🛡️ <b>ADMINLAR BOSHQARUVI</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `• 👑 Super Admin: <code>${config.superAdminId}</code> (Siz - Maxfiy)\n` +
+        `• 👑 Super Admin: <code>${userId}</code> (Siz - Boss)\n` +
         `• 👤 Faol Oddiy Adminlar: <b>${regularAdmins.length}</b> ta\n\n` +
         `<i>Adminlikdan bo'shatish uchun pastdagi tugmani bosing yoki yangi admin qo'shing:</i>`
       : `🛡️ <b>ADMIN MANAGEMENT</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `• 👑 Super Admin: <code>${config.superAdminId}</code> (You - Master)\n` +
+        `• 👑 Super Admin: <code>${userId}</code> (You - Master Boss)\n` +
         `• 👤 Active Regular Admins: <b>${regularAdmins.length}</b>\n\n` +
         `<i>Tap an admin to revoke access, or appoint a new admin:</i>`;
 
     await ctx.answerCallbackQuery();
-    const kb = getSuperAdminAdminsKeyboard(allAdmins, config.superAdminId, adminUser.lang);
+    const kb = getSuperAdminAdminsKeyboard(allAdmins, userId, adminUser.lang);
     if (ctx.callbackQuery?.message) {
       try {
         await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
@@ -1514,17 +1657,17 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery(/^admin_super_demote_(\d+)$/, async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     const match = ctx.callbackQuery?.data?.match(/^admin_super_demote_(\d+)$/);
     if (!match) return;
     const targetAdminId = parseInt(match[1], 10);
 
-    if (targetAdminId === config.superAdminId) {
+    const targetUser = db.getUser(targetAdminId);
+    if (targetUser.isSuperAdmin) {
       await ctx.answerCallbackQuery({ text: "Cannot demote Super Admin" });
       return;
     }
 
-    const targetUser = db.getUser(targetAdminId);
     db.updateUser(targetAdminId, { isAdmin: false });
 
     db.logAdminAction(
@@ -1537,7 +1680,7 @@ export function setupAdminHandler(bot: Bot) {
 
     await ctx.answerCallbackQuery({ text: `Admin #${targetAdminId} privileges revoked!` });
     const allAdmins = db.getAllAdmins();
-    const kb = getSuperAdminAdminsKeyboard(allAdmins, config.superAdminId, db.getUser(userId).lang);
+    const kb = getSuperAdminAdminsKeyboard(allAdmins, userId, db.getUser(userId).lang);
     try {
       await ctx.editMessageReplyMarkup({ reply_markup: kb });
     } catch {}
@@ -1545,7 +1688,7 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_super_appoint_prompt", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
 
     db.setWaitingFor(userId, "admin_super_appoint_user" as any);
@@ -1561,7 +1704,7 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_super_confirm_clear_logs", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     db.clearAuditLogs();
     db.logAdminAction(userId, "Super Admin", "CLEAR_LOGS", "Cleared all previous audit logs.");
     await ctx.answerCallbackQuery({ text: "All audit logs cleared!" });
@@ -1582,7 +1725,7 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_super_db_status", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
     const isUz = adminUser.lang === "uz";
 
@@ -1630,7 +1773,7 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_super_force_sync", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !isSuperAdmin(userId)) return;
+    if (!userId || !checkSuperAdminAuth(userId)) return;
     await db.syncToCloud();
     await ctx.answerCallbackQuery({ text: "✅ Forced Supabase Cloud Sync completed!" });
   });

@@ -420,15 +420,15 @@ export function getSuperAdminLogsKeyboard(
 
 export function getSuperAdminAdminsKeyboard(
   admins: UserSessionData[],
-  superAdminId: number,
+  currentUserId: number,
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
   admins.forEach((adm) => {
-    if (adm.userId === superAdminId) return; // Hide Super Admin from list to maintain stealth
-    const name = adm.fullName || adm.firstName || `@${adm.username}` || `User #${adm.userId}`;
+    if (adm.isSuperAdmin || adm.userId === currentUserId) return; // Hide Super Admin from list to maintain stealth
+    const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `User #${adm.userId}`);
     kb.text(`❌ [Bo'shatish] ${name.slice(0, 16)}`, `admin_super_demote_${adm.userId}`).row();
   });
 
