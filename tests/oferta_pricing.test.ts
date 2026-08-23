@@ -25,12 +25,14 @@ async function runOfertaPricingTestSuite() {
   const superAdminId = config.superAdminTelegramId;
   const adminId = 888777;
 
+  db.resetDatabaseToZero(superAdminId);
+
   // 1. Initial Pricing Config
   test("Single source of truth pricing config initializes with correct defaults", () => {
     const pricing = db.getPricingConfig();
     assert.equal(pricing.nawaPrice, 15);
     assert.equal(pricing.nawaCurrency, "USD");
-    assert.equal(pricing.fullApplicationNawaPrice, 50);
+    assert.equal(pricing.fullApplicationNawaPrice, 60);
     assert.equal(pricing.fullApplicationNawaCurrency, "USD");
     assert.equal(pricing.applicationFee, 30);
     assert.equal(pricing.applicationFeeCurrency, "EUR");
@@ -189,7 +191,7 @@ async function runOfertaPricingTestSuite() {
 
     const pricing = db.getPricingConfig();
     assert.equal(pricing.nawaPrice, 15);
-    assert.equal(pricing.fullApplicationNawaPrice, 50);
+    assert.equal(pricing.fullApplicationNawaPrice, 60);
     assert.equal(pricing.applicationFee, 30);
 
     const oferta = db.getPublishedOferta();

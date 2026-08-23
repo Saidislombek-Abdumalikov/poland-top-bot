@@ -247,7 +247,7 @@ export function getAdminPromoProductSelectKeyboard(
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const nawaPrice = pricing ? pricing.nawaPrice : 15;
-  const fullPrice = pricing ? pricing.fullApplicationNawaPrice : 50;
+  const fullPrice = pricing ? pricing.fullApplicationNawaPrice : 60;
   return new InlineKeyboard()
     .text(
       isUz ? `📦 1. NAWA — $${nawaPrice} (Standart)` : `📦 1. NAWA — $${nawaPrice} (Standard)`,

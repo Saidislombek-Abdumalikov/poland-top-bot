@@ -509,12 +509,13 @@ export function setupAdminHandler(bot: Bot) {
 
     // 2. Automatically redeem and activate Full Application + NAWA on the student's profile!
     db.redeemPromoCode(promo.code, targetUserId);
+    const pricing = db.getPricingConfig();
 
     db.logAdminAction(
       adminId,
       adminUser.fullName || adminUser.username || `Admin #${adminId}`,
       "GRANT_VIP_PREMIUM",
-      `Directly granted & activated Full Application + NAWA ($50) via code '${promo.code}' for Student #${targetUserId} (${user.fullName || user.username || "Student"})`,
+      `Directly granted & activated Full Application + NAWA ($${pricing.fullApplicationNawaPrice}) via code '${promo.code}' for Student #${targetUserId} (${user.fullName || user.username || "Student"})`,
       promo.code
     );
 
@@ -524,20 +525,22 @@ export function setupAdminHandler(bot: Bot) {
     const isUz = user.lang === "uz";
     const studentText = isUz
       ? `🎉 <b>TABRIKLAYMIZ! QABUL MASLAHATCHISI SIZGA TO'LIQ PREMIUM TAQDIM ETDI!</b>\n\n` +
-        `Sizning hisobingizga <b>Full Application + NAWA ($50)</b> paketi to'g'ridan-to'g'ri faollashtirildi!\n\n` +
+        `Sizning hisobingizga <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice})</b> paketi to'g'ridan-to'g'ri faollashtirildi!\n\n` +
         `🔑 <b>Promokod:</b> <code>${escapeHtml(promo.code)}</code> (Avtomatik faollashtirildi ✅)\n\n` +
         `✨ <b>Ochilgan Imkoniyatlar:</b>\n` +
         `• 📁 Barcha kerakli hujjatlarni tekshiruvga yuklash va tasdiqlatish\n` +
         `• 🏛️ Universitet arizalarini to'liq yuritish va topshirish\n` +
+        `• 💶 <b>€${pricing.applicationFee} Rasmiy Ariza To'lovi (Application Fee) shu paket ichida to'liq qoplangan (biz to'laymiz)</b>\n` +
         `• 📜 NAWA SYRENA va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły) ko'magi\n` +
         `• 💬 Shaxsiy qabul koordinatori bilan doimiy 1-ga-1 aloqa\n\n` +
         `<i>Hujjatlaringizni yuklashni boshlash uchun quyidagi tugmani bosing:</i>`
       : `🎉 <b>CONGRATULATIONS! ADMISSIONS ADVISOR GRANTED YOU FULL PREMIUM!</b>\n\n` +
-        `The <b>Full Application + NAWA ($50)</b> package has been activated directly on your account!\n\n` +
+        `The <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice})</b> package has been activated directly on your account!\n\n` +
         `🔑 <b>Promo Code:</b> <code>${escapeHtml(promo.code)}</code> (Auto-activated ✅)\n\n` +
         `✨ <b>Unlocked Features:</b>\n` +
         `• 📁 Full Document Verification & Advisor Checklist\n` +
         `• 🏛️ Direct University Application Processing\n` +
+        `• 💶 <b>€${pricing.applicationFee} Official University Application Fee is INCLUDED (covered by our team)</b>\n` +
         `• 📜 NAWA SYRENA & Sworn Translations (Tłumacz Przysięgły)\n` +
         `• 💬 1-on-1 Dedicated Admissions Consultant Support\n\n` +
         `<i>Tap below to access your document checklist:</i>`;
@@ -554,7 +557,6 @@ export function setupAdminHandler(bot: Bot) {
       });
     } catch {}
 
-    const pricing = db.getPricingConfig();
     const updatedTarget = db.getUser(targetUserId);
 
     await ctx.reply(

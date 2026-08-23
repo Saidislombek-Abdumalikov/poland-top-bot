@@ -261,7 +261,7 @@ export function getPremiumKeyboard(
   lang: Language,
   isPremium: boolean,
   tier?: string,
-  fullPrice: number = 50
+  fullPrice: number = 60
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();

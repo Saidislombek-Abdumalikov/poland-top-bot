@@ -52,7 +52,7 @@ export async function checkPremiumAccess(
       ? (isUz ? featureName.uz : featureName.en)
       : featureName;
 
-  // Case 1: User has NAWA ($15) but needs Full Application + NAWA ($50)
+  // Case 1: User has NAWA ($15) but needs Full Application + NAWA ($60)
   if (user.isPremium && user.premiumTier === "NAWA" && requiredProduct === "NAWA_FULL") {
     const text = isUz
       ? `💎 <b>Full Application + NAWA Rejasi Talab Qilinadi</b>\n` +
@@ -62,9 +62,9 @@ export async function checkPremiumAccess(
         `🌟 <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice}) Imkoniyatlari:</b>\n` +
         `• 📁 Barcha kerakli hujjatlarni to'plash, tekshirish va tasdiqlash\n` +
         `• 🏛️ Universitet arizalarini to'liq yuritish va qabul nazorati\n` +
+        `• 💶 <b>€${pricing.applicationFee} Rasmiy Ariza To'lovi (Application Fee) shu paket ichida kiritilgan (admin/biz to'laymiz)</b>\n` +
         `• 📜 Qasamyodli tarjima (Tłumacz Przysięgły) va legalizatsiya ko'magi\n` +
         `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 doimiy aloqa\n\n` +
-        `💶 <i>Eslatma: Universitet arizalari uchun €${pricing.applicationFee} Application Fee rasmiy to'lovi alohida to'lanadi.</i>\n\n` +
         `💡 <i>Agar sizda Full Application + NAWA promokodi bo'lsa, uni quyida kiriting yoki maslahatchi bilan bog'laning:</i>`
       : `💎 <b>Full Application + NAWA Plan Required</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -73,9 +73,9 @@ export async function checkPremiumAccess(
         `🌟 <b>Full Application + NAWA ($${pricing.fullApplicationNawaPrice}) Includes:</b>\n` +
         `• 📁 Document collection, review, and verification workflow\n` +
         `• 🏛️ Full university application submission & dossier tracking\n` +
+        `• 💶 <b>€${pricing.applicationFee} Official University Application Fee is INCLUDED (covered by our admissions team)</b>\n` +
         `• 📜 Sworn translations (Tłumacz Przysięgły) & legalization guidance\n` +
         `• 💬 1-on-1 Dedicated Admissions Consultant Support\n\n` +
-        `💶 <i>Note: The €${pricing.applicationFee} university application fee applies separately where required.</i>\n\n` +
         `💡 <i>If you have an upgrade promo code, tap below to activate:</i>`;
 
     const kb = new InlineKeyboard()
@@ -103,15 +103,15 @@ export async function checkPremiumAccess(
       `📦 <b>1. NAWA — $${pricing.nawaPrice}</b>\n` +
       `• Standart NAWA SYRENA arizasi va yo'riqnomasi\n` +
       `• Nostrifikatsiya talablari bo'yicha yo'l-yo'riq\n` +
-      `• Standart ma'lumotlar bazasiga kirish\n\n` +
+      `• Standart ma'lumotlar bazasiga kirish\n` +
+      `• <i>(Universitet rasmiy €${pricing.applicationFee} ariza to'lovi alohida to'lanadi)</i>\n\n` +
       `📦 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}</b>\n` +
       `• NAWA paketidagi barcha xizmatlar\n` +
       `• Kerakli hujjatlarni to'plash, to'liq tekshirish va tasdiqlash\n` +
       `• Universitet arizalarini to'liq topshirish va qabul nazorati\n` +
+      `• 💶 <b>€${pricing.applicationFee} Rasmiy Ariza To'lovi (Application Fee) shu paket ichida to'liq qoplangan (biz to'laymiz)</b>\n` +
       `• Qasamyodli tarjima va legalizatsiya ko'magi\n` +
       `• Shaxsiy qabul koordinatori bilan doimiy aloqa\n\n` +
-      `💶 <b>Rasmiy To'lov:</b>\n` +
-      `• <b>€${pricing.applicationFee} Application Fee</b> (Universitet/konsullik rasmiy arizasi uchun — alohida to'lanadi)\n\n` +
       `💡 <i>Agar sizda faollashtirish promokodi bo'lsa, uni quyidagi tugma orqali kiriting:</i>`
     : `💎 <b>Premium Plans & Services</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -119,15 +119,15 @@ export async function checkPremiumAccess(
       `📦 <b>1. NAWA — $${pricing.nawaPrice}</b>\n` +
       `• Standard NAWA SYRENA application & recognition guide\n` +
       `• Diploma nostrification requirement guidance\n` +
-      `• Standard admissions resources access\n\n` +
+      `• Standard admissions resources access\n` +
+      `• <i>(Official €${pricing.applicationFee} university application fee paid separately)</i>\n\n` +
       `📦 <b>2. Full Application + NAWA — $${pricing.fullApplicationNawaPrice}</b>\n` +
       `• Everything in the NAWA plan\n` +
       `• Complete document collection, review, and verification\n` +
       `• End-to-end university application filing & dossier management\n` +
+      `• 💶 <b>€${pricing.applicationFee} Official University Application Fee is INCLUDED (covered by our team)</b>\n` +
       `• Sworn translation and legalization assistance\n` +
       `• 1-on-1 Dedicated Admissions Consultant\n\n` +
-      `💶 <b>Official Fee:</b>\n` +
-      `• <b>€${pricing.applicationFee} Application Fee</b> (Official university/consular administrative fee — paid separately)\n\n` +
       `💡 <i>If you have an activation promo code, tap below to enter it:</i>`;
 
   const kb = new InlineKeyboard()

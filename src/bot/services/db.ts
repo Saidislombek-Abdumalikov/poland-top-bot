@@ -31,7 +31,7 @@ const DB_FILE = path.join(DATA_DIR, "ptu_database.json");
 export const defaultPricingConfig: PricingConfig = {
   nawaPrice: 15,
   nawaCurrency: "USD",
-  fullApplicationNawaPrice: 50,
+  fullApplicationNawaPrice: 60,
   fullApplicationNawaCurrency: "USD",
   applicationFee: 30,
   applicationFeeCurrency: "EUR",
@@ -47,9 +47,9 @@ Ushbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq 
 
 <b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>
 Poland TOP Universities Polsha universitetlariga o'qishga kirish jarayonida axborot-maslahat, hujjatlar nazorati va arizalar bo'yicha yordam ko'rsatadi:
-• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi.
-• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima va 1-ga-1 shaxsiy koordinator.
-• 💶 <b>Rasmiy Ariza To'lovi:</b> €{{APPLICATION_FEE}} EUR (universitet yoki platforma talabiga binoan).
+• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).
+• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (admin/komandamiz tomonidan to'lanadi)</b>.
+• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA ($60) paketi ichida to'liq qoplangan; NAWA ($15) rejasida esa talaba tomonidan alohida to'lanadi.
 
 <b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>
 Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.
@@ -933,7 +933,8 @@ export class DatabaseService {
 
     // Create and link private transaction record
     const txnId = this.generateTransactionId();
-    const txnAmount = grantedTier === "NAWA" ? 15 : 50;
+    const pricing = this.getPricingConfig();
+    const txnAmount = grantedTier === "NAWA" ? pricing.nawaPrice : pricing.fullApplicationNawaPrice;
     const nowTimestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
 
     const txnRecord: TransactionRecord = {

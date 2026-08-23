@@ -22,6 +22,8 @@ async function runFinancialTestSuite() {
     }
   }
 
+  db.resetDatabaseToZero(5059829001);
+
   // 1. Transaction Generation & ID format
   test("Transaction IDs are uniquely generated with TXN- prefix", () => {
     const id1 = db.generateTransactionId();
@@ -41,7 +43,7 @@ async function runFinancialTestSuite() {
     const txn = db.createTransaction({
       userId: studentId,
       product: "NAWA_FULL",
-      amount: 50,
+      amount: 60,
       status: "UNVERIFIED",
       source: "EXTERNAL_TRANSFER",
       notes: "Student sent bank transfer receipt via Telegram",
@@ -51,7 +53,7 @@ async function runFinancialTestSuite() {
     assert.ok(txn.id);
     assert.equal(txn.userId, studentId);
     assert.equal(txn.product, "NAWA_FULL");
-    assert.equal(txn.amount, 50);
+    assert.equal(txn.amount, 60);
     assert.equal(txn.status, "UNVERIFIED");
     assert.equal(txn.source, "EXTERNAL_TRANSFER");
 
@@ -118,7 +120,7 @@ async function runFinancialTestSuite() {
     assert.equal(txn.status, "PAID");
     assert.equal(txn.source, "PROMO_CODE");
     assert.equal(txn.promoCode, promo.code);
-    assert.equal(txn.amount, 50);
+    assert.equal(txn.amount, 60);
   });
 
   // 5. Accurate Real-Time Financial Calculations
@@ -149,7 +151,7 @@ async function runFinancialTestSuite() {
     const txn = db.createTransaction({
       userId: studentId,
       product: "NAWA_FULL",
-      amount: 50,
+      amount: 60,
       status: "UNVERIFIED",
       source: "EXTERNAL_TRANSFER",
     });
