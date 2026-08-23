@@ -213,6 +213,26 @@ export interface AuditLogEntry {
   adminName?: string;
 }
 
+export type PaymentStatus = "UNVERIFIED" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED";
+export type PaymentSource = "EXTERNAL_TRANSFER" | "PROMO_CODE" | "MANUAL_ADVISOR" | "PAYMENT_GATEWAY";
+
+export interface TransactionRecord {
+  id: string; // e.g. "TXN-A1B2C3"
+  userId: number;
+  userName?: string;
+  product: "NAWA" | "NAWA_FULL";
+  amount: number; // 15 or 50
+  currency: string; // "USD"
+  status: PaymentStatus;
+  source: PaymentSource;
+  promoCode?: string;
+  createdAt: string;
+  verifiedAt?: string;
+  verifiedBy?: number;
+  verifiedByName?: string;
+  notes?: string;
+}
+
 export interface UserSessionData {
   userId: number;
   username?: string;
@@ -235,6 +255,10 @@ export interface UserSessionData {
   isPremium: boolean;
   premiumTier: PremiumTier;
   premiumCode?: string;
+  premiumGrantReason?: "VERIFIED_PAYMENT" | "PROMO_CODE" | "ADMIN_GRANT";
+  premiumTransactionId?: string;
+  premiumVerifiedAt?: string;
+  premiumVerifiedBy?: number;
   savedPrograms: string[];
   documents: Record<string, DocumentRecord>;
   activeQuiz?: {

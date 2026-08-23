@@ -969,6 +969,67 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
+    // 12. Super Admin Record External Payment / Transaction
+    if (user.waitingFor === ("admin_super_create_txn_user" as any)) {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+      if (!user.isSuperAdmin) return;
+
+      const parts = text.split(/\s+/);
+      const targetUserIdStr = parts[0]?.replace("@", "").trim();
+      const rawProduct = (parts[1] || "").toUpperCase();
+      const product: "NAWA" | "NAWA_FULL" = rawProduct === "NAWA" ? "NAWA" : "NAWA_FULL";
+      const defaultAmount = product === "NAWA" ? 15 : 50;
+      const amount = parts[2] && !isNaN(parseFloat(parts[2])) ? parseFloat(parts[2]) : defaultAmount;
+      const rawStatus = (parts[3] || "PAID").toUpperCase();
+      const status: "UNVERIFIED" | "PAID" = rawStatus === "UNVERIFIED" ? "UNVERIFIED" : "PAID";
+
+      let targetUser: UserSessionData | undefined;
+      if (/^\d+$/.test(targetUserIdStr)) {
+        targetUser = db.getUser(parseInt(targetUserIdStr, 10));
+      } else {
+        const found = db.searchUsers(targetUserIdStr);
+        targetUser = found[0];
+      }
+
+      if (!targetUser) {
+        await ctx.reply(
+          `⚠️ <b>User Not Found.</b> Please provide a valid numeric User ID or registered @username.`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+
+      const txn = db.createTransaction({
+        userId: targetUser.userId,
+        userName: targetUser.fullName || targetUser.username || `User #${targetUser.userId}`,
+        product,
+        amount,
+        status,
+        source: "EXTERNAL_TRANSFER",
+        notes: `Recorded manually by Super Admin #${userId}`,
+        actorId: userId,
+      });
+
+      if (status === "PAID") {
+        db.verifyPaymentTransaction(txn.id, userId, "Direct verification upon manual entry");
+      }
+
+      await ctx.reply(
+        `💰 <b>Transaction Successfully Recorded!</b>\n\n` +
+          `• 🧾 <b>ID:</b> <code>${txn.id}</code>\n` +
+          `• 👤 <b>Student:</b> ${escapeHtml(targetUser.fullName || targetUser.username || "User")} (<code>${targetUser.userId}</code>)\n` +
+          `• 📦 <b>Product:</b> <b>${txn.product}</b> ($${txn.amount})\n` +
+          `• 📌 <b>Status:</b> <b>${status}</b>\n` +
+          `• 💳 <b>Source:</b> External Bank/Card Transfer\n\n` +
+          (status === "PAID"
+            ? `✨ <i>Premium ${txn.product} has been automatically activated for the student.</i>`
+            : `🟡 <i>Payment is UNVERIFIED. You can verify it anytime in Financial HQ.</i>`),
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
     return next();
   });
 }

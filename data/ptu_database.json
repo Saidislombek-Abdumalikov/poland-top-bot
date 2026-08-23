@@ -231,7 +231,7 @@
         }
       },
       "isPremium": true,
-      "premiumCode": "MFMMZ7ZP",
+      "premiumCode": "9F5ANDBJ",
       "premiumTier": "NAWA",
       "isRegistered": false,
       "isSuperAdmin": false,
@@ -239,7 +239,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "preferredLevel": "Bachelor"
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:59:29",
+      "premiumGrantReason": "PROMO_CODE",
+      "premiumTransactionId": "TXN-B19E7B"
     },
     "333102": {
       "lang": "en",
@@ -312,7 +315,7 @@
         }
       },
       "isPremium": true,
-      "premiumCode": "S55CMY8Z",
+      "premiumCode": "25R35V26",
       "premiumTier": "NAWA_FULL",
       "isRegistered": false,
       "isSuperAdmin": false,
@@ -320,7 +323,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "preferredLevel": "Bachelor"
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:59:29",
+      "premiumGrantReason": "PROMO_CODE",
+      "premiumTransactionId": "TXN-A837B8"
     },
     "333103": {
       "lang": "en",
@@ -393,7 +399,7 @@
         }
       },
       "isPremium": true,
-      "premiumCode": "DHKBBCF4",
+      "premiumCode": "GETZD458",
       "premiumTier": "NAWA",
       "isRegistered": false,
       "isSuperAdmin": false,
@@ -401,7 +407,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "preferredLevel": "Bachelor"
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:59:29",
+      "premiumGrantReason": "PROMO_CODE",
+      "premiumTransactionId": "TXN-AA8540"
     },
     "333201": {
       "lang": "en",
@@ -474,7 +483,7 @@
         }
       },
       "isPremium": true,
-      "premiumCode": "8SSQMW4D",
+      "premiumCode": "Q6MP7CJZ",
       "premiumTier": "NAWA_FULL",
       "isRegistered": false,
       "isSuperAdmin": false,
@@ -482,7 +491,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "preferredLevel": "Bachelor"
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:59:29",
+      "premiumGrantReason": "PROMO_CODE",
+      "premiumTransactionId": "TXN-6FDEFD"
     },
     "333202": {
       "lang": "en",
@@ -725,8 +737,8 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787514290680
+      "sessionVersion": 3,
+      "adminSessionExpiresAt": 1787515169334
     },
     "444102": {
       "lang": "en",
@@ -809,15 +821,598 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787514290687
+      "sessionVersion": 3,
+      "adminSessionExpiresAt": 1787515169342
     },
-    "888801": {
+    "555501": {
       "lang": "en",
-      "userId": 888801,
+      "userId": 555501,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120968
+    },
+    "555502": {
+      "lang": "en",
+      "userId": 555502,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120974
+    },
+    "666601": {
+      "lang": "en",
+      "userId": 666601,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "super_admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": true,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120943
+    },
+    "666602": {
+      "lang": "en",
+      "userId": 666602,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120950
+    },
+    "777101": {
+      "lang": "en",
+      "userId": 777101,
       "country": "Uzbekistan",
       "isAdmin": false,
-      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor"
+    },
+    "777102": {
+      "lang": "en",
+      "userId": 777102,
+      "country": "Uzbekistan",
+      "isAdmin": false,
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": true,
+      "premiumTier": "NAWA",
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:58:20",
+      "premiumVerifiedBy": 5059829001,
+      "premiumGrantReason": "VERIFIED_PAYMENT",
+      "premiumTransactionId": "TXN-67BA72"
+    },
+    "777103": {
+      "lang": "en",
+      "userId": 777103,
+      "country": "Uzbekistan",
+      "isAdmin": false,
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": true,
+      "premiumCode": "PH2XZ6S6",
+      "premiumTier": "NAWA_FULL",
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "premiumVerifiedAt": "2026-08-23 07:58:20",
+      "premiumGrantReason": "PROMO_CODE",
+      "premiumTransactionId": "TXN-877B5B"
+    },
+    "777104": {
+      "lang": "en",
+      "userId": 777104,
+      "country": "Uzbekistan",
+      "isAdmin": false,
       "documents": {
         "photo": {
           "id": "photo",
@@ -892,7 +1487,346 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "adminSessionExpiresAt": 1787512397508
+      "premiumVerifiedAt": "2026-08-23 07:58:20",
+      "premiumVerifiedBy": 5059829001,
+      "premiumGrantReason": "VERIFIED_PAYMENT",
+      "premiumTransactionId": "TXN-8D18AF"
+    },
+    "777701": {
+      "lang": "en",
+      "userId": 777701,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "super_admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": true,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 3,
+      "adminSessionExpiresAt": 1787515120941
+    },
+    "777702": {
+      "lang": "en",
+      "userId": 777702,
+      "country": "Uzbekistan",
+      "isAdmin": false,
+      "adminRole": null,
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 3,
+      "adminSessionExpiresAt": 0
+    },
+    "888101": {
+      "lang": "en",
+      "userId": 888101,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515100168
+    },
+    "888801": {
+      "lang": "en",
+      "userId": 888801,
+      "country": "Uzbekistan",
+      "isAdmin": true,
+      "adminRole": "admin",
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "ghostSession": null,
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor",
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120919
     },
     "888802": {
       "lang": "en",
@@ -967,6 +1901,7 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
+      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -974,7 +1909,8 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "adminSessionExpiresAt": 1787512397511
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120921
     },
     "999901": {
       "lang": "en",
@@ -1049,6 +1985,7 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
+      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -1056,6 +1993,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
+      "sessionVersion": 3,
       "adminSessionExpiresAt": 0
     },
     "999902": {
@@ -1131,6 +2069,7 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
+      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -1138,7 +2077,8 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "adminSessionExpiresAt": 1787512397495
+      "sessionVersion": 2,
+      "adminSessionExpiresAt": 1787515120908
     },
     "999903": {
       "lang": "en",
@@ -1213,6 +2153,7 @@
       },
       "isPremium": false,
       "premiumTier": "Free",
+      "ghostSession": null,
       "isRegistered": false,
       "isSuperAdmin": false,
       "lastActiveAt": "2026-08-23",
@@ -1220,7 +2161,88 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
+      "sessionVersion": 3,
       "adminSessionExpiresAt": 0
+    },
+    "999999": {
+      "lang": "en",
+      "userId": 999999,
+      "country": "Uzbekistan",
+      "isAdmin": false,
+      "documents": {
+        "photo": {
+          "id": "photo",
+          "name": {
+            "en": "Biometric ID Photos (35x45 mm)",
+            "uz": "Biometrik Fotosurat (3.5x4.5 sm)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "diploma": {
+          "id": "diploma",
+          "name": {
+            "en": "High School Diploma / Bachelor Degree",
+            "uz": "Attestat yoki Bakalavr Diplomi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "language": {
+          "id": "language",
+          "name": {
+            "en": "English Language Certificate (IELTS/Duolingo)",
+            "uz": "Ingliz Tili Sertifikati (IELTS / CEFR)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "passport": {
+          "id": "passport",
+          "name": {
+            "en": "International Passport",
+            "uz": "Xorijga Chiqish Pasporti (Zagran)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "apostille": {
+          "id": "apostille",
+          "name": {
+            "en": "Apostille Certificate / Legalization",
+            "uz": "Apostil Muhri / Legalizatsiya"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "eligibility": {
+          "id": "eligibility",
+          "name": {
+            "en": "Eligibility Letter (O'qish huquqi ma'lumotnomasi)",
+            "uz": "O'qish Huquqi Ma'lumotnomasi (Eligibility)"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        },
+        "translation": {
+          "id": "translation",
+          "name": {
+            "en": "Sworn Polish Translation (Tłumacz)",
+            "uz": "Polsha Qasamyodli Tarjimasi"
+          },
+          "status": "missing",
+          "updatedAt": "2026-08-23"
+        }
+      },
+      "isPremium": false,
+      "premiumTier": "Free",
+      "isRegistered": false,
+      "isSuperAdmin": false,
+      "lastActiveAt": "2026-08-23",
+      "registeredAt": "2026-08-23",
+      "preferredCity": "Warsaw",
+      "savedPrograms": [],
+      "preferredLevel": "Bachelor"
     },
     "5059829001": {
       "lang": "uz",
@@ -1309,6 +2331,7 @@
       "waitingFor": "admin_auth",
       "premiumCode": "PTU-PDKG-AR2P",
       "premiumTier": "Full Premium",
+      "ghostSession": null,
       "isRegistered": true,
       "isSuperAdmin": true,
       "lastActiveAt": "2026-08-23",
@@ -1316,11 +2339,46 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
+      "sessionVersion": 5,
       "lastPromptMsgId": 621,
-      "adminSessionExpiresAt": 1787512704454
+      "adminSessionExpiresAt": 1787515100121
     }
   },
   "promoCodes": {
+    "22DUH83A": {
+      "code": "22DUH83A",
+      "tier": "NAWA_FULL",
+      "maxUses": 1,
+      "isActive": true,
+      "createdAt": "2026-08-23",
+      "createdBy": 444102,
+      "isExpired": false,
+      "usedCount": 0,
+      "createdByName": "Super Admin Boss"
+    },
+    "25R35V26": {
+      "code": "25R35V26",
+      "tier": "NAWA_FULL",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 333102,
+      "usedByUserName": "User #333102"
+    },
+    "2PU4A5KR": {
+      "code": "2PU4A5KR",
+      "tier": "NAWA",
+      "maxUses": 1,
+      "isActive": true,
+      "createdAt": "2026-08-23",
+      "createdBy": 444101,
+      "isExpired": false,
+      "usedCount": 0,
+      "createdByName": "Test Admin"
+    },
     "3WXDMFH4": {
       "code": "3WXDMFH4",
       "tier": "NAWA",
@@ -1344,8 +2402,53 @@
       "usedByUserId": 333201,
       "usedByUserName": "User #333201"
     },
+    "9F5ANDBJ": {
+      "code": "9F5ANDBJ",
+      "tier": "NAWA",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 333101,
+      "usedByUserName": "User #333101"
+    },
+    "ALW2PE5R": {
+      "code": "ALW2PE5R",
+      "tier": "NAWA_FULL",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 777103,
+      "usedByUserName": "User #777103"
+    },
+    "CTJYDEZG": {
+      "code": "CTJYDEZG",
+      "tier": "NAWA",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": true,
+      "usedCount": 0
+    },
     "DHKBBCF4": {
       "code": "DHKBBCF4",
+      "tier": "NAWA",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 333103,
+      "usedByUserName": "User #333103"
+    },
+    "GETZD458": {
+      "code": "GETZD458",
       "tier": "NAWA",
       "usedAt": "2026-08-23",
       "maxUses": 1,
@@ -1378,6 +2481,30 @@
       "isExpired": false,
       "usedCount": 0,
       "createdByName": "Super Admin Boss"
+    },
+    "PH2XZ6S6": {
+      "code": "PH2XZ6S6",
+      "tier": "NAWA_FULL",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 777103,
+      "usedByUserName": "User #777103"
+    },
+    "Q6MP7CJZ": {
+      "code": "Q6MP7CJZ",
+      "tier": "NAWA_FULL",
+      "usedAt": "2026-08-23",
+      "maxUses": 1,
+      "isActive": false,
+      "createdAt": "2026-08-23",
+      "isExpired": false,
+      "usedCount": 1,
+      "usedByUserId": 333201,
+      "usedByUserName": "User #333201"
     },
     "S55CMY8Z": {
       "code": "S55CMY8Z",
@@ -1428,6 +2555,64 @@
       "createdAt": "2026-08-22",
       "isExpired": true,
       "usedCount": 0
+    }
+  },
+  "transactions": {
+    "TXN-6FDEFD": {
+      "id": "TXN-6FDEFD",
+      "notes": "Access unlocked via promo code [Q6MP7CJZ]",
+      "amount": 50,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 333201,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #333201",
+      "createdAt": "2026-08-23 07:59:29",
+      "promoCode": "Q6MP7CJZ",
+      "verifiedAt": "2026-08-23 07:59:29"
+    },
+    "TXN-A837B8": {
+      "id": "TXN-A837B8",
+      "notes": "Access unlocked via promo code [25R35V26]",
+      "amount": 50,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 333102,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #333102",
+      "createdAt": "2026-08-23 07:59:29",
+      "promoCode": "25R35V26",
+      "verifiedAt": "2026-08-23 07:59:29"
+    },
+    "TXN-AA8540": {
+      "id": "TXN-AA8540",
+      "notes": "Access unlocked via promo code [GETZD458]",
+      "amount": 15,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 333103,
+      "product": "NAWA",
+      "currency": "USD",
+      "userName": "User #333103",
+      "createdAt": "2026-08-23 07:59:29",
+      "promoCode": "GETZD458",
+      "verifiedAt": "2026-08-23 07:59:29"
+    },
+    "TXN-B19E7B": {
+      "id": "TXN-B19E7B",
+      "notes": "Access unlocked via promo code [9F5ANDBJ]",
+      "amount": 15,
+      "source": "PROMO_CODE",
+      "status": "PAID",
+      "userId": 333101,
+      "product": "NAWA",
+      "currency": "USD",
+      "userName": "User #333101",
+      "createdAt": "2026-08-23 07:59:29",
+      "promoCode": "9F5ANDBJ",
+      "verifiedAt": "2026-08-23 07:59:29"
     }
   },
   "applications": {},
@@ -1907,6 +3092,305 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "36B9D9",
+      "action": "PROMO_CODE_DISABLED",
+      "status": "success",
+      "target": "CTJYDEZG",
+      "actorId": 999,
+      "adminId": 999,
+      "details": "Disabled promo code 'CTJYDEZG' (NAWA)",
+      "actorName": "Administrator",
+      "actorRole": "admin",
+      "adminName": "Administrator",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "82BEAC",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "Q6MP7CJZ",
+      "actorId": 333201,
+      "adminId": 333201,
+      "details": "Student successfully redeemed promo code 'Q6MP7CJZ' granting [NAWA_FULL] package. Transaction TXN-6FDEFD recorded.",
+      "actorName": "User #333201",
+      "actorRole": "system",
+      "adminName": "User #333201",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "B389F9",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "GETZD458",
+      "actorId": 333103,
+      "adminId": 333103,
+      "details": "Student successfully redeemed promo code 'GETZD458' granting [NAWA] package. Transaction TXN-AA8540 recorded.",
+      "actorName": "User #333103",
+      "actorRole": "system",
+      "adminName": "User #333103",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "F75EC8",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "25R35V26",
+      "actorId": 333102,
+      "adminId": 333102,
+      "details": "Student successfully redeemed promo code '25R35V26' granting [NAWA_FULL] package. Transaction TXN-A837B8 recorded.",
+      "actorName": "User #333102",
+      "actorRole": "system",
+      "adminName": "User #333102",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "3B7A5F",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "9F5ANDBJ",
+      "actorId": 333101,
+      "adminId": 333101,
+      "details": "Student successfully redeemed promo code '9F5ANDBJ' granting [NAWA] package. Transaction TXN-B19E7B recorded.",
+      "actorName": "User #333101",
+      "actorRole": "system",
+      "adminName": "User #333101",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "5424B5",
+      "action": "PROMO_CODE_CREATED",
+      "status": "success",
+      "target": "22DUH83A",
+      "actorId": 444102,
+      "adminId": 444102,
+      "details": "Created promo code '22DUH83A' for package [NAWA_FULL] (Single-use)",
+      "actorName": "Super Admin Boss",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin Boss",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "4E0A38",
+      "action": "PROMO_CODE_CREATED",
+      "status": "success",
+      "target": "2PU4A5KR",
+      "actorId": 444101,
+      "adminId": 444101,
+      "details": "Created promo code '2PU4A5KR' for package [NAWA] (Single-use)",
+      "actorName": "Test Admin",
+      "actorRole": "admin",
+      "adminName": "Test Admin",
+      "timestamp": "2026-08-23 07:59:29"
+    },
+    {
+      "id": "489782",
+      "action": "ADMIN_PERMISSION_GRANTED",
+      "status": "success",
+      "target": "555502",
+      "actorId": 999999,
+      "adminId": 999999,
+      "details": "Granted Normal Admin privileges to User #555502 (User)",
+      "actorName": "Admin #999999",
+      "actorRole": "super_admin",
+      "adminName": "Admin #999999",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "676911",
+      "action": "GHOST_MODE_EXIT",
+      "status": "success",
+      "target": "666602",
+      "actorId": 666601,
+      "adminId": 666601,
+      "details": "Exited Ghost Mode (was acting as Admin #666602)",
+      "actorName": "Super Admin",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "9F0880",
+      "action": "DOCUMENT_VERIFY",
+      "status": "success",
+      "target": "12345",
+      "actorId": 666601,
+      "adminId": 666601,
+      "details": "[GHOST MODE acting as Admin #666602] Approved secondary school diploma for student #12345",
+      "actorName": "Super Admin (Ghost as Admin #666602)",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin (Ghost as Admin #666602)",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "A2E5C8",
+      "action": "GHOST_MODE_ENTER",
+      "status": "success",
+      "target": "666602",
+      "actorId": 666601,
+      "adminId": 666601,
+      "details": "[GHOST MODE acting as Admin #666602] Entered Ghost Mode acting as Admin #666602 (Admin #666602)",
+      "actorName": "Super Admin (Ghost as Admin #666602)",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin (Ghost as Admin #666602)",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "A67B16",
+      "action": "ADMIN_PERMISSION_GRANTED",
+      "status": "success",
+      "target": "666602",
+      "actorId": 666601,
+      "adminId": 666601,
+      "details": "Granted Normal Admin privileges to User #666602 (User)",
+      "actorName": "Admin #666601",
+      "actorRole": "super_admin",
+      "adminName": "Admin #666601",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "318878",
+      "action": "ADMIN_PERMISSION_REVOKED",
+      "status": "success",
+      "target": "777702",
+      "actorId": 777701,
+      "adminId": 777701,
+      "details": "Revoked admin privileges from User #777702 (User). All sessions invalidated.",
+      "actorName": "Admin #777701",
+      "actorRole": "super_admin",
+      "adminName": "Admin #777701",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "C23A7C",
+      "action": "ADMIN_PERMISSION_GRANTED",
+      "status": "success",
+      "target": "777702",
+      "actorId": 777701,
+      "adminId": 777701,
+      "details": "Granted Normal Admin privileges to User #777702 (User)",
+      "actorName": "Admin #777701",
+      "actorRole": "super_admin",
+      "adminName": "Admin #777701",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "DD671E",
+      "action": "TEST_ACTION",
+      "status": "success",
+      "target": "[PROTECTED_CREDENTIAL]",
+      "actorId": 888802,
+      "adminId": 888802,
+      "details": "User tried to login with [PROTECTED_CREDENTIAL] and [PROTECTED_CREDENTIAL] password",
+      "actorName": "Super Admin",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin",
+      "timestamp": "2026-08-23 07:58:40"
+    },
+    {
+      "id": "C41CB3",
+      "action": "PAYMENT_REFUNDED",
+      "status": "success",
+      "target": "TXN-8D18AF",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Super Admin refunded Transaction TXN-8D18AF ($50). Premium revoked for User #777104.",
+      "actorName": "Saidislom Abdumalikov",
+      "actorRole": "super_admin",
+      "adminName": "Saidislom Abdumalikov",
+      "timestamp": "2026-08-23 07:58:20"
+    },
+    {
+      "id": "894F8D",
+      "action": "PAYMENT_VERIFIED",
+      "status": "success",
+      "target": "TXN-8D18AF",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Super Admin manually verified payment for Transaction TXN-8D18AF ($50 NAWA_FULL). Premium activated for User #777104.",
+      "actorName": "Saidislom Abdumalikov",
+      "actorRole": "super_admin",
+      "adminName": "Saidislom Abdumalikov",
+      "timestamp": "2026-08-23 07:58:20"
+    },
+    {
+      "id": "905933",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "PH2XZ6S6",
+      "actorId": 777103,
+      "adminId": 777103,
+      "details": "Student successfully redeemed promo code 'PH2XZ6S6' granting [NAWA_FULL] package. Transaction TXN-877B5B recorded.",
+      "actorName": "User #777103",
+      "actorRole": "system",
+      "adminName": "User #777103",
+      "timestamp": "2026-08-23 07:58:20"
+    },
+    {
+      "id": "91B7D7",
+      "action": "PAYMENT_VERIFIED",
+      "status": "success",
+      "target": "TXN-67BA72",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Super Admin manually verified payment for Transaction TXN-67BA72 ($15 NAWA). Premium activated for User #777102.",
+      "actorName": "Saidislom Abdumalikov",
+      "actorRole": "super_admin",
+      "adminName": "Saidislom Abdumalikov",
+      "timestamp": "2026-08-23 07:58:20"
+    },
+    {
+      "id": "8379CA",
+      "action": "TRANSACTION_CREATED",
+      "status": "success",
+      "target": "TXN-D87E6E",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Created private transaction record TXN-D87E6E (NAWA_FULL, $50, status: UNVERIFIED) for User #777101",
+      "actorName": "Super Admin",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin",
+      "timestamp": "2026-08-23 07:58:20"
+    },
+    {
+      "id": "6E6CB8",
+      "action": "PROMO_CODE_REDEEMED",
+      "status": "success",
+      "target": "ALW2PE5R",
+      "actorId": 777103,
+      "adminId": 777103,
+      "details": "Student successfully redeemed promo code 'ALW2PE5R' granting [NAWA_FULL] package. Transaction TXN-F59770 recorded.",
+      "actorName": "User #777103",
+      "actorRole": "system",
+      "adminName": "User #777103",
+      "timestamp": "2026-08-23 07:55:29"
+    },
+    {
+      "id": "1C5F10",
+      "action": "PAYMENT_VERIFIED",
+      "status": "success",
+      "target": "TXN-FD1957",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Super Admin manually verified payment for Transaction TXN-FD1957 ($15 NAWA). Premium activated for User #777102.",
+      "actorName": "Saidislom Abdumalikov",
+      "actorRole": "super_admin",
+      "adminName": "Saidislom Abdumalikov",
+      "timestamp": "2026-08-23 07:55:29"
+    },
+    {
+      "id": "CB55B7",
+      "action": "TRANSACTION_CREATED",
+      "status": "success",
+      "target": "TXN-2C350D",
+      "actorId": 5059829001,
+      "adminId": 5059829001,
+      "details": "Created private transaction record TXN-2C350D (NAWA_FULL, $50, status: UNVERIFIED) for User #777101",
+      "actorName": "Super Admin",
+      "actorRole": "super_admin",
+      "adminName": "Super Admin",
+      "timestamp": "2026-08-23 07:55:29"
+    },
     {
       "id": "A891CE",
       "action": "PROMO_CODE_DISABLED",

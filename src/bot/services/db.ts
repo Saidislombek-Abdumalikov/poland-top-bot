@@ -17,6 +17,9 @@ import {
   AppStage,
   DocStatus,
   AuditLogEntry,
+  TransactionRecord,
+  PaymentStatus,
+  PaymentSource,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
 
@@ -113,6 +116,7 @@ export const defaultDocumentDefinitions: Record<string, DocumentDefinition> = {
 interface DatabaseSchema {
   users: Record<number, UserSessionData>;
   promoCodes: Record<string, PromoCodeRecord>;
+  transactions: Record<string, TransactionRecord>;
   applications: Record<string, ApplicationRecord>;
   nawaApplications: Record<string, NawaApplicationRecord>;
   universities: Record<string, University>;
@@ -125,6 +129,7 @@ export class DatabaseService {
   private data: DatabaseSchema = {
     users: {},
     promoCodes: {},
+    transactions: {},
     applications: {},
     nawaApplications: {},
     universities: {},
@@ -171,6 +176,7 @@ export class DatabaseService {
         this.data = {
           users: data.data.users || this.data.users || {},
           promoCodes: data.data.promoCodes || this.data.promoCodes || {},
+          transactions: data.data.transactions || this.data.transactions || {},
           applications: data.data.applications || this.data.applications || {},
           nawaApplications: data.data.nawaApplications || this.data.nawaApplications || {},
           universities: data.data.universities || this.data.universities || {},
@@ -231,6 +237,7 @@ export class DatabaseService {
         this.data = {
           users: parsed.users || {},
           promoCodes: parsed.promoCodes || {},
+          transactions: parsed.transactions || {},
           applications: parsed.applications || {},
           nawaApplications: parsed.nawaApplications || {},
           universities: parsed.universities || {},
@@ -750,17 +757,42 @@ export class DatabaseService {
     const grantedTier: PremiumTier =
       promo.tier === "NAWA" || promo.tier === "NAWA_FULL" ? promo.tier : "NAWA_FULL";
 
+    // Create and link private transaction record
+    const txnId = this.generateTransactionId();
+    const txnAmount = grantedTier === "NAWA" ? 15 : 50;
+    const nowTimestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+    const txnRecord: TransactionRecord = {
+      id: txnId,
+      userId,
+      userName: user.fullName || user.username || `User #${userId}`,
+      product: grantedTier === "NAWA" ? "NAWA" : "NAWA_FULL",
+      amount: txnAmount,
+      currency: "USD",
+      status: "PAID",
+      source: "PROMO_CODE",
+      promoCode: promo.code,
+      createdAt: nowTimestamp,
+      verifiedAt: nowTimestamp,
+      notes: `Access unlocked via promo code [${promo.code}]`,
+    };
+    if (!this.data.transactions) this.data.transactions = {};
+    this.data.transactions[txnId] = txnRecord;
+
     this.updateUser(userId, {
       isPremium: true,
       premiumTier: grantedTier,
       premiumCode: promo.code,
+      premiumGrantReason: "PROMO_CODE",
+      premiumTransactionId: txnId,
+      premiumVerifiedAt: nowTimestamp,
     });
 
     this.logAdminAction(
       userId,
       user.fullName || user.username || `User #${userId}`,
       "PROMO_CODE_REDEEMED",
-      `Student successfully redeemed promo code '${promo.code}' granting [${grantedTier}] package.`,
+      `Student successfully redeemed promo code '${promo.code}' granting [${grantedTier}] package. Transaction ${txnId} recorded.`,
       promo.code,
       "system",
       "success"
@@ -772,6 +804,225 @@ export class DatabaseService {
 
   public getAllPromoCodes(): PromoCodeRecord[] {
     return Object.values(this.data.promoCodes);
+  }
+
+  // ================= PRIVATE FINANCIAL & TRANSACTION LEDGER =================
+  public generateTransactionId(): string {
+    const hex = crypto.randomBytes(3).toString("hex").toUpperCase();
+    return `TXN-${hex}`;
+  }
+
+  public createTransaction(params: {
+    userId: number;
+    userName?: string;
+    product: "NAWA" | "NAWA_FULL";
+    amount?: number;
+    currency?: string;
+    status?: PaymentStatus;
+    source?: PaymentSource;
+    promoCode?: string;
+    notes?: string;
+    actorId?: number;
+  }): TransactionRecord {
+    const id = this.generateTransactionId();
+    const defaultAmount = params.product === "NAWA" ? 15 : 50;
+    const user = this.getUser(params.userId);
+
+    const record: TransactionRecord = {
+      id,
+      userId: params.userId,
+      userName: params.userName || user.fullName || user.username || `User #${params.userId}`,
+      product: params.product,
+      amount: params.amount !== undefined ? params.amount : defaultAmount,
+      currency: params.currency || "USD",
+      status: params.status || "UNVERIFIED",
+      source: params.source || "EXTERNAL_TRANSFER",
+      promoCode: params.promoCode,
+      createdAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+      notes: params.notes,
+    };
+
+    if (!this.data.transactions) this.data.transactions = {};
+    this.data.transactions[id] = record;
+
+    if (record.status === "PAID") {
+      this.updateUser(params.userId, {
+        isPremium: true,
+        premiumTier: record.product,
+        premiumGrantReason: "VERIFIED_PAYMENT",
+        premiumTransactionId: id,
+        premiumVerifiedAt: record.createdAt,
+        premiumVerifiedBy: params.actorId,
+      });
+    }
+
+    if (params.actorId) {
+      this.logAdminAction(
+        params.actorId,
+        "Super Admin",
+        "TRANSACTION_CREATED",
+        `Created private transaction record ${id} (${record.product}, $${record.amount}, status: ${record.status}) for User #${record.userId}`,
+        id,
+        "super_admin"
+      );
+    }
+
+    this.saveDatabase();
+    return record;
+  }
+
+  public getTransaction(id: string): TransactionRecord | undefined {
+    if (!id || !this.data.transactions) return undefined;
+    return this.data.transactions[id.toUpperCase().trim()];
+  }
+
+  public getAllTransactions(): TransactionRecord[] {
+    if (!this.data.transactions) return [];
+    return Object.values(this.data.transactions).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  public getFinancialSummary() {
+    const txns = this.getAllTransactions();
+    let totalVerifiedRevenue = 0;
+    let verifiedPaymentsCount = 0;
+    let nawaCount = 0;
+    let nawaRevenue = 0;
+    let nawaFullCount = 0;
+    let nawaFullRevenue = 0;
+    let unverifiedCount = 0;
+    let refundedCount = 0;
+    let cancelledCount = 0;
+
+    for (const t of txns) {
+      if (t.status === "PAID") {
+        totalVerifiedRevenue += t.amount || 0;
+        verifiedPaymentsCount += 1;
+        if (t.product === "NAWA") {
+          nawaCount += 1;
+          nawaRevenue += t.amount || 15;
+        } else if (t.product === "NAWA_FULL") {
+          nawaFullCount += 1;
+          nawaFullRevenue += t.amount || 50;
+        }
+      } else if (t.status === "UNVERIFIED") {
+        unverifiedCount += 1;
+      } else if (t.status === "REFUNDED") {
+        refundedCount += 1;
+      } else if (t.status === "CANCELLED" || t.status === "FAILED") {
+        cancelledCount += 1;
+      }
+    }
+
+    return {
+      totalVerifiedRevenue,
+      verifiedPaymentsCount,
+      nawaCount,
+      nawaRevenue,
+      nawaFullCount,
+      nawaFullRevenue,
+      unverifiedCount,
+      refundedCount,
+      cancelledCount,
+      totalTxnCount: txns.length,
+    };
+  }
+
+  public verifyPaymentTransaction(
+    transactionId: string,
+    superAdminId: number,
+    notes?: string
+  ): { success: boolean; error?: string; transaction?: TransactionRecord } {
+    const txn = this.getTransaction(transactionId);
+    if (!txn) {
+      return { success: false, error: "Transaction not found." };
+    }
+    if (txn.status === "PAID") {
+      return { success: false, error: "Transaction is already marked as verified and paid." };
+    }
+
+    const superUser = this.getUser(superAdminId);
+    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+    txn.status = "PAID";
+    txn.verifiedAt = now;
+    txn.verifiedBy = superAdminId;
+    txn.verifiedByName = superUser.fullName || superUser.username || `Super Admin #${superAdminId}`;
+    if (notes) txn.notes = notes;
+
+    // Activate user entitlement
+    this.updateUser(txn.userId, {
+      isPremium: true,
+      premiumTier: txn.product,
+      premiumGrantReason: "VERIFIED_PAYMENT",
+      premiumTransactionId: txn.id,
+      premiumVerifiedAt: now,
+      premiumVerifiedBy: superAdminId,
+    });
+
+    this.logAdminAction(
+      superAdminId,
+      superUser.fullName || "Super Admin",
+      "PAYMENT_VERIFIED",
+      `Super Admin manually verified payment for Transaction ${txn.id} ($${txn.amount} ${txn.product}). Premium activated for User #${txn.userId}.`,
+      txn.id,
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return { success: true, transaction: txn };
+  }
+
+  public refundPaymentTransaction(
+    transactionId: string,
+    superAdminId: number,
+    reason?: string
+  ): boolean {
+    const txn = this.getTransaction(transactionId);
+    if (!txn || txn.status !== "PAID") return false;
+
+    txn.status = "REFUNDED";
+    if (reason) txn.notes = `Refunded: ${reason}`;
+
+    // Revoke premium if it was tied to this transaction
+    const user = this.getUser(txn.userId);
+    if (user.premiumTransactionId === txn.id) {
+      this.updateUser(txn.userId, {
+        isPremium: false,
+        premiumTier: "Free",
+      });
+    }
+
+    const superUser = this.getUser(superAdminId);
+    this.logAdminAction(
+      superAdminId,
+      superUser.fullName || "Super Admin",
+      "PAYMENT_REFUNDED",
+      `Super Admin refunded Transaction ${txn.id} ($${txn.amount}). Premium revoked for User #${txn.userId}.`,
+      txn.id,
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return true;
+  }
+
+  public cancelTransaction(transactionId: string, superAdminId: number): boolean {
+    const txn = this.getTransaction(transactionId);
+    if (!txn) return false;
+    txn.status = "CANCELLED";
+
+    const superUser = this.getUser(superAdminId);
+    this.logAdminAction(
+      superAdminId,
+      superUser.fullName || "Super Admin",
+      "TRANSACTION_CANCELLED",
+      `Super Admin cancelled Transaction ${txn.id}.`,
+      txn.id,
+      "super_admin"
+    );
+
+    this.saveDatabase();
+    return true;
   }
 
   // ================= DOCUMENTS SUBMISSION CRUD =================

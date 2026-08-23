@@ -9,6 +9,7 @@ import {
   StudentReview,
   AuditLogEntry,
   Language,
+  TransactionRecord,
 } from "../types";
 
 export function getAdminDashboardKeyboard(
@@ -405,6 +406,11 @@ export function getSuperAdminDashboardKeyboard(
 
   return new InlineKeyboard()
     .text(
+      isUz ? `💰 Yashirin Moliyaviy Boshqaruv` : `💰 Private Financial HQ`,
+      "admin_super_financial_hq"
+    )
+    .row()
+    .text(
       isUz ? `📜 Barcha Admin Loglari (${stats.auditLogsCount})` : `📜 All Admin Audit Logs (${stats.auditLogsCount})`,
       "admin_super_logs_0"
     )
@@ -428,6 +434,75 @@ export function getSuperAdminDashboardKeyboard(
     )
     .row()
     .text(isUz ? `◀️ Asosiy Admin Dashboard` : `◀️ Back to Admin Dashboard`, "admin_refresh");
+}
+
+export function getSuperAdminFinancialHQKeyboard(lang: Language = "en"): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "📋 Barcha Tranzaksiyalar" : "📋 All Transactions", "admin_super_txns_0")
+    .text(isUz ? "🟡 Kutilayotgan To'lovlar" : "🟡 Unverified Queue", "admin_super_txns_unverified_0")
+    .row()
+    .text(isUz ? "➕ Tashqi To'lovni Kiritish (Manual)" : "➕ Record External Payment", "admin_super_create_txn_prompt")
+    .row()
+    .text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "admin_super_financial_hq")
+    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
+}
+
+export function getSuperAdminTransactionsKeyboard(
+  txns: TransactionRecord[],
+  page: number = 0,
+  pageSize: number = 5,
+  isUnverifiedOnly: boolean = false,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+  const start = page * pageSize;
+  const pageTxns = txns.slice(start, start + pageSize);
+
+  pageTxns.forEach((t) => {
+    const icon =
+      t.status === "PAID"
+        ? "🟢"
+        : t.status === "UNVERIFIED"
+        ? "🟡"
+        : t.status === "REFUNDED"
+        ? "🔴"
+        : "⚪";
+    const prodLabel = t.product === "NAWA" ? "$15 NAWA" : "$50 Full";
+    kb.text(`${icon} ${t.id} (${prodLabel} | ${t.status})`, `admin_super_view_txn_${t.id}`).row();
+  });
+
+  const totalPages = Math.ceil(txns.length / pageSize) || 1;
+  const prefix = isUnverifiedOnly ? "admin_super_txns_unverified_" : "admin_super_txns_";
+
+  if (page > 0) kb.text("⬅️ Prev", `${prefix}${page - 1}`);
+  if (page < totalPages - 1) kb.text("Next ➡️", `${prefix}${page + 1}`);
+  if (page > 0 || page < totalPages - 1) kb.row();
+
+  kb.text(isUz ? "🔄 Yangilash" : "🔄 Refresh", `${prefix}${page}`)
+    .row()
+    .text(isUz ? "◀️ Moliyaviy Boshqaruv" : "◀️ Back to Financial HQ", "admin_super_financial_hq");
+
+  return kb;
+}
+
+export function getSuperAdminTransactionDetailKeyboard(
+  txn: TransactionRecord,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  if (txn.status === "UNVERIFIED") {
+    kb.text(isUz ? "✅ To'lovni Tasdiqlash & Premium Berish" : "✅ Verify Payment & Grant Premium", `admin_super_verify_txn_${txn.id}`).row();
+    kb.text(isUz ? "❌ Tranzaksiyani Bekor Qilish" : "❌ Cancel Transaction", `admin_super_cancel_txn_${txn.id}`).row();
+  } else if (txn.status === "PAID") {
+    kb.text(isUz ? "↩️ To'lovni Qaytarish (Refund)" : "↩️ Refund Payment", `admin_super_refund_txn_${txn.id}`).row();
+  }
+
+  kb.text(isUz ? "◀️ Tranzaksiyalar Ro'yxatiga" : "◀️ Back to Transactions", "admin_super_txns_0");
+  return kb;
 }
 
 export function getSuperAdminLogsKeyboard(

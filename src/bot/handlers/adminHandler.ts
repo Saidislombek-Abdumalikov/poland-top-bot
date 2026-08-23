@@ -31,6 +31,9 @@ import {
   getAdminReviewsListKeyboard,
   getAdminReviewEditKeyboard,
   getSuperAdminDashboardKeyboard,
+  getSuperAdminFinancialHQKeyboard,
+  getSuperAdminTransactionsKeyboard,
+  getSuperAdminTransactionDetailKeyboard,
   getSuperAdminLogsKeyboard,
   getSuperAdminAdminsKeyboard,
   getSuperAdminGhostMenuKeyboard,
@@ -437,7 +440,24 @@ export function setupAdminHandler(bot: Bot) {
       appsSummary = apps.map((a) => `• #${a.id} ${a.programName} (${a.university}) — [${a.stage}]`).join("\n");
     }
 
-    const text = isUz
+    let superFinancialAudit = "";
+    if (isSuper && user.isPremium) {
+      superFinancialAudit = isUz
+        ? `\n\n💰 <b>Maxfiy Moliyaviy Audit (Faqat Super Admin):</b>\n` +
+          `• 📌 Berilish Asosi: <b>${user.premiumGrantReason || (user.premiumCode ? "PROMO_CODE" : "VERIFIED_PAYMENT")}</b>\n` +
+          `• 🧾 Tranzaksiya ID: <code>${user.premiumTransactionId || "N/A"}</code>\n` +
+          `• 🔑 Promokod: <code>${user.premiumCode || "N/A"}</code>\n` +
+          `• ⏱️ Tasdiqlangan: ${user.premiumVerifiedAt || user.registeredAt}\n` +
+          (user.premiumVerifiedBy ? `• 👤 Tasdiqlagan: <code>Admin #${user.premiumVerifiedBy}</code>\n` : "")
+        : `\n\n💰 <b>Private Financial Audit (Super Admin Only):</b>\n` +
+          `• 📌 Grant Reason: <b>${user.premiumGrantReason || (user.premiumCode ? "PROMO_CODE" : "VERIFIED_PAYMENT")}</b>\n` +
+          `• 🧾 Transaction ID: <code>${user.premiumTransactionId || "N/A"}</code>\n` +
+          `• 🔑 Promo Code: <code>${user.premiumCode || "N/A"}</code>\n` +
+          `• ⏱️ Verified At: ${user.premiumVerifiedAt || user.registeredAt}\n` +
+          (user.premiumVerifiedBy ? `• 👤 Verified By: <code>Admin #${user.premiumVerifiedBy}</code>\n` : "");
+    }
+
+    const text = (isUz
       ? `👤 <b>Talaba Ma'lumotlari: ${escapeHtml(user.fullName || user.firstName || `Foydalanuvchi #${user.userId}`)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `• 🆔 User ID: <code>${user.userId}</code>\n` +
@@ -459,7 +479,7 @@ export function setupAdminHandler(bot: Bot) {
         `• 📁 Verified Docs: <b>${verifiedDocs} / ${Object.keys(docs).length || 7}</b>\n` +
         `• 📅 Registered: ${escapeHtml(user.registeredAt)}\n` +
         `• ⏱️ Last Active: ${escapeHtml(user.lastActiveAt)}\n\n` +
-        `📋 <b>University Applications (${apps.length}):</b>\n${escapeHtml(appsSummary)}`;
+        `📋 <b>University Applications (${apps.length}):</b>\n${escapeHtml(appsSummary)}`) + superFinancialAudit;
 
     await ctx.answerCallbackQuery();
     if (ctx.callbackQuery?.message) {
@@ -2006,4 +2026,282 @@ export function setupAdminHandler(bot: Bot) {
     await db.syncToCloud();
     await ctx.answerCallbackQuery({ text: "✅ Forced Supabase Cloud Sync completed!" });
   });
+
+  // ================= PRIVATE SUPER ADMIN FINANCIAL HQ HANDLERS =================
+  bot.callbackQuery("admin_super_financial_hq", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const fin = db.getFinancialSummary();
+
+    const text = isUz
+      ? `💰 <b>MAXFIY MOLIYAVIY BOSHQARUV (SUPER ADMIN HQ)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `💵 <b>Jami Tasdiqlangan Tushum:</b> <code>$${fin.totalVerifiedRevenue.toLocaleString()}</code>\n` +
+        `💳 <b>Tasdiqlangan To'lovlar Soni:</b> <b>${fin.verifiedPaymentsCount} ta</b>\n\n` +
+        `📦 <b>NAWA ($15) Savdolari:</b> <b>${fin.nawaCount} ta</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
+        `💎 <b>NAWA Full ($50) Savdolari:</b> <b>${fin.nawaFullCount} ta</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
+        `🟡 <b>Kutilayotgan (Tasdiqlanmagan):</b> <b>${fin.unverifiedCount} ta</b>\n` +
+        `🔴 <b>Qaytarilgan / Bekor qilingan:</b> <b>${fin.refundedCount + fin.cancelledCount} ta</b>\n\n` +
+        `🔒 <i>Ushbu ma'lumotlar faqat Super Admin uchun maxfiy. Oddiy adminlar bu bo'lim mavjudligini ko'ra olmaydi.</i>`
+      : `💰 <b>PRIVATE FINANCIAL HQ (SUPER ADMIN ONLY)</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `💵 <b>Total Verified Revenue:</b> <code>$${fin.totalVerifiedRevenue.toLocaleString()}</code>\n` +
+        `💳 <b>Verified Payments Count:</b> <b>${fin.verifiedPaymentsCount}</b>\n\n` +
+        `📦 <b>NAWA ($15) Purchases:</b> <b>${fin.nawaCount}</b> (<code>$${fin.nawaRevenue.toLocaleString()}</code>)\n` +
+        `💎 <b>NAWA Full ($50) Purchases:</b> <b>${fin.nawaFullCount}</b> (<code>$${fin.nawaFullRevenue.toLocaleString()}</code>)\n\n` +
+        `🟡 <b>Unverified / Pending Queue:</b> <b>${fin.unverifiedCount}</b>\n` +
+        `🔴 <b>Refunded / Cancelled:</b> <b>${fin.refundedCount + fin.cancelledCount}</b>\n\n` +
+        `🔒 <i>This financial system operates strictly in private. Normal administrators have zero financial visibility or access.</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminFinancialHQKeyboard(adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // All Transactions list
+  bot.callbackQuery(/^admin_super_txns_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_txns_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const txns = db.getAllTransactions();
+
+    const text = isUz
+      ? `📋 <b>Barcha Moliyaviy Tranzaksiyalar (${txns.length} ta)</b>\n\n` +
+        `<i>Tranzaksiya tafsilotlarini ko'rish, tasdiqlash yoki to'lovni qaytarish uchun ustiga bosing:</i>`
+      : `📋 <b>All Financial Transactions (${txns.length})</b>\n\n` +
+        `<i>Tap any transaction to view full ledger details, verify payment, or issue refund:</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminTransactionsKeyboard(txns, page, 5, false, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // Unverified queue
+  bot.callbackQuery(/^admin_super_txns_unverified_(\d+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_txns_unverified_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const unverifiedTxns = db.getAllTransactions().filter((t) => t.status === "UNVERIFIED");
+
+    const text = isUz
+      ? `🟡 <b>Kutilayotgan / Tasdiqlanmagan To'lovlar (${unverifiedTxns.length} ta)</b>\n\n` +
+        `<i>Tasdiqlash uchun tegishli tranzaksiyani tanlang va "To'lovni Tasdiqlash" tugmasini bosing:</i>`
+      : `🟡 <b>Unverified / Pending Transactions (${unverifiedTxns.length})</b>\n\n` +
+        `<i>Select a transaction to review and click "Verify Payment" to confirm and activate premium:</i>`;
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminTransactionsKeyboard(unverifiedTxns, page, 5, true, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // View specific transaction details
+  bot.callbackQuery(/^admin_super_view_txn_(.+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_view_txn_(.+)$/);
+    if (!match) return;
+    const txnId = match[1];
+    const txn = db.getTransaction(txnId);
+    if (!txn) {
+      await ctx.answerCallbackQuery({ text: "Transaction not found." });
+      return;
+    }
+
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+    const statusIcon =
+      txn.status === "PAID"
+        ? "🟢 PAID (Tasdiqlangan)"
+        : txn.status === "UNVERIFIED"
+        ? "🟡 UNVERIFIED (Tasdiqlanmagan)"
+        : txn.status === "REFUNDED"
+        ? "🔴 REFUNDED (Qaytarilgan)"
+        : "⚪ CANCELLED (Bekor qilingan)";
+
+    const text = isUz
+      ? `🧾 <b>Tranzaksiya Tafsilotlari: <code>${escapeHtml(txn.id)}</code></b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 📌 <b>Holati:</b> ${statusIcon}\n` +
+        `• 👤 <b>Talaba:</b> ${escapeHtml(txn.userName || "Noma'lum")} (<code>${txn.userId}</code>)\n` +
+        `• 📦 <b>Paket:</b> <b>${escapeHtml(txn.product)}</b>\n` +
+        `• 💵 <b>Summa:</b> <b>$${txn.amount} ${txn.currency}</b>\n` +
+        `• 💳 <b>Manba:</b> <code>${txn.source}</code>\n` +
+        (txn.promoCode ? `• 🔑 <b>Promokod:</b> <code>${escapeHtml(txn.promoCode)}</code>\n` : "") +
+        `• 📅 <b>Yaratilgan:</b> ${escapeHtml(txn.createdAt)}\n` +
+        (txn.verifiedAt ? `• ✅ <b>Tasdiqlangan:</b> ${escapeHtml(txn.verifiedAt)}\n` : "") +
+        (txn.verifiedByName ? `• 👤 <b>Tasdiqlagan:</b> <b>${escapeHtml(txn.verifiedByName)}</b>\n` : "") +
+        (txn.notes ? `• 📝 <b>Izoh:</b> <i>${escapeHtml(txn.notes)}</i>\n` : "")
+      : `🧾 <b>Transaction Record: <code>${escapeHtml(txn.id)}</code></b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 📌 <b>Status:</b> ${statusIcon}\n` +
+        `• 👤 <b>Student:</b> ${escapeHtml(txn.userName || "Unknown")} (<code>${txn.userId}</code>)\n` +
+        `• 📦 <b>Product:</b> <b>${escapeHtml(txn.product)}</b>\n` +
+        `• 💵 <b>Amount:</b> <b>$${txn.amount} ${txn.currency}</b>\n` +
+        `• 💳 <b>Source:</b> <code>${txn.source}</code>\n` +
+        (txn.promoCode ? `• 🔑 <b>Promo Code:</b> <code>${escapeHtml(txn.promoCode)}</code>\n` : "") +
+        `• 📅 <b>Created:</b> ${escapeHtml(txn.createdAt)}\n` +
+        (txn.verifiedAt ? `• ✅ <b>Verified:</b> ${escapeHtml(txn.verifiedAt)}\n` : "") +
+        (txn.verifiedByName ? `• 👤 <b>Verified By:</b> <b>${escapeHtml(txn.verifiedByName)}</b>\n` : "") +
+        (txn.notes ? `• 📝 <b>Notes:</b> <i>${escapeHtml(txn.notes)}</i>\n` : "");
+
+    await ctx.answerCallbackQuery();
+    const kb = getSuperAdminTransactionDetailKeyboard(txn, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  // Verify payment action
+  bot.callbackQuery(/^admin_super_verify_txn_(.+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_verify_txn_(.+)$/);
+    if (!match) return;
+    const txnId = match[1];
+
+    const res = db.verifyPaymentTransaction(txnId, userId);
+    if (res.success && res.transaction) {
+      await ctx.answerCallbackQuery({ text: "Payment verified successfully!" });
+      await ctx.reply(
+        `✅ <b>Payment Verified & Recorded!</b>\n\n` +
+          `• 🧾 Transaction <code>${escapeHtml(txnId)}</code> is now marked as <b>PAID</b>.\n` +
+          `• 💎 <b>${res.transaction.product}</b> package has been unlocked for User #${res.transaction.userId}.\n` +
+          `• 👤 Verified by Super Admin #${userId}.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: "◀️ Financial HQ", callback_data: "admin_super_financial_hq" }]],
+          },
+        }
+      );
+    } else {
+      await ctx.answerCallbackQuery({ text: res.error || "Failed to verify payment." });
+    }
+  });
+
+  // Refund payment action
+  bot.callbackQuery(/^admin_super_refund_txn_(.+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_refund_txn_(.+)$/);
+    if (!match) return;
+    const txnId = match[1];
+
+    const ok = db.refundPaymentTransaction(txnId, userId, "Super Admin issued refund");
+    if (ok) {
+      await ctx.answerCallbackQuery({ text: "Transaction refunded." });
+      await ctx.reply(
+        `↩️ <b>Transaction Refunded:</b> <code>${escapeHtml(txnId)}</code> marked as <b>REFUNDED</b>. User entitlement revoked.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[{ text: "◀️ Financial HQ", callback_data: "admin_super_financial_hq" }]],
+          },
+        }
+      );
+    } else {
+      await ctx.answerCallbackQuery({ text: "Failed to refund transaction." });
+    }
+  });
+
+  // Cancel transaction action
+  bot.callbackQuery(/^admin_super_cancel_txn_(.+)$/, async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const match = ctx.callbackQuery?.data?.match(/^admin_super_cancel_txn_(.+)$/);
+    if (!match) return;
+    const txnId = match[1];
+
+    db.cancelTransaction(txnId, userId);
+    await ctx.answerCallbackQuery({ text: "Transaction cancelled." });
+    await ctx.reply(`❌ <b>Transaction Cancelled:</b> <code>${escapeHtml(txnId)}</code>.`, {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [[{ text: "◀️ Financial HQ", callback_data: "admin_super_financial_hq" }]],
+      },
+    });
+  });
+
+  // Prompt manual external payment creation
+  bot.callbackQuery("admin_super_create_txn_prompt", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkSuperAdminAuth(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied." });
+      return;
+    }
+    const adminUser = db.getUser(userId);
+
+    db.setWaitingFor(userId, "admin_super_create_txn_user" as any);
+    await ctx.answerCallbackQuery();
+
+    const msg = await ctx.reply(
+      adminUser.lang === "uz"
+        ? `➕ <b>Tashqi To'lov / Tranzaksiyani Kiritish (Manual Entry)</b>\n\n` +
+          `Format: <code>&lt;USER_ID yoki @username&gt; &lt;NAWA|NAWA_FULL&gt; [SUMMA] [PAID|UNVERIFIED]</code>\n\n` +
+          `<i>Misollar:</i>\n` +
+          `• <code>5059829001 NAWA_FULL 50 PAID</code> (Darhol faollashtirish)\n` +
+          `• <code>123456789 NAWA 15 UNVERIFIED</code> (Kutilayotgan to'lov)`
+        : `➕ <b>Record External Payment / Transaction (Manual Entry)</b>\n\n` +
+          `Format: <code>&lt;USER_ID or @username&gt; &lt;NAWA|NAWA_FULL&gt; [AMOUNT] [PAID|UNVERIFIED]</code>\n\n` +
+          `<i>Examples:</i>\n` +
+          `• <code>5059829001 NAWA_FULL 50 PAID</code> (Instant verified grant)\n` +
+          `• <code>123456789 NAWA 15 UNVERIFIED</code> (Pending external check)`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
 }
+
