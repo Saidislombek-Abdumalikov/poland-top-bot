@@ -36,6 +36,38 @@ export function setupStartHandler(bot: Bot) {
 
     // If user is not yet registered, enforce upfront onboarding with NO menu buttons open!
     if (!user.isRegistered) {
+      if (user.fullName && user.phone && user.preferredLevel) {
+        // User finished entering info, but hasn't accepted Oferta yet -> Show Oferta
+        const renderedOferta = db.getRenderedOferta();
+        const isUz = user.lang === "uz";
+        const ofertaMessage = isUz
+          ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
+            `• 👤 <b>Ism:</b> ${escapeHtml(user.fullName)}\n` +
+            `• 📞 <b>Telefon:</b> ${escapeHtml(user.phone)}\n` +
+            `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
+            `📄 <b>OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `${renderedOferta}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
+          : `📋 <b>Your Profile Summary:</b>\n` +
+            `• 👤 <b>Name:</b> ${escapeHtml(user.fullName)}\n` +
+            `• 📞 <b>Phone:</b> ${escapeHtml(user.phone)}\n` +
+            `• 🎓 <b>Target Degree:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
+            `📄 <b>PUBLIC OFFER & TERMS OF SERVICE</b>\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `${renderedOferta}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `👇 <b>To unlock the bot and begin, please read the Terms above and tap "✅ I Agree":</b>`;
+
+        const msg = await ctx.reply(ofertaMessage, {
+          parse_mode: "HTML",
+          reply_markup: getOfertaKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
       const welcomeText =
         `🇵🇱 <b>Welcome to Poland Top Universities (PTU)!</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -287,10 +319,11 @@ export function setupStartHandler(bot: Bot) {
   bot.callbackQuery("accept_oferta", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId) return;
-    const user = db.getUser(userId);
-    const isUz = user.lang === "uz";
+    const isUz = db.getUser(userId).lang === "uz";
 
+    // Mark as accepted and registered!
     db.acceptOferta(userId);
+    const user = db.getUser(userId);
 
     await ctx.answerCallbackQuery({
       text: isUz
@@ -301,12 +334,20 @@ export function setupStartHandler(bot: Bot) {
 
     const firstName = user.fullName || user.firstName || "Student";
     const welcomeMsg =
+      `🎉 <b>${isUz ? "TABRIKLAYMIZ!" : "CONGRATULATIONS!"}</b>\n\n` +
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
       `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
-      `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
+      `👋 <b>${isUz ? "Xush kelibsiz" : "Welcome"}, ${escapeHtml(firstName)}!</b>\n` +
+      `💎 ${isUz ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>\n\n` +
+      `🚀 ${isUz ? "Endi siz Polsha universitetlarini ko'rishingiz, arizangizni topshirishingiz va barcha imkoniyatlardan foydalanishingiz mumkin." : "You can now explore Polish universities, apply for programs, and access all bot features."}`;
 
-    await ctx.reply(welcomeMsg, {
+    try {
+      await ctx.editMessageText(welcomeMsg, {
+        parse_mode: "HTML",
+      });
+    } catch {}
+
+    await ctx.reply(`🏠 <b>${escapeHtml(isUz ? "Bosh Menyu Ochildi" : "Main Menu Unlocked")}</b>`, {
       parse_mode: "HTML",
       reply_markup: getMainMenuKeyboard(user.lang),
     });

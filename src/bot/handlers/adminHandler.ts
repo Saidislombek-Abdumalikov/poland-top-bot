@@ -1177,11 +1177,11 @@ export function setupAdminHandler(bot: Bot) {
     db.setLastPromptMsgId(userId, msg.message_id);
   });
 
-  // ================= OFERTA & PRICING MANAGEMENT =================
+  // ================= OFERTA & PRICING MANAGEMENT (SUPER ADMIN ONLY) =================
   bot.callbackQuery("admin_menu_oferta_pricing", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) {
-      await ctx.answerCallbackQuery({ text: "Access Denied." });
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Only Super Admin can manage Oferta & Pricing." });
       return;
     }
     const adminUser = db.getUser(userId);
@@ -1192,7 +1192,7 @@ export function setupAdminHandler(bot: Bot) {
     const hasDraft = draft && draft.status === "draft" && draft.text !== oferta.text;
 
     const text = isUz
-      ? `📄 <b>OFERTA VA NARXLARNI BOSHQARISH (PRICING & TERMS)</b>\n` +
+      ? `📄 <b>OFERTA VA NARXLARNI BOSHQARISH (SUPER ADMIN HQ)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📌 <b>Amaldagi Narxlar (Yagona Manba):</b>\n` +
         `• 📦 <b>NAWA Paketi:</b> <code>$${pricing.nawaPrice} ${pricing.nawaCurrency}</code>\n` +
@@ -1201,7 +1201,7 @@ export function setupAdminHandler(bot: Bot) {
         `📜 <b>Amaldagi Oferta:</b> <b>v${oferta.version}</b> (E'lon qilingan: ${oferta.publishedAt} — ${escapeHtml(oferta.publishedByName || "System")})\n` +
         (hasDraft ? `\n📝 <i>Eslatma: E'lon qilinmagan yangi qoralama (Draft v${draft.version}) mavjud.</i>\n` : "\n") +
         `<i>Quyidagi tugmalar orqali narxlarni o'zgartirishingiz, Ofertani tahrirlashingiz, ko'rib chiqishingiz va e'lon qilishingiz mumkin:</i>`
-      : `📄 <b>OFERTA & PRICING MANAGEMENT</b>\n` +
+      : `📄 <b>OFERTA & PRICING MANAGEMENT (SUPER ADMIN HQ)</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📌 <b>Current Configured Pricing (Single Source of Truth):</b>\n` +
         `• 📦 <b>NAWA Package:</b> <code>$${pricing.nawaPrice} ${pricing.nawaCurrency}</code>\n` +
@@ -1225,7 +1225,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_edit_price_nawa", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const pricing = db.getPricingConfig();
     const isUz = adminUser.lang === "uz";
@@ -1252,7 +1255,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_edit_price_full", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const pricing = db.getPricingConfig();
     const isUz = adminUser.lang === "uz";
@@ -1279,7 +1285,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_edit_fee", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const pricing = db.getPricingConfig();
     const isUz = adminUser.lang === "uz";
@@ -1306,7 +1315,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_edit_oferta_text", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const draft = db.getDraftOferta();
     const isUz = adminUser.lang === "uz";
@@ -1341,7 +1353,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_preview_oferta", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const draft = db.getDraftOferta();
     const published = db.getPublishedOferta();
@@ -1366,7 +1381,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_publish_oferta_confirm", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
     const draft = db.getDraftOferta();
     const isUz = adminUser.lang === "uz";
@@ -1390,7 +1408,10 @@ export function setupAdminHandler(bot: Bot) {
 
   bot.callbackQuery("admin_publish_oferta_execute", async (ctx) => {
     const userId = ctx.from?.id;
-    if (!userId || !checkAdminAuth(userId)) return;
+    if (!userId || !isAuthorizedSuperAdmin(userId)) {
+      await ctx.answerCallbackQuery({ text: "Access Denied. Super Admin only." });
+      return;
+    }
     const adminUser = db.getUser(userId);
 
     const published = db.publishOferta(

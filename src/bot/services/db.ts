@@ -1442,6 +1442,8 @@ export class DatabaseService {
     const published = this.getPublishedOferta();
     user.acceptedOfertaVersion = published.version;
     user.acceptedOfertaAt = new Date().toISOString();
+    user.isRegistered = true;
+    user.waitingFor = null;
     this.saveDatabase();
   }
 

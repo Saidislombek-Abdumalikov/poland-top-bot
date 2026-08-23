@@ -1,6 +1,6 @@
 import { strict as assert } from "assert";
 import { db, renderOfertaText } from "../src/bot/services/db";
-import { isAuthorizedAdmin, isAuthorizedSuperAdmin } from "../src/bot/services/auth";
+import { isAuthorizedAdmin, isAuthorizedSuperAdmin, startAdminSession } from "../src/bot/services/auth";
 import { config } from "../src/bot/config";
 
 async function runOfertaPricingTestSuite() {
@@ -110,15 +110,38 @@ async function runOfertaPricingTestSuite() {
     assert.equal(history[0].version, 1);
   });
 
-  // 6. User Oferta Acceptance
-  test("User accepts current Oferta and record persists acceptedOfertaVersion", () => {
-    const testUserId = 777111;
-    db.getUser(testUserId);
-    db.acceptOferta(testUserId);
+  // 6. User Onboarding Oferta Gate & Acceptance
+  test("User completes info entry, remains unregistered until Oferta is accepted, then unlocks full registration", () => {
+    const studentUser = 777111;
+    // Step 1: Info input (Name, Phone, Degree)
+    db.getUser(studentUser, {
+      fullName: "Saidislom Karimov",
+      phone: "+998901234567",
+      preferredLevel: "Bachelor (BSc/BA)",
+      isRegistered: false,
+    });
 
-    const user = db.getUser(testUserId);
-    assert.equal(user.acceptedOfertaVersion, 2);
-    assert.ok(user.acceptedOfertaAt);
+    const pendingUser = db.getUser(studentUser);
+    assert.equal(pendingUser.isRegistered, false, "Must remain unregistered before accepting Oferta");
+
+    // Step 2: Student clicks [ ✅ Roziman ] (acceptOferta)
+    db.acceptOferta(studentUser);
+
+    const acceptedUser = db.getUser(studentUser);
+    assert.equal(acceptedUser.isRegistered, true, "Must be registered after accepting Oferta");
+    assert.equal(acceptedUser.acceptedOfertaVersion, 2, "Must record accepted Oferta version");
+    assert.ok(acceptedUser.acceptedOfertaAt, "Must record timestamp of acceptance");
+  });
+
+  // 7. Super Admin Exclusive Access Control (Normal Admin Denied)
+  test("Only Super Admin can manage Oferta and Dynamic Pricing; Normal Admin is denied", () => {
+    // Normal Admin
+    startAdminSession(adminId, "admin");
+    assert.equal(isAuthorizedSuperAdmin(adminId), false, "Normal admin must NOT have super_admin authorization");
+
+    // Super Admin
+    startAdminSession(superAdminId, "super_admin");
+    assert.equal(isAuthorizedSuperAdmin(superAdminId), true, "Super Admin MUST have super_admin authorization");
   });
 
   // 7. Transaction Price Immutability

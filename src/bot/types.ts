@@ -296,6 +296,7 @@ export interface UserSessionData {
     | "registration_phone"
     | "registration_email"
     | "registration_level"
+    | "waiting_oferta_acceptance"
     | "document_upload"
     | "premium_code"
     | "review_text"

@@ -57,7 +57,6 @@ export function getAdminDashboardKeyboard(
     .text(isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`, "admin_menu_reviews")
     .text(isUz ? `⚡ Promokodlar` : `⚡ Promo Codes`, "admin_menu_promos")
     .row()
-    .text(isUz ? `📄 Oferta & Narxlar` : `📄 Oferta & Pricing`, "admin_menu_oferta_pricing")
     .text(isUz ? `📢 Global Xabar Yuborish` : `📢 Broadcast Message`, "admin_broadcast_start")
     .row()
     .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
@@ -425,6 +424,10 @@ export function getSuperAdminDashboardKeyboard(
       isUz ? `💰 Yashirin Moliyaviy Boshqaruv` : `💰 Private Financial HQ`,
       "admin_super_financial_hq"
     )
+    .text(
+      isUz ? `📄 Oferta & Narxlar` : `📄 Oferta & Pricing`,
+      "admin_menu_oferta_pricing"
+    )
     .row()
     .text(
       isUz ? `📜 Barcha Admin Loglari (${stats.auditLogsCount})` : `📜 All Admin Audit Logs (${stats.auditLogsCount})`,
@@ -643,7 +646,7 @@ export function getAdminOfertaPricingKeyboard(
     );
   }
 
-  kb.row().text(isUz ? `◀️ Admin Bosh Panel` : `◀️ Admin Dashboard`, "admin_main");
+  kb.row().text(isUz ? `◀️ Super Admin HQ` : `◀️ Back to Super Admin HQ`, "admin_super_hq");
 
   return kb;
 }

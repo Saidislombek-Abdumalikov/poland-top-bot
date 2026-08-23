@@ -1,12 +1,12 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { authenticatePasscode, startAdminSession, grantAdminRole } from "../services/auth";
+import { authenticatePasscode, startAdminSession, grantAdminRole, isAuthorizedSuperAdmin } from "../services/auth";
 import {
   getAdminDashboardKeyboard,
   getSuperAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
 } from "../keyboards/adminKeyboards";
-import { getMainMenuKeyboard, getOnboardingDegreeKeyboard } from "../keyboards/menuKeyboards";
+import { getMainMenuKeyboard, getOnboardingDegreeKeyboard, getOfertaKeyboard } from "../keyboards/menuKeyboards";
 import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
 import { escapeHtml } from "../utils/format";
 
@@ -130,7 +130,7 @@ export function setupTextInputHandler(bot: Bot) {
     }
   });
 
-  // Degree Level Selection Callback (Final Onboarding Step) -> Edit prompt to celebration!
+  // Degree Level Selection Callback (Step 3: Target Degree Level) -> Send Oferta Message with [ ✅ Roziman ]
   bot.callbackQuery(/^onboarding_level_(.+)$/, async (ctx: Context) => {
     const match = ctx.callbackQuery?.data?.match(/^onboarding_level_(.+)$/);
     if (!match) return;
@@ -138,45 +138,52 @@ export function setupTextInputHandler(bot: Bot) {
     const userId = ctx.from?.id;
     if (!userId) return;
 
+    // Update degree preference and set waitingFor to waiting_oferta_acceptance
     const user = db.updateUser(userId, {
       preferredLevel: level,
-      isRegistered: true,
-      waitingFor: null,
+      isRegistered: false, // Remains false until Oferta is accepted!
+      waitingFor: "waiting_oferta_acceptance",
       waitingPayload: null,
     });
 
     await ctx.answerCallbackQuery();
 
     const fullName = user.fullName || user.firstName || "Student";
-    const phone = user.phone || "<i>(not set)</i>";
+    const phone = user.phone || "(not set)";
+    const isUz = user.lang === "uz";
+    const renderedOferta = db.getRenderedOferta();
 
-    const congratsText =
-      user.lang === "uz"
-        ? `🎉 <b>Tabriklaymiz, ${escapeHtml(fullName)}! Profilingiz Muvaffaqiyatli Yaratildi!</b>\n` +
-          `━━━━━━━━━━━━━━━━━━━━\n` +
-          `• 👤 <b>Ism:</b> ${escapeHtml(fullName)}\n` +
-          `• 📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
-          `• 🎓 <b>Dastur Darajasi:</b> ${escapeHtml(level)}\n` +
-          `• 💎 <b>A'zolik:</b> ${escapeHtml(user.premiumTier || "Free")}\n\n` +
-          `🚀 Endi siz Polsha universitetlarini ko'rishingiz, dasturlarni tanlashingiz va arizangizni boshlashingiz mumkin!`
-        : `🎉 <b>Congratulations, ${escapeHtml(fullName)}! Your Student Profile is Ready!</b>\n` +
-          `━━━━━━━━━━━━━━━━━━━━\n` +
-          `• 👤 <b>Name:</b> ${escapeHtml(fullName)}\n` +
-          `• 📞 <b>Phone:</b> ${escapeHtml(phone)}\n` +
-          `• 🎓 <b>Target Degree:</b> ${escapeHtml(level)}\n` +
-          `• 💎 <b>Membership:</b> ${escapeHtml(user.premiumTier || "Free")}\n\n` +
-          `🚀 You can now browse universities, explore English-taught degrees, track documents, and practice entrance exams!`;
+    const ofertaMessage = isUz
+      ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
+        `• 👤 <b>Ism:</b> ${escapeHtml(fullName)}\n` +
+        `• 📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
+        `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(level)}\n\n` +
+        `📄 <b>OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `${renderedOferta}\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
+      : `📋 <b>Your Profile Summary:</b>\n` +
+        `• 👤 <b>Name:</b> ${escapeHtml(fullName)}\n` +
+        `• 📞 <b>Phone:</b> ${escapeHtml(phone)}\n` +
+        `• 🎓 <b>Target Degree:</b> ${escapeHtml(level)}\n\n` +
+        `📄 <b>PUBLIC OFFER & TERMS OF SERVICE</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `${renderedOferta}\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `👇 <b>To unlock the bot and begin, please read the Terms above and tap "✅ I Agree":</b>`;
 
-    // Edit the previous message to congratulations card
     try {
-      await ctx.editMessageText(congratsText, { parse_mode: "HTML" });
-    } catch {}
-
-    // Send main menu reply keyboard
-    await ctx.reply(`🏠 <b>${escapeHtml(user.lang === "uz" ? "Bosh Menyu Ochildi" : "Main Menu Unlocked")}</b>`, {
-      parse_mode: "HTML",
-      reply_markup: getMainMenuKeyboard(user.lang),
-    });
+      await ctx.editMessageText(ofertaMessage, {
+        parse_mode: "HTML",
+        reply_markup: getOfertaKeyboard(user.lang),
+      });
+    } catch {
+      await ctx.reply(ofertaMessage, {
+        parse_mode: "HTML",
+        reply_markup: getOfertaKeyboard(user.lang),
+      });
+    }
   });
 
   // Handle text messages
@@ -352,6 +359,21 @@ export function setupTextInputHandler(bot: Bot) {
             reply_markup: getOnboardingDegreeKeyboard(user.lang),
           }
         );
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      // Step 4: Waiting for Oferta Acceptance
+      if (user.waitingFor === "waiting_oferta_acceptance" || (user.fullName && user.phone && user.preferredLevel)) {
+        const renderedOferta = db.getRenderedOferta();
+        const reminder = user.lang === "uz"
+          ? `⚠️ <b>Iltimos, botdan foydalanishni boshlash uchun avval quyidagi Ommaviy Ofertani qabul qiling ("✅ Roziman" tugmasini bosing):</b>\n\n${renderedOferta}`
+          : `⚠️ <b>Please accept the Oferta below by tapping "✅ I Agree" to unlock the bot:</b>\n\n${renderedOferta}`;
+
+        const msg = await ctx.reply(reminder, {
+          parse_mode: "HTML",
+          reply_markup: getOfertaKeyboard(user.lang),
+        });
         db.setLastPromptMsgId(userId, msg.message_id);
         return;
       }
@@ -1036,10 +1058,15 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
-    // 17. Admin Edit NAWA Price
+    // 17. Admin Edit NAWA Price (Super Admin Only)
     if (user.waitingFor === "admin_edit_price_nawa") {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
+
+      if (!isAuthorizedSuperAdmin(userId)) {
+        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify pricing.`, { parse_mode: "HTML" });
+        return;
+      }
 
       const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
       if (isNaN(parsedPrice) || parsedPrice <= 0) {
@@ -1072,10 +1099,15 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
-    // 18. Admin Edit Full Application + NAWA Price
+    // 18. Admin Edit Full Application + NAWA Price (Super Admin Only)
     if (user.waitingFor === "admin_edit_price_full") {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
+
+      if (!isAuthorizedSuperAdmin(userId)) {
+        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify pricing.`, { parse_mode: "HTML" });
+        return;
+      }
 
       const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
       if (isNaN(parsedPrice) || parsedPrice <= 0) {
@@ -1108,10 +1140,15 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
-    // 19. Admin Edit Application Fee
+    // 19. Admin Edit Application Fee (Super Admin Only)
     if (user.waitingFor === "admin_edit_fee") {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
+
+      if (!isAuthorizedSuperAdmin(userId)) {
+        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify application fee.`, { parse_mode: "HTML" });
+        return;
+      }
 
       const parsedFee = parseFloat(text.replace(/[^0-9.]/g, ""));
       if (isNaN(parsedFee) || parsedFee < 0) {
@@ -1144,10 +1181,15 @@ export function setupTextInputHandler(bot: Bot) {
       return;
     }
 
-    // 20. Admin Edit Oferta Text (Draft)
+    // 20. Admin Edit Oferta Text (Draft - Super Admin Only)
     if (user.waitingFor === "admin_edit_oferta_text") {
       await cleanUpInput(ctx, userId);
       db.setWaitingFor(userId, null);
+
+      if (!isAuthorizedSuperAdmin(userId)) {
+        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can edit Oferta text.`, { parse_mode: "HTML" });
+        return;
+      }
 
       if (!text || text.trim().length < 20) {
         await ctx.reply(
