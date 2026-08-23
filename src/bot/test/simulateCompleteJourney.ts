@@ -1,7 +1,6 @@
 import { db } from "../services/db";
 import { universities } from "../data/universities";
 import { programs } from "../data/programs";
-import { examSubjects } from "../data/exams";
 
 console.log("=================================================");
 console.log("🚀 SIMULATING FULL PTU USER JOURNEY & ARCHITECTURE");
@@ -48,14 +47,14 @@ console.log(`• Buttons Status: 🟢 UNLOCKED (Main menu reply keyboard active)
 console.log("\n3️⃣ Step 3: Checking Feature Access for Free Registered Student");
 console.log(`• Browse Universities: ✅ Allowed (${universities.length} universities available)`);
 console.log(`• Browse Degree Programs: ✅ Allowed (${programs.length} programs available)`);
-console.log(`• Free Demo Exam (Polish B1): ✅ Allowed`);
+console.log(`• Free Demo Test Material (Polish B1): ✅ Allowed`);
 
 // Attempt Premium Features as Free user
 const canApplyWithoutPremium = registeredUser.isPremium;
 console.log(`• Direct Program Application: 🔒 BLOCKED (isPremium: ${canApplyWithoutPremium}) -> Shows Paywall`);
 console.log(`• Document Verification by Counselor: 🔒 BLOCKED (isPremium: ${canApplyWithoutPremium}) -> Shows Paywall`);
 console.log(`• NAWA Legalization Dossier: 🔒 BLOCKED (isPremium: ${canApplyWithoutPremium}) -> Shows Paywall`);
-console.log(`• Math / Biology Entrance Exams: 🔒 BLOCKED (isPremium: ${canApplyWithoutPremium}) -> Shows Paywall`);
+console.log(`• VIP Entrance Exam Test Files: 🔒 BLOCKED (isPremium: ${canApplyWithoutPremium}) -> Shows Paywall`);
 
 // 4. Admin Generates Random Single-Use Code
 console.log("\n4️⃣ Step 4: Admin Generates Single-Use Promo Code");

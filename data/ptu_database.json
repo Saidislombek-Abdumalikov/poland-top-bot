@@ -163,7 +163,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "preferredLevel": "Bachelor",
-      "acceptedOfertaAt": "2026-08-23T13:42:06.734Z",
+      "acceptedOfertaAt": "2026-08-23T13:53:04.298Z",
       "acceptedOfertaVersion": 1
     },
     "777101": {
@@ -323,10 +323,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 13:41:58",
+      "premiumVerifiedAt": "2026-08-23 13:52:55",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-9396F4"
+      "premiumTransactionId": "TXN-36E6DC"
     },
     "777103": {
       "lang": "en",
@@ -400,7 +400,7 @@
       },
       "isPremium": true,
       "waitingFor": null,
-      "premiumCode": "7MD4DSLH",
+      "premiumCode": "BKSNRTR8",
       "premiumTier": "NAWA_FULL",
       "isRegistered": true,
       "isSuperAdmin": false,
@@ -408,10 +408,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "acceptedOfertaAt": "2026-08-23 13:41:58",
-      "premiumVerifiedAt": "2026-08-23 13:41:58",
+      "acceptedOfertaAt": "2026-08-23 13:52:55",
+      "premiumVerifiedAt": "2026-08-23 13:52:55",
       "premiumGrantReason": "PROMO_CODE",
-      "premiumTransactionId": "TXN-F4F79F",
+      "premiumTransactionId": "TXN-4C58C4",
       "acceptedOfertaVersion": 1
     },
     "777104": {
@@ -492,10 +492,10 @@
       "registeredAt": "2026-08-23",
       "preferredCity": "Warsaw",
       "savedPrograms": [],
-      "premiumVerifiedAt": "2026-08-23 13:41:58",
+      "premiumVerifiedAt": "2026-08-23 13:52:55",
       "premiumVerifiedBy": 5059829001,
       "premiumGrantReason": "VERIFIED_PAYMENT",
-      "premiumTransactionId": "TXN-40E53C"
+      "premiumTransactionId": "TXN-B07E9F"
     },
     "777701": {
       "lang": "en",
@@ -577,7 +577,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787535726726
+      "adminSessionExpiresAt": 1787536384291
     },
     "777702": {
       "lang": "en",
@@ -741,7 +741,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787535718968
+      "adminSessionExpiresAt": 1787536375305
     },
     "888801": {
       "lang": "en",
@@ -823,7 +823,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787535726704
+      "adminSessionExpiresAt": 1787536384273
     },
     "888802": {
       "lang": "en",
@@ -905,7 +905,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787535726707
+      "adminSessionExpiresAt": 1787536384276
     },
     "999901": {
       "lang": "en",
@@ -987,7 +987,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787535726681
+      "adminSessionExpiresAt": 1787536384251
     },
     "999902": {
       "lang": "en",
@@ -1069,7 +1069,7 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 2,
-      "adminSessionExpiresAt": 1787535726689
+      "adminSessionExpiresAt": 1787536384257
     },
     "999903": {
       "lang": "en",
@@ -1316,12 +1316,12 @@
       "preferredCity": "Warsaw",
       "savedPrograms": [],
       "sessionVersion": 3,
-      "adminSessionExpiresAt": 1787535718912
+      "adminSessionExpiresAt": 1787536375261
     }
   },
   "promoCodes": {
-    "7MD4DSLH": {
-      "code": "7MD4DSLH",
+    "BKSNRTR8": {
+      "code": "BKSNRTR8",
       "tier": "NAWA_FULL",
       "usedAt": "2026-08-23",
       "maxUses": 1,
@@ -1334,23 +1334,8 @@
     }
   },
   "transactions": {
-    "TXN-40E53C": {
-      "id": "TXN-40E53C",
-      "notes": "Refunded: User requested refund",
-      "amount": 60,
-      "source": "EXTERNAL_TRANSFER",
-      "status": "REFUNDED",
-      "userId": 777104,
-      "product": "NAWA_FULL",
-      "currency": "USD",
-      "userName": "User #777104",
-      "createdAt": "2026-08-23 13:41:58",
-      "verifiedAt": "2026-08-23 13:41:58",
-      "verifiedBy": 5059829001,
-      "verifiedByName": "Super Admin"
-    },
-    "TXN-8163F5": {
-      "id": "TXN-8163F5",
+    "TXN-1B6D40": {
+      "id": "TXN-1B6D40",
       "notes": "Student sent bank transfer receipt via Telegram",
       "amount": 60,
       "source": "EXTERNAL_TRANSFER",
@@ -1359,10 +1344,10 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777101",
-      "createdAt": "2026-08-23 13:41:58"
+      "createdAt": "2026-08-23 13:52:55"
     },
-    "TXN-9396F4": {
-      "id": "TXN-9396F4",
+    "TXN-36E6DC": {
+      "id": "TXN-36E6DC",
       "notes": "Confirmed in bank statement",
       "amount": 15,
       "source": "EXTERNAL_TRANSFER",
@@ -1371,14 +1356,14 @@
       "product": "NAWA",
       "currency": "USD",
       "userName": "User #777102",
-      "createdAt": "2026-08-23 13:41:58",
-      "verifiedAt": "2026-08-23 13:41:58",
+      "createdAt": "2026-08-23 13:52:55",
+      "verifiedAt": "2026-08-23 13:52:55",
       "verifiedBy": 5059829001,
       "verifiedByName": "Super Admin"
     },
-    "TXN-F4F79F": {
-      "id": "TXN-F4F79F",
-      "notes": "Access unlocked via promo code [7MD4DSLH]",
+    "TXN-4C58C4": {
+      "id": "TXN-4C58C4",
+      "notes": "Access unlocked via promo code [BKSNRTR8]",
       "amount": 60,
       "source": "PROMO_CODE",
       "status": "PAID",
@@ -1386,9 +1371,24 @@
       "product": "NAWA_FULL",
       "currency": "USD",
       "userName": "User #777103",
-      "createdAt": "2026-08-23 13:41:58",
-      "promoCode": "7MD4DSLH",
-      "verifiedAt": "2026-08-23 13:41:58"
+      "createdAt": "2026-08-23 13:52:55",
+      "promoCode": "BKSNRTR8",
+      "verifiedAt": "2026-08-23 13:52:55"
+    },
+    "TXN-B07E9F": {
+      "id": "TXN-B07E9F",
+      "notes": "Refunded: User requested refund",
+      "amount": 60,
+      "source": "EXTERNAL_TRANSFER",
+      "status": "REFUNDED",
+      "userId": 777104,
+      "product": "NAWA_FULL",
+      "currency": "USD",
+      "userName": "User #777104",
+      "createdAt": "2026-08-23 13:52:55",
+      "verifiedAt": "2026-08-23 13:52:55",
+      "verifiedBy": 5059829001,
+      "verifiedByName": "Super Admin"
     }
   },
   "applications": {},
@@ -1835,6 +1835,80 @@
       "required": true
     }
   },
+  "tests": {
+    "test-eng-b2": {
+      "id": "test-eng-b2",
+      "title": {
+        "en": "Academic English B2 / CEFR — Entrance Exam Practice Pack (PDF)",
+        "uz": "Ingliz Tili B2 / CEFR — Oliygoh Ichki Kirish Testi (PDF)"
+      },
+      "isFree": false,
+      "fileUrl": "https://studyinpoland.pl/en/",
+      "subject": "Ingliz tili (B2)",
+      "fileName": "English_B2_University_Entrance_Test_Pack.pdf",
+      "fileType": "link",
+      "createdAt": "2026-08-23",
+      "addedByName": "Admissions Team",
+      "description": {
+        "en": "Academic English entrance exam preparation pack with reading, writing, and grammar tests.",
+        "uz": "Polsha universitetlari ichki ingliz tili imtihoni uchun B2 CEFR test variantlari va grammatika mashqlari."
+      }
+    },
+    "test-pol-b1": {
+      "id": "test-pol-b1",
+      "title": {
+        "en": "Polish Language — B1 State Certificate Practice Exam (PDF)",
+        "uz": "Polyak Tili — B1 Davlat Sertifikati Namunaviy Test To'plami (PDF)"
+      },
+      "isFree": true,
+      "fileUrl": "https://certyfikatpolski.pl/o-egzaminie/przykladowe-testy-zbiory-zadan/",
+      "subject": "Polyak tili (B1)",
+      "fileName": "Polyak_Tili_B1_Rasmiy_Test_Toplami.pdf",
+      "fileType": "link",
+      "createdAt": "2026-08-23",
+      "addedByName": "Admissions Team",
+      "description": {
+        "en": "Official B1 Polish language proficiency sample test pack with grammar, vocabulary, reading, and listening tasks.",
+        "uz": "Polsha oliygohlariga kiruvchilar uchun B1 darajadagi namunaviy testlar, grammatika va leksika mashqlari."
+      }
+    },
+    "test-med-bio": {
+      "id": "test-med-bio",
+      "title": {
+        "en": "Medical University Entrance Exam — Biology & Chemistry (PDF)",
+        "uz": "Polsha Tibbiyot Universitetlari — Biologiya & Kimyo Testlari (PDF)"
+      },
+      "isFree": false,
+      "fileUrl": "https://muw.edu.pl/en",
+      "subject": "Tibbiyot / Biologiya",
+      "fileName": "Medical_Poland_Biology_Chemistry_Entrance_2025.pdf",
+      "fileType": "link",
+      "createdAt": "2026-08-23",
+      "addedByName": "Admissions Team",
+      "description": {
+        "en": "Entrance examination questions and answer keys for Medicine (MD) and Dentistry in Poland.",
+        "uz": "Davolash ishi (MD) va Stomatologiya yo'nalishlari uchun biologiya va kimyo fanlaridan namunaviy testlar."
+      }
+    },
+    "test-math-entrance": {
+      "id": "test-math-entrance",
+      "title": {
+        "en": "University Entrance Mathematics — Problem Sets & Solutions (PDF)",
+        "uz": "Oliygohlar Matematika Kirish Testlari va Yechimlari (PDF)"
+      },
+      "isFree": false,
+      "fileUrl": "https://www.mimuw.edu.pl/en/admissions",
+      "subject": "Matematika",
+      "fileName": "Warsaw_Math_Entrance_Exam_Pack_2025.pdf",
+      "fileType": "link",
+      "createdAt": "2026-08-23",
+      "addedByName": "Admissions Team",
+      "description": {
+        "en": "Entrance math test problem sets for Computer Science, Engineering, and Business programs in Poland.",
+        "uz": "IT, Muhandislik va Iqtisodiyot yo'nalishlariga kirish uchun matematika testlari va namunaviy yechimlar."
+      }
+    }
+  },
   "pricingConfig": {
     "nawaPrice": 15,
     "nawaCurrency": "USD",
@@ -1866,7 +1940,7 @@
   "reviews": [],
   "auditLogs": [
     {
-      "id": "3049F6",
+      "id": "0C4CDF",
       "action": "ADMIN_PERMISSION_REVOKED",
       "status": "success",
       "target": "777702",
@@ -1876,10 +1950,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 13:42:06"
+      "timestamp": "2026-08-23 13:53:04"
     },
     {
-      "id": "AA89E1",
+      "id": "630268",
       "action": "ADMIN_PERMISSION_GRANTED",
       "status": "success",
       "target": "777702",
@@ -1889,10 +1963,10 @@
       "actorName": "Admin #777701",
       "actorRole": "super_admin",
       "adminName": "Admin #777701",
-      "timestamp": "2026-08-23 13:42:06"
+      "timestamp": "2026-08-23 13:53:04"
     },
     {
-      "id": "E9AE15",
+      "id": "3D2FE8",
       "action": "TEST_ACTION",
       "status": "success",
       "target": "[PROTECTED_CREDENTIAL]",
@@ -1902,72 +1976,72 @@
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 13:42:06"
+      "timestamp": "2026-08-23 13:53:04"
     },
     {
-      "id": "9C0654",
+      "id": "87D275",
       "action": "PAYMENT_REFUNDED",
       "status": "success",
-      "target": "TXN-40E53C",
+      "target": "TXN-B07E9F",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin refunded Transaction TXN-40E53C ($60). Premium revoked for User #777104.",
+      "details": "Super Admin refunded Transaction TXN-B07E9F ($60). Premium revoked for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 13:41:58"
+      "timestamp": "2026-08-23 13:52:55"
     },
     {
-      "id": "7FBAD4",
+      "id": "251BAD",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-40E53C",
+      "target": "TXN-B07E9F",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-40E53C ($60 NAWA_FULL). Premium activated for User #777104.",
+      "details": "Super Admin manually verified payment for Transaction TXN-B07E9F ($60 NAWA_FULL). Premium activated for User #777104.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 13:41:58"
+      "timestamp": "2026-08-23 13:52:55"
     },
     {
-      "id": "BC8D57",
+      "id": "BD6D4A",
       "action": "PROMO_CODE_REDEEMED",
       "status": "success",
-      "target": "7MD4DSLH",
+      "target": "BKSNRTR8",
       "actorId": 777103,
       "adminId": 777103,
-      "details": "Student successfully redeemed promo code '7MD4DSLH' granting [NAWA_FULL] package. Transaction TXN-F4F79F recorded.",
+      "details": "Student successfully redeemed promo code 'BKSNRTR8' granting [NAWA_FULL] package. Transaction TXN-4C58C4 recorded.",
       "actorName": "User #777103",
       "actorRole": "system",
       "adminName": "User #777103",
-      "timestamp": "2026-08-23 13:41:58"
+      "timestamp": "2026-08-23 13:52:55"
     },
     {
-      "id": "656772",
+      "id": "9B0114",
       "action": "PAYMENT_VERIFIED",
       "status": "success",
-      "target": "TXN-9396F4",
+      "target": "TXN-36E6DC",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Super Admin manually verified payment for Transaction TXN-9396F4 ($15 NAWA). Premium activated for User #777102.",
+      "details": "Super Admin manually verified payment for Transaction TXN-36E6DC ($15 NAWA). Premium activated for User #777102.",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 13:41:58"
+      "timestamp": "2026-08-23 13:52:55"
     },
     {
-      "id": "AE3276",
+      "id": "A3F5FC",
       "action": "TRANSACTION_CREATED",
       "status": "success",
-      "target": "TXN-8163F5",
+      "target": "TXN-1B6D40",
       "actorId": 5059829001,
       "adminId": 5059829001,
-      "details": "Created private transaction record TXN-8163F5 (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
+      "details": "Created private transaction record TXN-1B6D40 (NAWA_FULL, $60, status: UNVERIFIED) for User #777101",
       "actorName": "Super Admin",
       "actorRole": "super_admin",
       "adminName": "Super Admin",
-      "timestamp": "2026-08-23 13:41:58"
+      "timestamp": "2026-08-23 13:52:55"
     }
   ]
 }

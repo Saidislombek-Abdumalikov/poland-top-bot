@@ -1,5 +1,5 @@
 import { InlineKeyboard, Keyboard } from "grammy";
-import { Language, University, Program, ExamSubject, StudentReview } from "../types";
+import { Language, University, Program, ExamSubject, StudentReview, TestMaterial } from "../types";
 import { t } from "../locales";
 import { universities } from "../data/universities";
 import { programs } from "../data/programs";
@@ -229,31 +229,51 @@ export function getDocumentsKeyboard(
   return kb;
 }
 
-export function getExamsListKeyboard(lang: Language, examList: ExamSubject[]): InlineKeyboard {
+export function getTestsListKeyboard(lang: Language, tests: TestMaterial[]): InlineKeyboard {
   const kb = new InlineKeyboard();
 
-  examList.forEach((exam) => {
-    const isFree = exam.id === "polish-b1";
-    const badge = isFree ? "🟢 [Free Demo] " : "🔒 [VIP] ";
-    kb.text(`${badge}${exam.name[lang] || exam.name.en}`, `start_exam_${exam.id}`).row();
+  tests.forEach((test) => {
+    const badge = test.isFree ? "🟢 [Free] " : "🔒 [VIP] ";
+    const title = test.title[lang] || test.title.en;
+    kb.text(`${badge}${title}`, `view_test_${test.id}`).row();
   });
 
   kb.text(t(lang, "nav_main_menu"), "go_main_menu");
   return kb;
 }
 
-export function getQuizQuestionKeyboard(
-  options: string[],
-  currentQ: number,
-  examId: string
-): InlineKeyboard {
+export function getTestDetailKeyboard(lang: Language, test: TestMaterial): InlineKeyboard {
+  const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  options.forEach((opt, idx) => {
-    kb.text(`${String.fromCharCode(65 + idx)}) ${opt}`, `quiz_ans_${examId}_${currentQ}_${idx}`).row();
-  });
+  if (test.fileUrl) {
+    kb.url(
+      isUz ? "📥 Test Faylini Yuklab Olish (Havola)" : "📥 Download Test File (Link)",
+      test.fileUrl
+    ).row();
+  }
 
-  kb.text("❌ Exit Quiz", "exam_cancel");
+  if (test.fileId) {
+    kb.text(
+      isUz ? "📄 Faylni Telegramda Olish" : "📄 Receive File in Telegram",
+      `download_test_file_${test.id}`
+    ).row();
+  }
+
+  kb.text(isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", "menu_exams")
+    .text(t(lang, "nav_main_menu"), "go_main_menu");
+
+  return kb;
+}
+
+export function getExamsListKeyboard(lang: Language, examList: any[]): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  examList.forEach((exam) => {
+    const title = exam.title ? (exam.title[lang] || exam.title.en) : (exam.name ? (exam.name[lang] || exam.name.en) : "Test");
+    const badge = exam.isFree ? "🟢 [Free] " : "🔒 [VIP] ";
+    kb.text(`${badge}${title}`, `view_test_${exam.id}`).row();
+  });
+  kb.text(t(lang, "nav_main_menu"), "go_main_menu");
   return kb;
 }
 

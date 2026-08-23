@@ -11,7 +11,7 @@ export const uz = {
   btn_programs: "📚 Ta'lim Dasturlari",
   btn_nawa: "🏛️ NAWA Nostrifikatsiya",
   btn_documents: "📋 Hujjatlar Nazorati",
-  btn_exams: "✍️ Mashq Imtihonlari",
+  btn_exams: "📝 Testlar",
   btn_premium: "💎 Premium A'zolik",
   btn_reviews: "⭐ Talabalar Sharhlari",
   btn_profile: "👤 Mening Profilim",
@@ -83,15 +83,9 @@ export const uz = {
   docs_submit_prompt: "Iltimos, <b>{docName}</b> hujjati uchun PDF fayl, fotosurat yoki Google Drive havolasini yuboring:",
   docs_submit_success: "✅ Hujjat qabul qilindi! Maslahatchilarimiz tez orada tekshirib chiqadi.",
 
-  // Exams & Quiz Section
-  exams_title: "✍️ <b>Mashq Imtihonlari va Kirish Testlari</b>\nPolsha universitetlarining kirish imtihonlari va til testlariga tayyorlaning:",
-  exam_choose_subject: "Boshlash uchun test fanini tanlang:",
-  exam_started: "📝 <b>{examName}</b>\n\nSavol: {current} / {total}:",
-  exam_score_title: "🏁 <b>Test yakunlandi!</b>\n\nSizning natijangiz: <b>{score} / {total}</b> ({percentage}%)\n\n{verdict}",
-  exam_verdict_high: "🎉 Ajoyib natija! Siz qabulga juda yaxshi tayyorgarlik ko'rgansiz.",
-  exam_verdict_med: "👍 Yaxshi harakat! Yana biroz mashq qilsangiz, mukammal bo'ladi.",
-  exam_verdict_low: "📚 Yana takrorlash tavsiya etiladi! Bilimingizni mustahkamlash uchun qaytadan urinib ko'ring.",
-  exam_btn_retry: "🔄 Testni qayta topshirish",
+  // Test Materials Section
+  exams_title: "📝 <b>Oliygohlar Kirish Testlari & Namunaviy Variantlar (PDF)</b>\nPolsha universitetlariga kirish imtihonlari, til sertifikatlari va yo'nalishlar bo'yicha rasmiy test to'plamlari va PDF materiallar:",
+  exam_choose_subject: "Ko'rish yoki PDF faylni yuklab olish uchun test materiallaridan birini tanlang:",
 
   // Premium Section
   premium_title: "💎 <b>VIP Qabul & Premium A'zolik</b>",

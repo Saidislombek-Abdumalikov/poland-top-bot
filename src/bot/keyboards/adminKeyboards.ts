@@ -12,6 +12,7 @@ import {
   TransactionRecord,
   PricingConfig,
   OfertaRecord,
+  TestMaterial,
 } from "../types";
 
 export function getAdminDashboardKeyboard(
@@ -50,7 +51,8 @@ export function getAdminDashboardKeyboard(
     .text(isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`, "admin_menu_reviews")
     .text(isUz ? `⚡ Promokodlar` : `⚡ Promo Codes`, "admin_menu_promos")
     .row()
-    .text(isUz ? `📢 Global Xabar Yuborish` : `📢 Broadcast Message`, "admin_broadcast_start")
+    .text(isUz ? `📝 Testlar Boshqaruvi` : `📝 Manage Test Materials`, "admin_menu_tests")
+    .text(isUz ? `📢 Global Xabar` : `📢 Broadcast`, "admin_broadcast_start")
     .row()
     .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
     .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Stats`, "admin_refresh")
@@ -656,4 +658,76 @@ export function getSuperAdminClearLogsConfirmKeyboard(
     .text(isUz ? "🚨 Ha, barcha loglarni tozalash" : "🚨 Yes, clear all logs", "admin_super_clear_logs_execute")
     .row()
     .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", "admin_super_hq");
+}
+
+export function getAdminTestsListKeyboard(
+  tests: TestMaterial[],
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  kb.text(isUz ? "➕ Yangi Test Qo'shish" : "➕ Add New Test Material", "admin_add_test").row();
+
+  tests.forEach((t) => {
+    const badge = t.isFree ? "🟢" : "🔒";
+    const title = (t.title[lang] || t.title.en).slice(0, 26);
+    kb.text(`${badge} ${title}`, `admin_view_test_${t.id}`).row();
+  });
+
+  kb.text(isUz ? "◀️ Admin Panel" : "◀️ Back to Admin Panel", "admin_panel");
+  return kb;
+}
+
+export function getAdminTestDetailKeyboard(
+  test: TestMaterial,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  kb.text(
+    isUz ? "✏️ Nomini Tahrirlash" : "✏️ Edit Title",
+    `admin_edit_test_title_${test.id}`
+  )
+    .text(
+      isUz ? "📚 Fanni Tahrirlash" : "📚 Edit Subject",
+      `admin_edit_test_subject_${test.id}`
+    )
+    .row()
+    .text(
+      isUz ? "🔗 Havola / Faylni O'zgartirish" : "🔗 Change File / Link",
+      `admin_edit_test_file_${test.id}`
+    )
+    .text(
+      test.isFree
+        ? (isUz ? "🔒 VIP Qilish" : "🔒 Make VIP")
+        : (isUz ? "🟢 Bepul Qilish" : "🟢 Make Free"),
+      `admin_toggle_test_vip_${test.id}`
+    )
+    .row();
+
+  if (test.fileUrl) {
+    kb.url(isUz ? "🌐 Havolani Tekshirish" : "🌐 Test URL Link", test.fileUrl).row();
+  }
+
+  kb.text(
+    isUz ? "🗑️ Testni O'chirish" : "🗑️ Delete Test Material",
+    `admin_del_test_confirm_${test.id}`
+  )
+    .row()
+    .text(isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", "admin_menu_tests");
+
+  return kb;
+}
+
+export function getAdminDeleteTestConfirmKeyboard(
+  testId: string,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "🚨 Ha, o'chirilsin" : "🚨 Yes, Delete", `admin_del_test_execute_${testId}`)
+    .row()
+    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", `admin_view_test_${testId}`);
 }

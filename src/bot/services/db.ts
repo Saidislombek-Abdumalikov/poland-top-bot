@@ -22,6 +22,7 @@ import {
   PaymentSource,
   PricingConfig,
   OfertaRecord,
+  TestMaterial,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
 
@@ -165,6 +166,81 @@ export const defaultDocumentDefinitions: Record<string, DocumentDefinition> = {
   },
 };
 
+export const defaultTestMaterials: Record<string, TestMaterial> = {
+  "test-pol-b1": {
+    id: "test-pol-b1",
+    title: {
+      en: "Polish Language — B1 State Certificate Practice Exam (PDF)",
+      uz: "Polyak Tili — B1 Davlat Sertifikati Namunaviy Test To'plami (PDF)",
+    },
+    subject: "Polyak tili (B1)",
+    description: {
+      en: "Official B1 Polish language proficiency sample test pack with grammar, vocabulary, reading, and listening tasks.",
+      uz: "Polsha oliygohlariga kiruvchilar uchun B1 darajadagi namunaviy testlar, grammatika va leksika mashqlari.",
+    },
+    fileName: "Polyak_Tili_B1_Rasmiy_Test_Toplami.pdf",
+    fileType: "link",
+    fileUrl: "https://certyfikatpolski.pl/o-egzaminie/przykladowe-testy-zbiory-zadan/",
+    isFree: true,
+    createdAt: "2026-08-23",
+    addedByName: "Admissions Team",
+  },
+  "test-math-entrance": {
+    id: "test-math-entrance",
+    title: {
+      en: "University Entrance Mathematics — Problem Sets & Solutions (PDF)",
+      uz: "Oliygohlar Matematika Kirish Testlari va Yechimlari (PDF)",
+    },
+    subject: "Matematika",
+    description: {
+      en: "Entrance math test problem sets for Computer Science, Engineering, and Business programs in Poland.",
+      uz: "IT, Muhandislik va Iqtisodiyot yo'nalishlariga kirish uchun matematika testlari va namunaviy yechimlar.",
+    },
+    fileName: "Warsaw_Math_Entrance_Exam_Pack_2025.pdf",
+    fileType: "link",
+    fileUrl: "https://www.mimuw.edu.pl/en/admissions",
+    isFree: false,
+    createdAt: "2026-08-23",
+    addedByName: "Admissions Team",
+  },
+  "test-eng-b2": {
+    id: "test-eng-b2",
+    title: {
+      en: "Academic English B2 / CEFR — Entrance Exam Practice Pack (PDF)",
+      uz: "Ingliz Tili B2 / CEFR — Oliygoh Ichki Kirish Testi (PDF)",
+    },
+    subject: "Ingliz tili (B2)",
+    description: {
+      en: "Academic English entrance exam preparation pack with reading, writing, and grammar tests.",
+      uz: "Polsha universitetlari ichki ingliz tili imtihoni uchun B2 CEFR test variantlari va grammatika mashqlari.",
+    },
+    fileName: "English_B2_University_Entrance_Test_Pack.pdf",
+    fileType: "link",
+    fileUrl: "https://studyinpoland.pl/en/",
+    isFree: false,
+    createdAt: "2026-08-23",
+    addedByName: "Admissions Team",
+  },
+  "test-med-bio": {
+    id: "test-med-bio",
+    title: {
+      en: "Medical University Entrance Exam — Biology & Chemistry (PDF)",
+      uz: "Polsha Tibbiyot Universitetlari — Biologiya & Kimyo Testlari (PDF)",
+    },
+    subject: "Tibbiyot / Biologiya",
+    description: {
+      en: "Entrance examination questions and answer keys for Medicine (MD) and Dentistry in Poland.",
+      uz: "Davolash ishi (MD) va Stomatologiya yo'nalishlari uchun biologiya va kimyo fanlaridan namunaviy testlar.",
+    },
+    fileName: "Medical_Poland_Biology_Chemistry_Entrance_2025.pdf",
+    fileType: "link",
+    fileUrl: "https://muw.edu.pl/en",
+    isFree: false,
+    createdAt: "2026-08-23",
+    addedByName: "Admissions Team",
+  },
+};
+
 interface DatabaseSchema {
   users: Record<number, UserSessionData>;
   promoCodes: Record<string, PromoCodeRecord>;
@@ -173,6 +249,7 @@ interface DatabaseSchema {
   nawaApplications: Record<string, NawaApplicationRecord>;
   universities: Record<string, University>;
   documentDefinitions: Record<string, DocumentDefinition>;
+  tests: Record<string, TestMaterial>;
   pricingConfig: PricingConfig;
   oferta: OfertaRecord;
   ofertaDraft?: OfertaRecord;
@@ -190,6 +267,7 @@ export class DatabaseService {
     nawaApplications: {},
     universities: {},
     documentDefinitions: {},
+    tests: { ...defaultTestMaterials },
     pricingConfig: { ...defaultPricingConfig },
     oferta: {
       version: 1,
@@ -247,6 +325,7 @@ export class DatabaseService {
           nawaApplications: data.data.nawaApplications || this.data.nawaApplications || {},
           universities: data.data.universities || this.data.universities || {},
           documentDefinitions: data.data.documentDefinitions || this.data.documentDefinitions || {},
+          tests: data.data.tests || this.data.tests || { ...defaultTestMaterials },
           pricingConfig: data.data.pricingConfig || this.data.pricingConfig || { ...defaultPricingConfig },
           oferta: data.data.oferta || this.data.oferta || {
             version: 1,
@@ -319,6 +398,7 @@ export class DatabaseService {
           nawaApplications: parsed.nawaApplications || {},
           universities: parsed.universities || {},
           documentDefinitions: parsed.documentDefinitions || {},
+          tests: parsed.tests || { ...defaultTestMaterials },
           pricingConfig: parsed.pricingConfig || { ...defaultPricingConfig },
           oferta: parsed.oferta || {
             version: 1,
@@ -344,6 +424,11 @@ export class DatabaseService {
       defaultUniversities.forEach((u) => {
         this.data.universities[u.id] = u;
       });
+    }
+
+    // Seed default tests if empty
+    if (!this.data.tests || Object.keys(this.data.tests).length === 0) {
+      this.data.tests = { ...defaultTestMaterials };
     }
 
     // Seed default document definitions if empty
@@ -647,6 +732,7 @@ export class DatabaseService {
       this.data.universities[u.id] = u;
     });
     this.data.documentDefinitions = { ...defaultDocumentDefinitions };
+    this.data.tests = { ...defaultTestMaterials };
     this.data.pricingConfig = { ...defaultPricingConfig };
     this.data.oferta = {
       version: 1,
@@ -1618,6 +1704,102 @@ export class DatabaseService {
 
   public getAllNawaApplications(): NawaApplicationRecord[] {
     return Object.values(this.data.nawaApplications);
+  }
+
+  // ================= TEST MATERIALS CRUD =================
+  public getAllTests(): TestMaterial[] {
+    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
+    return Object.values(this.data.tests).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  public getTest(id: string): TestMaterial | undefined {
+    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
+    return this.data.tests[id];
+  }
+
+  public createTest(
+    material: Omit<TestMaterial, "createdAt">,
+    actorId?: number,
+    actorName?: string
+  ): TestMaterial {
+    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
+    const id = material.id || `test-${Date.now().toString(36)}`;
+    const now = new Date().toISOString().split("T")[0];
+
+    const testItem: TestMaterial = {
+      ...material,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      addedByName: actorName || "Admissions Team",
+    };
+
+    this.data.tests[id] = testItem;
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        actorName || "Admin",
+        "CREATE_TEST_MATERIAL",
+        `Created test material: "${testItem.title.uz || testItem.title.en}" (${testItem.subject})`,
+        id
+      );
+    }
+
+    this.saveDatabase();
+    return testItem;
+  }
+
+  public updateTest(
+    id: string,
+    updates: Partial<TestMaterial>,
+    actorId?: number,
+    actorName?: string
+  ): TestMaterial | undefined {
+    if (!this.data.tests || !this.data.tests[id]) return undefined;
+
+    const existing = this.data.tests[id];
+    const updated: TestMaterial = {
+      ...existing,
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString().split("T")[0],
+    };
+
+    this.data.tests[id] = updated;
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        actorName || "Admin",
+        "UPDATE_TEST_MATERIAL",
+        `Updated test material: "${updated.title.uz || updated.title.en}" (${updated.subject})`,
+        id
+      );
+    }
+
+    this.saveDatabase();
+    return updated;
+  }
+
+  public deleteTest(id: string, actorId?: number, actorName?: string): boolean {
+    if (!this.data.tests || !this.data.tests[id]) return false;
+
+    const testItem = this.data.tests[id];
+    delete this.data.tests[id];
+
+    if (actorId) {
+      this.logAdminAction(
+        actorId,
+        actorName || "Admin",
+        "DELETE_TEST_MATERIAL",
+        `Deleted test material: "${testItem.title.uz || testItem.title.en}" (${testItem.subject})`,
+        id
+      );
+    }
+
+    this.saveDatabase();
+    return true;
   }
 
   // ================= REVIEWS CRUD =================

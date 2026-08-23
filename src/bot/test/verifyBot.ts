@@ -1,14 +1,14 @@
 import { db } from "../services/db";
 import { universities } from "../data/universities";
 import { programs } from "../data/programs";
-import { examSubjects } from "../data/exams";
 import { nawaGuide } from "../data/nawaGuide";
 
 console.log("🔍 Running Paywall Gating & Single-Use Promo Code Verification...\n");
 
 // 1. Data Integrity Check
+const tests = db.getAllTests();
 console.log(`✅ Loaded ${universities.length} universities and ${programs.length} degree programs.`);
-console.log(`✅ Loaded ${examSubjects.length} exam categories and ${nawaGuide.steps.length} NAWA roadmap steps.`);
+console.log(`✅ Loaded ${tests.length} test materials and ${nawaGuide.steps.length} NAWA roadmap steps.`);
 
 // 2. Free User Creation
 const studentId1 = 11111111;

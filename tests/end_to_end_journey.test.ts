@@ -24,6 +24,7 @@ async function runEndToEndTestSuite() {
 
   // 1. Initial State & Clean Setup
   test("Database initializes with active catalog and default pricing ($60 / $15 / €30)", () => {
+    db.resetDatabaseToZero(5059829001);
     const pricing = db.getPricingConfig();
     assert.equal(pricing.nawaPrice, 15);
     assert.equal(pricing.fullApplicationNawaPrice, 60);

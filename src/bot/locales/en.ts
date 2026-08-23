@@ -11,7 +11,7 @@ export const en = {
   btn_programs: "📚 Degree Programs",
   btn_nawa: "🏛️ NAWA Recognition",
   btn_documents: "📋 Document Checklist",
-  btn_exams: "✍️ Practice Exams",
+  btn_exams: "📝 Test Materials",
   btn_premium: "💎 Premium Access",
   btn_reviews: "⭐ Student Reviews",
   btn_profile: "👤 My Profile",
@@ -83,15 +83,9 @@ export const en = {
   docs_submit_prompt: "Please send your PDF file, photo scan, or cloud link for <b>{docName}</b> in the chat below:",
   docs_submit_success: "✅ Document submitted! Our advisors will verify it shortly.",
 
-  // Exams & Quiz Section
-  exams_title: "✍️ <b>Practice Exams & Placement Tests</b>\nPrepare for Polish university entrance exams and language assessments:",
-  exam_choose_subject: "Select an exam subject below:",
-  exam_started: "📝 <b>{examName}</b>\n\nQuestion {current} of {total}:",
-  exam_score_title: "🏁 <b>Quiz Completed!</b>\n\nYour Score: <b>{score} / {total}</b> ({percentage}%)\n\n{verdict}",
-  exam_verdict_high: "🎉 Excellent preparation! You are ready for admissions.",
-  exam_verdict_med: "👍 Good attempt! Review key topics to boost your score.",
-  exam_verdict_low: "📚 More study recommended! Retake the test to practice.",
-  exam_btn_retry: "🔄 Retake Test",
+  // Test Materials Section
+  exams_title: "📝 <b>Entrance Exams & Sample Test Papers (PDF)</b>\nOfficial entrance test papers, language assessment files, and sample solutions for Polish university admissions:",
+  exam_choose_subject: "Select a test material below to view specifications and download files:",
 
   // Premium Section
   premium_title: "💎 <b>VIP Admissions & Premium Access</b>",

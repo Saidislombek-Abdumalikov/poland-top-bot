@@ -273,7 +273,7 @@ export function setupStartHandler(bot: Bot) {
       `• /programs - Search degree programs\n` +
       `• /nawa - NAWA document recognition guide\n` +
       `• /documents - Track application document status\n` +
-      `• /exams - Practice entrance exams\n` +
+      `• /tests - Entrance exams & sample test papers (PDF)\n` +
       `• /premium - Activate VIP support with access code\n` +
       `• /profile - View saved programs & application status\n` +
       `• /admin - Access Admin CRM panel (for advisors)\n` +

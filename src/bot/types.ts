@@ -68,30 +68,37 @@ export interface Program {
   mode: "Full-time" | "Part-time";
 }
 
-export interface ExamQuestion {
-  id: number;
-  q: {
+export interface TestMaterial {
+  id: string; // e.g. "test-math-01", "test-pol-b1"
+  title: {
     en: string;
     uz: string;
   };
-  options: string[];
-  correct: string;
-  explanation: {
+  subject: string; // e.g. "Matematika", "Ingliz tili (B2)", "Polyak tili", "Tibbiyot / Biologiya"
+  description?: {
     en: string;
     uz: string;
   };
+  fileId?: string; // Telegram document/photo file_id
+  fileName?: string; // e.g. "Warsaw_University_Math_Test_2025.pdf"
+  fileType?: "document" | "photo" | "link";
+  fileUrl?: string; // Google Drive / download link
+  isFree?: boolean; // true for free samples, false for VIP
+  createdAt: string;
+  updatedAt?: string;
+  addedByName?: string;
 }
 
+// Backward compatibility aliases if needed
 export interface ExamSubject {
   id: string;
   name: {
     en: string;
     uz: string;
   };
-  category: "Language" | "Entrance" | "Science" | "Culture";
-  level: string;
-  timeMinutes: number;
-  questions: ExamQuestion[];
+  category?: string;
+  level?: string;
+  timeMinutes?: number;
 }
 
 export interface StudentReview {
@@ -312,6 +319,11 @@ export interface UserSessionData {
     | "admin_edit_price_full"
     | "admin_edit_fee"
     | "admin_edit_oferta_text"
+    | "admin_add_test_title"
+    | "admin_add_test_subject"
+    | "admin_add_test_file"
+    | "admin_edit_test_title"
+    | "admin_edit_test_file"
     | null;
   waitingPayload?: any;
   lastPromptMsgId?: number;

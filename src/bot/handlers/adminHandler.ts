@@ -39,6 +39,9 @@ import {
   getAdminOfertaPreviewKeyboard,
   getSuperAdminPurgeTransactionsConfirmKeyboard,
   getSuperAdminClearLogsConfirmKeyboard,
+  getAdminTestsListKeyboard,
+  getAdminTestDetailKeyboard,
+  getAdminDeleteTestConfirmKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -2008,6 +2011,307 @@ export function setupAdminHandler(bot: Bot) {
       parse_mode: "HTML",
       reply_markup: getAdminReviewsListKeyboard(revs, 0, 6, adminUser?.lang),
     });
+  });
+
+  // ================= 7.5 TEST MATERIALS MANAGEMENT =================
+  bot.callbackQuery("admin_menu_tests", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const tests = db.getAllTests();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `📝 <b>Polsha Kirish Testlari & Qo'llanmalar Boshqaruvi (${tests.length} ta mavjud)</b>\n\n` +
+        `<i>Yangi test qo'shish, fanni/nomini tahrirlash, havola/fayl yuklash yoki o'chirish uchun tanlang:</i>`
+      : `📝 <b>Test Materials & Exam Papers Management (${tests.length} available)</b>\n\n` +
+        `<i>Add new test files, edit title/subject, change download link, or delete materials:</i>`;
+
+    const kb = getAdminTestsListKeyboard(tests, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery(/^admin_view_test_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_view_test_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const test = db.getTest(testId);
+    if (!test) {
+      await ctx.answerCallbackQuery({ text: isUz ? "Test topilmadi" : "Test not found" });
+      return;
+    }
+
+    await ctx.answerCallbackQuery();
+    const title = test.title[adminUser.lang] || test.title.en;
+    const desc = test.description
+      ? test.description[adminUser.lang] || test.description.en
+      : isUz ? "Tavsif mavjud emas." : "No description.";
+
+    const text = isUz
+      ? `📝 <b>Test Tafsilotlari:</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🏷️ <b>Nomi:</b> ${escapeHtml(title)}\n` +
+        `📚 <b>Fani:</b> ${escapeHtml(test.subject)}\n` +
+        `💎 <b>Turi:</b> ${test.isFree ? "🟢 Bepul Namunaviy Variant" : "🔒 VIP Imtihon To'plami"}\n` +
+        (test.fileName ? `📁 <b>Fayl:</b> <code>${escapeHtml(test.fileName)}</code>\n` : "") +
+        (test.fileUrl ? `🔗 <b>Havola:</b> ${escapeHtml(test.fileUrl)}\n` : "") +
+        (test.fileId ? `🆔 <b>Telegram File ID:</b> <code>${escapeHtml(test.fileId.slice(0, 20))}...</code>\n` : "") +
+        `📅 <b>Yaratilgan:</b> ${test.createdAt}\n` +
+        `👤 <b>Kirituvchi:</b> ${test.addedByName || "Admissions Team"}\n\n` +
+        `📖 <b>Tavsif:</b>\n${escapeHtml(desc)}`
+      : `📝 <b>Test Material Details:</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `🏷️ <b>Title:</b> ${escapeHtml(title)}\n` +
+        `📚 <b>Subject:</b> ${escapeHtml(test.subject)}\n` +
+        `💎 <b>Tier:</b> ${test.isFree ? "🟢 Free Sample" : "🔒 VIP Entrance Pack"}\n` +
+        (test.fileName ? `📁 <b>File:</b> <code>${escapeHtml(test.fileName)}</code>\n` : "") +
+        (test.fileUrl ? `🔗 <b>Link:</b> ${escapeHtml(test.fileUrl)}\n` : "") +
+        (test.fileId ? `🆔 <b>Telegram File ID:</b> <code>${escapeHtml(test.fileId.slice(0, 20))}...</code>\n` : "") +
+        `📅 <b>Created:</b> ${test.createdAt}\n` +
+        `👤 <b>Added By:</b> ${test.addedByName || "Admissions Team"}\n\n` +
+        `📖 <b>Description:</b>\n${escapeHtml(desc)}`;
+
+    const kb = getAdminTestDetailKeyboard(test, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery("admin_add_test", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_add_test_title");
+    await ctx.answerCallbackQuery();
+
+    const msg = await ctx.reply(
+      isUz
+        ? `➕ <b>Yangi Test Materiali Qo'shish (1/3-bosqich)</b>\n\n` +
+          `Iltimos, test materialining nomini kiriting (masalan: <i>Varshava Universiteti Matematika Kirish Testi 2025</i>):`
+        : `➕ <b>Add New Test Material (Step 1/3)</b>\n\n` +
+          `Please enter the test material title (e.g. <i>Warsaw University Mathematics Entrance Exam 2025</i>):`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery(/^admin_edit_test_title_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_edit_test_title_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_test_title");
+    db.updateUser(userId, { waitingPayload: { testId } });
+    await ctx.answerCallbackQuery();
+
+    const msg = await ctx.reply(
+      isUz
+        ? `✏️ <b>Test Nomini O'zgartirish</b>\n\n` +
+          `Ushbu test uchun yangi sarlavhani chatga yuboring:`
+        : `✏️ <b>Edit Test Title</b>\n\n` +
+          `Send the new title for this test in chat:`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery(/^admin_edit_test_subject_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_edit_test_subject_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_add_test_subject");
+    db.updateUser(userId, { waitingPayload: { testId, isEdit: true } });
+    await ctx.answerCallbackQuery();
+
+    const msg = await ctx.reply(
+      isUz
+        ? `📚 <b>Test Fanini O'zgartirish</b>\n\n` +
+          `Ushbu test fani yoki yo'nalishini kiriting (masalan: <i>Matematika</i>, <i>Ingliz tili B2</i>, <i>Polyak tili</i>):`
+        : `📚 <b>Edit Test Subject</b>\n\n` +
+          `Enter the subject/field for this test (e.g. <i>Mathematics</i>, <i>English B2</i>, <i>Polish Language</i>):`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery(/^admin_edit_test_file_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_edit_test_file_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    db.setWaitingFor(userId, "admin_edit_test_file");
+    db.updateUser(userId, { waitingPayload: { testId } });
+    await ctx.answerCallbackQuery();
+
+    const msg = await ctx.reply(
+      isUz
+        ? `🔗 <b>Fayl yoki Havolani Yangilash</b>\n\n` +
+          `Iltimos, yangi PDF faylni Telegram orqali yuboring yoki yangi yuklab olish havolasini (URL) matn ko'rinishida yozing:`
+        : `🔗 <b>Update File or Download Link</b>\n\n` +
+          `Please upload a new PDF document or send a new download link (URL):`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
+  bot.callbackQuery(/^admin_toggle_test_vip_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_toggle_test_vip_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const test = db.getTest(testId);
+    if (!test) {
+      await ctx.answerCallbackQuery({ text: isUz ? "Test topilmadi" : "Test not found" });
+      return;
+    }
+
+    const updatedIsFree = !test.isFree;
+    const updated = db.updateTest(
+      testId,
+      { isFree: updatedIsFree },
+      userId,
+      adminUser.fullName || adminUser.username || "Admin"
+    );
+
+    await ctx.answerCallbackQuery({
+      text: updatedIsFree
+        ? (isUz ? "🟢 Test bepul holatga o'tkazildi" : "🟢 Test made free")
+        : (isUz ? "🔒 Test VIP holatga o'tkazildi" : "🔒 Test set to VIP"),
+    });
+
+    if (updated) {
+      const title = updated.title[adminUser.lang] || updated.title.en;
+      const desc = updated.description
+        ? updated.description[adminUser.lang] || updated.description.en
+        : isUz ? "Tavsif mavjud emas." : "No description.";
+
+      const text = isUz
+        ? `📝 <b>Test Tafsilotlari:</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `🏷️ <b>Nomi:</b> ${escapeHtml(title)}\n` +
+          `📚 <b>Fani:</b> ${escapeHtml(updated.subject)}\n` +
+          `💎 <b>Turi:</b> ${updated.isFree ? "🟢 Bepul Namunaviy Variant" : "🔒 VIP Imtihon To'plami"}\n` +
+          (updated.fileName ? `📁 <b>Fayl:</b> <code>${escapeHtml(updated.fileName)}</code>\n` : "") +
+          (updated.fileUrl ? `🔗 <b>Havola:</b> ${escapeHtml(updated.fileUrl)}\n` : "") +
+          `📅 <b>Yaratilgan:</b> ${updated.createdAt}\n` +
+          `👤 <b>Kirituvchi:</b> ${updated.addedByName || "Admissions Team"}\n\n` +
+          `📖 <b>Tavsif:</b>\n${escapeHtml(desc)}`
+        : `📝 <b>Test Material Details:</b>\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `🏷️ <b>Title:</b> ${escapeHtml(title)}\n` +
+          `📚 <b>Subject:</b> ${escapeHtml(updated.subject)}\n` +
+          `💎 <b>Tier:</b> ${updated.isFree ? "🟢 Free Sample" : "🔒 VIP Entrance Pack"}\n` +
+          (updated.fileName ? `📁 <b>File:</b> <code>${escapeHtml(updated.fileName)}</code>\n` : "") +
+          (updated.fileUrl ? `🔗 <b>Link:</b> ${escapeHtml(updated.fileUrl)}\n` : "") +
+          `📅 <b>Created:</b> ${updated.createdAt}\n` +
+          `👤 <b>Added By:</b> ${updated.addedByName || "Admissions Team"}\n\n` +
+          `📖 <b>Description:</b>\n${escapeHtml(desc)}`;
+
+      const kb = getAdminTestDetailKeyboard(updated, adminUser.lang);
+      if (ctx.callbackQuery?.message) {
+        try {
+          await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+          return;
+        } catch {}
+      }
+    }
+  });
+
+  bot.callbackQuery(/^admin_del_test_confirm_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_del_test_confirm_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    await ctx.answerCallbackQuery();
+    const text = isUz
+      ? `🚨 <b>Ushbu test materialini o'chirishni tasdiqlaysizmi?</b>\n\n` +
+        `ID: <code>${testId}</code>`
+      : `🚨 <b>Are you sure you want to delete this test material?</b>\n\n` +
+        `ID: <code>${testId}</code>`;
+
+    const kb = getAdminDeleteTestConfirmKeyboard(testId, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  });
+
+  bot.callbackQuery(/^admin_del_test_execute_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_del_test_execute_(.+)$/);
+    if (!match) return;
+    const testId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const deleted = db.deleteTest(testId, userId, adminUser.fullName || adminUser.username || "Admin");
+    await ctx.answerCallbackQuery({
+      text: deleted
+        ? (isUz ? "🗑️ Test muvaffaqiyatli o'chirildi" : "🗑️ Test deleted successfully")
+        : (isUz ? "Xatolik yuz berdi" : "Error deleting test"),
+    });
+
+    const tests = db.getAllTests();
+    const text = isUz
+      ? `📝 <b>Polsha Kirish Testlari Boshqaruvi (${tests.length} ta)</b>\n\n` +
+        `Test o'chirildi. Yangi test qo'shish yoki mavjudlarini tahrirlash uchun tanlang:`
+      : `📝 <b>Test Materials Management (${tests.length} total)</b>\n\n` +
+        `Test deleted. Manage remaining test materials below:`;
+
+    const kb = getAdminTestsListKeyboard(tests, adminUser.lang);
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, { parse_mode: "HTML", reply_markup: kb });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
   });
 
   // ================= 8. BROADCAST ANNOUNCEMENTS =================

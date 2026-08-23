@@ -95,6 +95,92 @@ export function setupTextInputHandler(bot: Bot) {
 
     const user = db.getUser(userId);
 
+    if (user.waitingFor === "admin_add_test_file") {
+      const payload = user.waitingPayload;
+      if (payload && payload.title && payload.subject) {
+        const isUz = user.lang === "uz";
+        const newTest = db.createTest(
+          {
+            id: `test-${Date.now().toString(36)}`,
+            title: {
+              en: payload.title,
+              uz: payload.title,
+            },
+            subject: payload.subject,
+            description: {
+              en: `Entrance examination test file for ${payload.subject}.`,
+              uz: `${payload.subject} fani bo'yicha namunaviy kirish imtihoni testi.`,
+            },
+            fileId: document.file_id,
+            fileName: document.file_name || "test_material.pdf",
+            fileType: "document",
+            isFree: false,
+          },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+
+        db.setWaitingFor(userId, null);
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Yangi Test Materiali Muvaffaqiyatli Qo'shildi!</b>\n\n` +
+              `🏷️ <b>Nomi:</b> ${escapeHtml(newTest.title.uz)}\n` +
+              `📚 <b>Fani:</b> ${escapeHtml(newTest.subject)}\n` +
+              `📁 <b>Fayl:</b> <code>${escapeHtml(newTest.fileName || "")}</code>\n` +
+              `💎 <b>Turi:</b> 🔒 VIP Imtihon To'plami`
+            : `✅ <b>New Test Material Created Successfully!</b>\n\n` +
+              `🏷️ <b>Title:</b> ${escapeHtml(newTest.title.en)}\n` +
+              `📚 <b>Subject:</b> ${escapeHtml(newTest.subject)}\n` +
+              `📁 <b>File:</b> <code>${escapeHtml(newTest.fileName || "")}</code>\n` +
+              `💎 <b>Tier:</b> 🔒 VIP Entrance Pack`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Testlar Ro'yxati" : "📝 Test Materials", callback_data: "admin_menu_tests" }],
+                [{ text: isUz ? "◀️ Admin Panel" : "◀️ Admin Panel", callback_data: "admin_panel" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+    }
+
+    if (user.waitingFor === "admin_edit_test_file") {
+      const testId = user.waitingPayload?.testId;
+      if (testId) {
+        const isUz = user.lang === "uz";
+        const updated = db.updateTest(
+          testId,
+          {
+            fileId: document.file_id,
+            fileName: document.file_name || "test_material.pdf",
+            fileType: "document",
+          },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+
+        db.setWaitingFor(userId, null);
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Test Fayli Muvaffaqiyatli Yangilandi!</b>\n\n📁 Yangi fayl: <code>${escapeHtml(document.file_name || "test.pdf")}</code>`
+            : `✅ <b>Test Document Successfully Updated!</b>\n\n📁 New file: <code>${escapeHtml(document.file_name || "test.pdf")}</code>`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
+                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+    }
+
     if (user.waitingFor === "document_upload") {
       const docKey = user.waitingPayload?.docKey;
       if (docKey) {
@@ -1461,6 +1547,213 @@ export function setupTextInputHandler(bot: Bot) {
         }
       );
       return;
+    }
+
+    // 21. Admin Add Test Title
+    if (user.waitingFor === "admin_add_test_title") {
+      await cleanUpInput(ctx, userId);
+      const title = text.trim();
+      if (title.length < 3) {
+        await ctx.reply("⚠️ Test sarlavhasi kamida 3 ta belgidan iborat bo'lishi kerak.");
+        return;
+      }
+      db.setWaitingFor(userId, "admin_add_test_subject");
+      db.updateUser(userId, { waitingPayload: { title } });
+
+      const isUz = user.lang === "uz";
+      const msg = await ctx.reply(
+        isUz
+          ? `📚 <b>Yangi Test Materiali Qo'shish (2/3-bosqich)</b>\n\n` +
+            `Sarlavha: <b>${escapeHtml(title)}</b>\n\n` +
+            `Iltimos, test fani yoki yo'nalishini kiriting (masalan: <i>Matematika</i>, <i>Ingliz tili B2</i>, <i>Polyak tili</i>, <i>Biologiya</i>):`
+          : `📚 <b>Add New Test Material (Step 2/3)</b>\n\n` +
+            `Title: <b>${escapeHtml(title)}</b>\n\n` +
+            `Please enter the test subject (e.g. <i>Mathematics</i>, <i>English B2</i>, <i>Polish Language</i>, <i>Biology</i>):`,
+        { parse_mode: "HTML" }
+      );
+      db.setLastPromptMsgId(userId, msg.message_id);
+      return;
+    }
+
+    // 22. Admin Add/Edit Test Subject
+    if (user.waitingFor === "admin_add_test_subject") {
+      await cleanUpInput(ctx, userId);
+      const subject = text.trim();
+      const payload = user.waitingPayload;
+
+      if (payload?.isEdit && payload?.testId) {
+        db.setWaitingFor(userId, null);
+        db.updateTest(
+          payload.testId,
+          { subject },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+        const isUz = user.lang === "uz";
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Test Fani Yangilandi!</b>\n\nYangi fan: <b>${escapeHtml(subject)}</b>`
+            : `✅ <b>Test Subject Updated!</b>\n\nNew subject: <b>${escapeHtml(subject)}</b>`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${payload.testId}` }],
+                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+
+      db.setWaitingFor(userId, "admin_add_test_file");
+      db.updateUser(userId, { waitingPayload: { ...payload, subject } });
+
+      const isUz = user.lang === "uz";
+      const msg = await ctx.reply(
+        isUz
+          ? `📁 <b>Yangi Test Materiali Qo'shish (3/3-bosqich)</b>\n\n` +
+            `Sarlavha: <b>${escapeHtml(payload?.title || "")}</b>\n` +
+            `Fan: <b>${escapeHtml(subject)}</b>\n\n` +
+            `Iltimos, test materialining <b>PDF faylini Telegram orqali yuboring</b> yoki <b>yuklab olish havolasini (Google Drive / OneDrive / URL)</b> matn sifatida yozing:`
+          : `📁 <b>Add New Test Material (Step 3/3)</b>\n\n` +
+            `Title: <b>${escapeHtml(payload?.title || "")}</b>\n` +
+            `Subject: <b>${escapeHtml(subject)}</b>\n\n` +
+            `Please <b>upload the test PDF document</b> or <b>send the download URL link</b> (Google Drive / Cloud) below:`,
+        { parse_mode: "HTML" }
+      );
+      db.setLastPromptMsgId(userId, msg.message_id);
+      return;
+    }
+
+    // 23. Admin Add Test File via URL
+    if (user.waitingFor === "admin_add_test_file") {
+      await cleanUpInput(ctx, userId);
+      const url = text.trim();
+      const payload = user.waitingPayload;
+
+      if (payload && payload.title && payload.subject) {
+        db.setWaitingFor(userId, null);
+        const isUz = user.lang === "uz";
+        const newTest = db.createTest(
+          {
+            id: `test-${Date.now().toString(36)}`,
+            title: {
+              en: payload.title,
+              uz: payload.title,
+            },
+            subject: payload.subject,
+            description: {
+              en: `Entrance examination test file for ${payload.subject}.`,
+              uz: `${payload.subject} fani bo'yicha namunaviy kirish imtihoni testi.`,
+            },
+            fileType: "link",
+            fileUrl: url,
+            isFree: false,
+          },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Yangi Test Materiali Muvaffaqiyatli Qo'shildi!</b>\n\n` +
+              `🏷️ <b>Nomi:</b> ${escapeHtml(newTest.title.uz)}\n` +
+              `📚 <b>Fani:</b> ${escapeHtml(newTest.subject)}\n` +
+              `🔗 <b>Havola:</b> ${escapeHtml(newTest.fileUrl || "")}\n` +
+              `💎 <b>Turi:</b> 🔒 VIP Imtihon To'plami`
+            : `✅ <b>New Test Material Created Successfully!</b>\n\n` +
+              `🏷️ <b>Title:</b> ${escapeHtml(newTest.title.en)}\n` +
+              `📚 <b>Subject:</b> ${escapeHtml(newTest.subject)}\n` +
+              `🔗 <b>Link:</b> ${escapeHtml(newTest.fileUrl || "")}\n` +
+              `💎 <b>Tier:</b> 🔒 VIP Entrance Pack`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Testlar Ro'yxati" : "📝 Test Materials", callback_data: "admin_menu_tests" }],
+                [{ text: isUz ? "◀️ Admin Panel" : "◀️ Admin Panel", callback_data: "admin_panel" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+    }
+
+    // 24. Admin Edit Test Title
+    if (user.waitingFor === "admin_edit_test_title") {
+      await cleanUpInput(ctx, userId);
+      const newTitle = text.trim();
+      const testId = user.waitingPayload?.testId;
+
+      if (testId && newTitle.length >= 3) {
+        db.setWaitingFor(userId, null);
+        db.updateTest(
+          testId,
+          {
+            title: {
+              en: newTitle,
+              uz: newTitle,
+            },
+          },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+        const isUz = user.lang === "uz";
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Test Sarlavhasi Yangilandi!</b>\n\nYangi nom: <b>${escapeHtml(newTitle)}</b>`
+            : `✅ <b>Test Title Updated!</b>\n\nNew title: <b>${escapeHtml(newTitle)}</b>`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
+                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+    }
+
+    // 25. Admin Edit Test File via URL
+    if (user.waitingFor === "admin_edit_test_file") {
+      await cleanUpInput(ctx, userId);
+      const url = text.trim();
+      const testId = user.waitingPayload?.testId;
+
+      if (testId && url.length >= 5) {
+        db.setWaitingFor(userId, null);
+        db.updateTest(
+          testId,
+          {
+            fileUrl: url,
+            fileType: "link",
+          },
+          userId,
+          user.fullName || user.username || "Admin"
+        );
+        const isUz = user.lang === "uz";
+        await ctx.reply(
+          isUz
+            ? `✅ <b>Test Havolasi Yangilandi!</b>\n\nYangi havola: ${escapeHtml(url)}`
+            : `✅ <b>Test Download Link Updated!</b>\n\nNew link: ${escapeHtml(url)}`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
+                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
     }
 
     return next();
