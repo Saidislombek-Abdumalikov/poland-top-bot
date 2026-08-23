@@ -34,8 +34,8 @@ export function setupStartHandler(bot: Bot) {
       }
     }
 
-    // If user is not yet registered, guide them to their current onboarding step without flickering!
-    if (!user.isRegistered) {
+    // If user is not yet registered (and not premium/admin), guide them to their current onboarding step without flickering!
+    if (!user.isRegistered && !user.isPremium && !user.isAdmin && !user.isSuperAdmin && !user.acceptedOfertaAt) {
       const isUz = user.lang === "uz";
 
       // 1. If info is complete, show Oferta with [ ✅ Roziman ]

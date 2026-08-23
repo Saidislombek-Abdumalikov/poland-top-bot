@@ -225,6 +225,30 @@ async function runPremiumPromoTestSuite() {
     assert.equal(isNawaFullAllowed(upgraded), true);
   });
 
+  // 11. Granting VIP/Promo preserves all user profile data and sets isRegistered
+  test("Granting promo code/VIP automatically marks user as fully registered and does not reset user data to 0", () => {
+    const studentId = 333501;
+    const initialUser = db.getUser(studentId, {
+      fullName: "Anvar Karimov",
+      phone: "+998901234567",
+      lang: "uz",
+      preferredLevel: "Bachelor",
+    });
+    db.setWaitingFor(studentId, "waiting_oferta_acceptance");
+
+    const promo = db.createPromoCode({ tier: "NAWA_FULL", maxUses: 1 });
+    const redeemRes = db.redeemPromoCode(promo.code, studentId);
+    assert.equal(redeemRes.success, true);
+
+    const updatedUser = db.getUser(studentId);
+    assert.equal(updatedUser.fullName, "Anvar Karimov", "User name must be preserved");
+    assert.equal(updatedUser.phone, "+998901234567", "User phone must be preserved");
+    assert.equal(updatedUser.lang, "uz", "User language must be preserved");
+    assert.equal(updatedUser.isRegistered, true, "User must be marked isRegistered=true");
+    assert.ok(updatedUser.acceptedOfertaAt, "User must have acceptedOfertaAt set");
+    assert.equal(updatedUser.waitingFor, null, "User waitingFor must be cleared so onboarding does not trigger");
+  });
+
   console.log(`\n🎉 ================= ALL ${passedTests}/${totalTests} PREMIUM & PROMO TESTS PASSED! =================\n`);
 }
 

@@ -745,13 +745,40 @@ export function setupAdminHandler(bot: Bot) {
 
       // Notify student in Telegram
       try {
+        const student = db.getUser(app.userId);
+        const isUz = student.lang === "uz";
+
+        const stageUzMap: Record<string, string> = {
+          "Applied": "Ariza topshirildi 📝",
+          "Under Review": "Oliygohda ko'rib chiqilmoqda 🔍",
+          "Accepted": "Qabul qilindi 🎉",
+          "Action Needed": "Qo'shimcha harakat talab etiladi ⚠️",
+          "Visa Stage": "Viza bosqichi ✈️",
+          "Rejected": "Rad etildi ❌",
+        };
+        const stageDisplay = isUz ? (stageUzMap[newStage] || newStage) : newStage;
+
+        const studentMsg = isUz
+          ? `🔔 <b>Ariza Holati Yangilandi!</b>\n\n` +
+            `Sizning <b>${escapeHtml(app.university)}</b> universitetidagi <b>${escapeHtml(app.programName)}</b> yo'nalishi bo'yicha arizangiz holati:\n` +
+            `📌 <b>${escapeHtml(stageDisplay)}</b>\n\n` +
+            `Batafsil ma'lumot va ko'rsatmalar bilan arizalar bo'limida tanishing.`
+          : `🔔 <b>Application Status Update!</b>\n\n` +
+            `Your application for <b>${escapeHtml(app.programName)}</b> at <b>${escapeHtml(app.university)}</b> is now:\n` +
+            `📌 <b>${escapeHtml(stageDisplay)}</b>\n\n` +
+            `Check your profile to view counselor instructions.`;
+
         await bot.api.sendMessage(
           app.userId,
-          `🔔 <b>Application Status Update!</b>\n\n` +
-            `Your application for <b>${escapeHtml(app.programName)}</b> at <b>${escapeHtml(app.university)}</b> is now:\n` +
-            `📌 <b>${escapeHtml(newStage)}</b>\n\n` +
-            `Check your profile to view counselor instructions.`,
-          { parse_mode: "HTML" }
+          studentMsg,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📋 Mening Arizalarim" : "📋 My Applications", callback_data: "menu_status" }],
+              ],
+            },
+          }
         );
       } catch {}
 
@@ -897,20 +924,42 @@ export function setupAdminHandler(bot: Bot) {
 
     await ctx.answerCallbackQuery({ text: isApproved ? "Document Approved!" : "Correction requested" });
 
-    // Notify student
+    // Notify student in their native language
     try {
+      const isUz = student.lang === "uz";
+      const docDef = db.getDocumentDefinition(docKey);
+      const docName = docDef ? (docDef.name[student.lang] || docDef.name.en) : docKey;
+
       if (isApproved) {
-        await bot.api.sendMessage(
-          targetUserId,
-          `✅ <b>Document Verified!</b>\n\nYour <b>${escapeHtml(docKey.toUpperCase())}</b> has been approved by admissions advisors.`,
-          { parse_mode: "HTML" }
-        );
+        const studentMsg = isUz
+          ? `✅ <b>Hujjatingiz Tasdiqlandi!</b>\n\n` +
+            `Siz yuklagan <b>${escapeHtml(docName)}</b> qabul maslahatchilari tomonidan muvaffaqiyatli tekshirildi va tasdiqlandi.`
+          : `✅ <b>Document Verified!</b>\n\n` +
+            `Your <b>${escapeHtml(docName)}</b> has been approved by admissions advisors.`;
+
+        await bot.api.sendMessage(targetUserId, studentMsg, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+            ],
+          },
+        });
       } else {
-        await bot.api.sendMessage(
-          targetUserId,
-          `🔴 <b>Document Correction Required!</b>\n\nYour <b>${escapeHtml(docKey.toUpperCase())}</b> requires revision. Please re-upload in the Document Checklist.`,
-          { parse_mode: "HTML" }
-        );
+        const studentMsg = isUz
+          ? `🔴 <b>Hujjatga Tuzatish Talab Qilinadi!</b>\n\n` +
+            `Siz yuklagan <b>${escapeHtml(docName)}</b> bo'yicha kamchiliklar aniqlandi. Iltimos, talablarga muvofiq qayta yuklang.`
+          : `🔴 <b>Document Correction Required!</b>\n\n` +
+            `Your <b>${escapeHtml(docName)}</b> requires revision. Please re-upload in the Document Checklist.`;
+
+        await bot.api.sendMessage(targetUserId, studentMsg, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+            ],
+          },
+        });
       }
     } catch {}
 

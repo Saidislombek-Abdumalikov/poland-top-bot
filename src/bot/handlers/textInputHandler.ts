@@ -493,14 +493,32 @@ export function setupTextInputHandler(bot: Bot) {
 
         if (app) {
           try {
-            await bot.api.sendMessage(
-              app.userId,
-              `💬 <b>Counselor Feedback on Application #${escapeHtml(app.id)}:</b>\n\n` +
+            const student = db.getUser(app.userId);
+            const isUz = student.lang === "uz";
+
+            const studentMsg = isUz
+              ? `💬 <b>Qabul Koordinatori Xabari (Ariza #${escapeHtml(app.id)}):</b>\n\n` +
+                `"${escapeHtml(text)}"\n\n` +
+                `🏛️ <b>Universitet:</b> ${escapeHtml(app.university)}\n` +
+                `📘 <b>Yo'nalish:</b> ${escapeHtml(app.programName)}\n\n` +
+                `Iltimos, ko'rsatilgan talablarni ko'rib chiqing va arizalar bo'limida yangilang.`
+              : `💬 <b>Counselor Feedback on Application #${escapeHtml(app.id)}:</b>\n\n` +
                 `"${escapeHtml(text)}"\n\n` +
                 `🏛️ <b>University:</b> ${escapeHtml(app.university)}\n` +
                 `📘 <b>Program:</b> ${escapeHtml(app.programName)}\n\n` +
-                `Please review your documents and update your dossier.`,
-              { parse_mode: "HTML" }
+                `Please review your documents and update your dossier.`;
+
+            await bot.api.sendMessage(
+              app.userId,
+              studentMsg,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: isUz ? "📋 Mening Arizalarim" : "📋 My Applications", callback_data: "menu_status" }],
+                  ],
+                },
+              }
             );
           } catch {}
 
@@ -529,12 +547,30 @@ export function setupTextInputHandler(bot: Bot) {
         );
 
         try {
+          const student = db.getUser(targetUserId);
+          const isUz = student.lang === "uz";
+          const docDef = db.getDocumentDefinition(docKey);
+          const docName = docDef ? (docDef.name[student.lang] || docDef.name.en) : docKey;
+
+          const studentMsg = isUz
+            ? `🔴 <b>Hujjatga Tuzatish Talab Qilinadi: ${escapeHtml(docName)}</b>\n\n` +
+              `💬 <b>Qabul maslahatchisi izohi:</b>\n"${escapeHtml(text)}"\n\n` +
+              `Iltimos, <b>Hujjatlar Ro'yxati</b> bo'limida to'g'rilangan faylni yuklang.`
+            : `🔴 <b>Document Correction Required: ${escapeHtml(docName)}</b>\n\n` +
+              `💬 <b>Counselor Note:</b>\n"${escapeHtml(text)}"\n\n` +
+              `Please upload a revised copy in the <b>Document Checklist</b> menu.`;
+
           await bot.api.sendMessage(
             targetUserId,
-            `🔴 <b>Document Correction Required: ${escapeHtml(docKey.toUpperCase())}</b>\n\n` +
-              `💬 <b>Counselor Note:</b> "${escapeHtml(text)}"\n\n` +
-              `Please upload a revised copy in the <b>Document Checklist</b> menu.`,
-            { parse_mode: "HTML" }
+            studentMsg,
+            {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+                ],
+              },
+            }
           );
         } catch {}
 

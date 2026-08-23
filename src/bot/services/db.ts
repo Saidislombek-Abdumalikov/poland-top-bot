@@ -962,6 +962,11 @@ export class DatabaseService {
       premiumGrantReason: "PROMO_CODE",
       premiumTransactionId: txnId,
       premiumVerifiedAt: nowTimestamp,
+      isRegistered: true,
+      acceptedOfertaAt: nowTimestamp,
+      acceptedOfertaVersion: this.getPublishedOferta().version,
+      waitingFor: null,
+      waitingPayload: undefined,
     });
 
     this.logAdminAction(
