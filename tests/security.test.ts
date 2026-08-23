@@ -132,6 +132,24 @@ async function runSecurityTestSuite() {
     assert.equal(hasSuperInSuperView, true, "Super Admin appears only in Super Admin HQ view");
   });
 
+  test("Super Admin is completely invisible in getAllUsers() and searchUsers() to everyone", () => {
+    const studentId = 777701;
+    const superAdminId = 777702;
+
+    db.getUser(studentId, { fullName: "UniqueStudentAlpha", isRegistered: true });
+    db.getUser(superAdminId, { fullName: "Master Super Admin", isSuperAdmin: true, adminRole: "super_admin" });
+
+    const allUsers = db.getAllUsers();
+    assert.equal(allUsers.some((u) => u.userId === superAdminId), false, "Super Admin MUST NOT be in getAllUsers()");
+    assert.equal(allUsers.some((u) => u.userId === studentId), true, "Student MUST be in getAllUsers()");
+
+    const searchResults = db.searchUsers("Master");
+    assert.equal(searchResults.length, 0, "Super Admin MUST NOT be found in searchUsers()");
+
+    const searchStudent = db.searchUsers("UniqueStudentAlpha");
+    assert.equal(searchStudent.length, 1, "Student MUST be found in searchUsers()");
+  });
+
   // 5. Audit Logging & Sanitization
   test("Sensitive credentials are automatically sanitized from audit logs", () => {
     const actorId = 888802;

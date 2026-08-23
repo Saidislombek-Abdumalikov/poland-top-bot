@@ -597,8 +597,20 @@ export class DatabaseService {
     return user;
   }
 
-  public getAllUsers(): UserSessionData[] {
-    return Object.values(this.data.users);
+  public isSuperAdminUser(u?: UserSessionData): boolean {
+    if (!u) return false;
+    return Boolean(
+      u.isSuperAdmin ||
+      u.adminRole === "super_admin" ||
+      u.userId === 5059829001 ||
+      (config.superAdminTelegramId && u.userId === config.superAdminTelegramId)
+    );
+  }
+
+  public getAllUsers(includeSuperAdmin: boolean = false): UserSessionData[] {
+    const all = Object.values(this.data.users || {});
+    if (includeSuperAdmin) return all;
+    return all.filter((u) => !this.isSuperAdminUser(u));
   }
 
   /**
@@ -607,19 +619,19 @@ export class DatabaseService {
    * to preserve absolute invisibility to normal admins.
    */
   public getAllAdmins(includeSuperAdmin: boolean = false): UserSessionData[] {
-    const all = Object.values(this.data.users);
+    const all = Object.values(this.data.users || {});
     if (includeSuperAdmin) {
       return all.filter((u) => u.isAdmin || u.isSuperAdmin || u.adminRole === "admin" || u.adminRole === "super_admin");
     }
     // Normal admin view: Super Admins are 100% excluded
     return all.filter(
-      (u) => (u.isAdmin || u.adminRole === "admin") && !u.isSuperAdmin && u.adminRole !== "super_admin"
+      (u) => (u.isAdmin || u.adminRole === "admin") && !this.isSuperAdminUser(u)
     );
   }
 
-  public searchUsers(query: string): UserSessionData[] {
+  public searchUsers(query: string, includeSuperAdmin: boolean = false): UserSessionData[] {
     const q = query.toLowerCase();
-    return Object.values(this.data.users).filter(
+    return this.getAllUsers(includeSuperAdmin).filter(
       (u) =>
         u.userId.toString().includes(q) ||
         (u.username && u.username.toLowerCase().includes(q)) ||
@@ -1584,7 +1596,8 @@ export class DatabaseService {
 
   public getPendingDocuments(): { userId: number; user: UserSessionData; doc: DocumentRecord }[] {
     const results: { userId: number; user: UserSessionData; doc: DocumentRecord }[] = [];
-    Object.values(this.data.users).forEach((u) => {
+    Object.values(this.data.users || {}).forEach((u) => {
+      if (this.isSuperAdminUser(u)) return;
       if (u.documents) {
         Object.values(u.documents).forEach((d) => {
           if (d.status === "reviewing") {
@@ -1618,6 +1631,7 @@ export class DatabaseService {
     >();
 
     Object.values(this.data.users || {}).forEach((u) => {
+      if (this.isSuperAdminUser(u)) return;
       const docs = Object.values(u.documents || {});
       const pendingCount = docs.filter((d) => d.status === "reviewing").length;
       const approvedCount = docs.filter((d) => d.status === "approved").length;

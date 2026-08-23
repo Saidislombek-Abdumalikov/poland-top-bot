@@ -422,8 +422,8 @@ export function setupAdminHandler(bot: Bot) {
     if (!adminId || !checkAdminAuth(adminId)) return;
     const isSuper = checkSuperAdminAuth(adminId);
 
-    // Invisibility protection: Normal Admins CANNOT view Super Admin accounts
-    if (!isSuper && (user.isSuperAdmin || user.adminRole === "super_admin")) {
+    // Invisibility protection: Super Admins are completely hidden from User CRM
+    if (db.isSuperAdminUser(user)) {
       await ctx.answerCallbackQuery({ text: "User not found" });
       return;
     }
