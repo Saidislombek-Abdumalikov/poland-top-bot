@@ -1,4 +1,4 @@
-import { Bot, Context } from "grammy";
+import { Bot, Context, InlineKeyboard } from "grammy";
 import { db } from "../services/db";
 import { t } from "../locales";
 import {
@@ -7,6 +7,8 @@ import {
   getUniversityDetailKeyboard,
 } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
+import { checkPremiumAccess } from "../utils/paywall";
+import { programs } from "../data/programs";
 
 export function setupUniversityHandler(bot: Bot) {
   // Trigger from command /universities or text button
@@ -181,6 +183,89 @@ export function setupUniversityHandler(bot: Bot) {
       parse_mode: "HTML",
       reply_markup: getUniversityDetailKeyboard(user.lang, uni),
     });
+  });
+
+  // Apply to university (Direct or Program Selector)
+  bot.callbackQuery(/^apply_uni_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^apply_uni_(.+)$/);
+    if (!match) return;
+    const uniId = match[1];
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
+
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "Direct University Application Submission",
+        uz: "Universitetga To'g'ridan-to'g'ri Ariza Topshirish",
+      },
+      "NAWA_FULL"
+    );
+    if (!hasAccess) return;
+
+    const uni = db.getUniversity(uniId);
+    if (!uni) return;
+
+    const uniPrograms = programs.filter(
+      (p) =>
+        p.university.toLowerCase().includes(uni.name.toLowerCase()) ||
+        (uni.abbr && p.university.toLowerCase().includes(uni.abbr.toLowerCase())) ||
+        p.city.toLowerCase() === uni.city.toLowerCase()
+    );
+
+    if (uniPrograms.length > 0) {
+      const kb = new InlineKeyboard();
+      uniPrograms.slice(0, 8).forEach((p) => {
+        kb.text(`📘 [${p.level}] ${p.name}`, `apply_prog_${p.id}`).row();
+      });
+      kb.text(isUz ? "◀️ Universitetga Qaytish" : "◀️ Back to University", `view_uni_${uni.id}`);
+
+      await ctx.answerCallbackQuery();
+      await ctx.reply(
+        isUz
+          ? `🏛️ <b>${escapeHtml(uni.name)}</b> universitetiga topshirish uchun quyidagi mavjud yo'nalishlardan birini tanlang:`
+          : `🏛️ Select an available degree program at <b>${escapeHtml(uni.name)}</b> to submit your application:`,
+        {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        }
+      );
+      return;
+    }
+
+    // Direct general application for this university
+    const app = db.createApplication(
+      userId,
+      `uni-${uni.id}`,
+      `General Admissions (${uni.abbr || uni.name})`,
+      uni.name,
+      uni.city
+    );
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `🎉 <b>${escapeHtml(uni.name)} Universitetiga Ariza Muvaffaqiyatli Topshirildi!</b>\n\n` +
+        `🏛️ <b>Universitet:</b> ${escapeHtml(uni.name)} (${escapeHtml(uni.city)})\n` +
+        `📌 <b>Ariza ID:</b> <code>#${escapeHtml(app.id)}</code>\n` +
+        `📌 <b>Holati:</b> Topshirildi (Maslahatchi tekshiruvida)\n\n` +
+        `👉 Keyingi qadam: <b>Hujjatlar Nazorati</b> bo'limiga kiring va barcha zarur hujjatlaringizni yuklang.`
+      : `🎉 <b>Application Submitted for ${escapeHtml(uni.name)}!</b>\n\n` +
+        `🏛️ <b>University:</b> ${escapeHtml(uni.name)} (${escapeHtml(uni.city)})\n` +
+        `📌 <b>Application ID:</b> <code>#${escapeHtml(app.id)}</code>\n` +
+        `📌 <b>Status:</b> Submitted (Awaiting Advisor Verification)\n\n` +
+        `👉 Next Step: Upload your documents in the <b>Document Checklist</b> menu so advisors can verify your dossier.`;
+
+    const kb = new InlineKeyboard()
+      .text(isUz ? "📁 Hujjatlarni Yuklash & Nazorat" : "📁 Document Checklist", "menu_docs")
+      .row()
+      .text(isUz ? "👤 Mening Profilim & Arizalarim" : "👤 My Profile & Applications", "menu_profile")
+      .row()
+      .text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu");
+
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
   });
 
   // Back to universities list (edit in place)

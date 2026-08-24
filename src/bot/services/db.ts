@@ -29,7 +29,9 @@ import {
 import { universities as defaultUniversities } from "../data/universities";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
-const DB_FILE = path.join(DATA_DIR, "ptu_database.json");
+const DB_FILE = process.env.DB_FILE_PATH
+  ? path.resolve(process.cwd(), process.env.DB_FILE_PATH)
+  : path.join(DATA_DIR, "ptu_database.json");
 
 export const defaultPricingConfig: PricingConfig = {
   nawaPrice: 15,

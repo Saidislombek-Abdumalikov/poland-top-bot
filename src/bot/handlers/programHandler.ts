@@ -1,4 +1,4 @@
-import { Bot, Context } from "grammy";
+import { Bot, Context, InlineKeyboard } from "grammy";
 import { db } from "../services/db";
 import { t } from "../locales";
 import { programs } from "../data/programs";
@@ -296,23 +296,32 @@ export function setupProgramHandler(bot: Bot) {
     const prog = programs.find((p) => p.id === progId);
     if (!prog) return;
 
-    db.createApplication(userId, prog.id, prog.name, prog.university, prog.city);
+    const app = db.createApplication(userId, prog.id, prog.name, prog.university, prog.city);
 
     await ctx.answerCallbackQuery();
 
     const text = isUz
       ? `🎉 <b>${escapeHtml(prog.name)} Dasturiga Ariza Muvaffaqiyatli Topshirildi!</b>\n\n` +
         `🏛️ <b>Universitet:</b> ${escapeHtml(prog.university)} (${escapeHtml(prog.city)})\n` +
+        `📌 <b>Ariza ID:</b> <code>#${escapeHtml(app.id)}</code>\n` +
         `📅 <b>Qabul Muddati:</b> ${escapeHtml(prog.deadline)}\n` +
         `📌 <b>Holati:</b> Topshirildi (Maslahatchi tekshiruvida)\n\n` +
         `👉 Keyingi qadam: <b>Hujjatlar Nazorati</b> bo'limiga kiring va barcha zarur hujjatlaringizni yuklang.`
       : `🎉 <b>Application Submitted for ${escapeHtml(prog.name)}!</b>\n\n` +
         `🏛️ <b>University:</b> ${escapeHtml(prog.university)} (${escapeHtml(prog.city)})\n` +
+        `📌 <b>Application ID:</b> <code>#${escapeHtml(app.id)}</code>\n` +
         `📅 <b>Deadline:</b> ${escapeHtml(prog.deadline)}\n` +
         `📌 <b>Status:</b> Submitted (Awaiting Advisor Verification)\n\n` +
         `👉 Next Step: Upload your documents in the <b>Document Checklist</b> menu so advisors can verify your dossier.`;
 
-    await ctx.reply(text, { parse_mode: "HTML" });
+    const kb = new InlineKeyboard()
+      .text(isUz ? "📁 Hujjatlarni Yuklash & Nazorat" : "📁 Document Checklist", "menu_docs")
+      .row()
+      .text(isUz ? "👤 Mening Profilim & Arizalarim" : "👤 My Profile & Applications", "menu_profile")
+      .row()
+      .text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu");
+
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
   });
 
   bot.callbackQuery("back_to_progs", async (ctx) => {

