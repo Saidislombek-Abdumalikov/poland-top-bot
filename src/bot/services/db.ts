@@ -8,6 +8,8 @@ import {
   PromoCodeRecord,
   ApplicationRecord,
   NawaApplicationRecord,
+  NawaDocumentKey,
+  NawaDocumentRecord,
   StudentReview,
   DocumentRecord,
   DocumentDefinition,
@@ -237,6 +239,89 @@ export const defaultTestMaterials: Record<string, TestMaterial> = {
     isFree: false,
     createdAt: "2026-08-23",
     addedByName: "Admissions Team",
+  },
+};
+
+export const defaultNawaDefinitions: Record<
+  NawaDocumentKey,
+  {
+    id: NawaDocumentKey;
+    name: { en: string; uz: string };
+    type: "file" | "text";
+    icon: string;
+    description: { en: string; uz: string };
+    required: boolean;
+  }
+> = {
+  attestat: {
+    id: "attestat",
+    name: {
+      uz: "Attestat (11-sinf maktab attestati)",
+      en: "High School Attestat",
+    },
+    type: "file",
+    icon: "📜",
+    description: {
+      uz: "11-sinf maktab attestatining toza sifatli PDF yoki rasm nusxasi",
+      en: "High school completion certificate (Attestat) PDF scan or photo",
+    },
+    required: true,
+  },
+  shahodatnoma: {
+    id: "shahodatnoma",
+    name: {
+      uz: "Shahodatnoma (9-sinf)",
+      en: "9th Grade Certificate",
+    },
+    type: "file",
+    icon: "📜",
+    description: {
+      uz: "9-sinf tayanch o'rta ta'lim shahodatnomasining PDF yoki rasm nusxasi",
+      en: "9th grade basic secondary education certificate scan or photo",
+    },
+    required: true,
+  },
+  email: {
+    id: "email",
+    name: {
+      uz: "Email pochta manzili",
+      en: "Email Address",
+    },
+    type: "text",
+    icon: "📧",
+    description: {
+      uz: "Talabaning rasmiy va doimiy faol elektron pochta manzili",
+      en: "Student's active and valid email address",
+    },
+    required: true,
+  },
+  home_address: {
+    id: "home_address",
+    name: {
+      uz: "Yashash manzili (Home address)",
+      en: "Home Address",
+    },
+    type: "text",
+    icon: "🏠",
+    description: {
+      uz: "To'liq yashash manzili (Viloyat, shahar/tuman, ko'cha, uy, kvartira)",
+      en: "Full residential address (Region, city/district, street, house number)",
+    },
+    required: true,
+  },
+  passport_red: {
+    id: "passport_red",
+    name: {
+      uz: "Pasport (qizil xorijiy pasport)",
+      en: "Red International Passport",
+    },
+    type: "file",
+    icon: "📕",
+    description: {
+      uz: "Xorijga chiqish qizil pasportining asosiy sahifasi PDF yoki rasmi",
+      en: "Red foreign passport bio-page scan or photo",
+    },
+    required: true,
   },
 };
 
@@ -1762,16 +1847,175 @@ export class DatabaseService {
   }
 
   // ================= NAWA APPLICATIONS CRUD =================
+  // ================= NAWA NOSTRIFIKATSIYA & DEDICATED DOCUMENTS =================
+  public getNawaDefinitions(): Record<NawaDocumentKey, (typeof defaultNawaDefinitions)[NawaDocumentKey]> {
+    return defaultNawaDefinitions;
+  }
+
+  public getNawaDefinition(key: NawaDocumentKey) {
+    return defaultNawaDefinitions[key];
+  }
+
+  public getUserNawaDocuments(userId: number): Record<NawaDocumentKey, NawaDocumentRecord> {
+    const user = this.getUser(userId);
+    if (!user.nawaDocuments) {
+      user.nawaDocuments = {};
+    }
+
+    const result: Record<NawaDocumentKey, NawaDocumentRecord> = {} as any;
+    (Object.keys(defaultNawaDefinitions) as NawaDocumentKey[]).forEach((k) => {
+      const existing = user.nawaDocuments?.[k];
+      if (existing) {
+        result[k] = existing;
+      } else {
+        result[k] = {
+          id: k,
+          status: "missing",
+          type: defaultNawaDefinitions[k].type,
+        };
+      }
+    });
+
+    return result;
+  }
+
+  public submitNawaDocument(
+    userId: number,
+    docKey: NawaDocumentKey,
+    data: {
+      fileId?: string;
+      fileName?: string;
+      fileType?: "photo" | "document" | "link";
+      value?: string;
+    }
+  ): NawaDocumentRecord {
+    const user = this.getUser(userId);
+    if (!user.nawaDocuments) user.nawaDocuments = {};
+
+    const now = new Date().toISOString();
+    const docRecord: NawaDocumentRecord = {
+      id: docKey,
+      status: "reviewing",
+      type: defaultNawaDefinitions[docKey]?.type || "file",
+      fileId: data.fileId,
+      fileName: data.fileName,
+      fileType: data.fileType,
+      value: data.value,
+      uploadedAt: now,
+    };
+
+    user.nawaDocuments[docKey] = docRecord;
+
+    // Ensure NAWA application exists or is synchronized
+    let nawaApp = this.getUserNawaApplications(userId)[0];
+    if (!nawaApp) {
+      nawaApp = this.createNawaApplication(userId);
+    } else {
+      if (!nawaApp.documents) nawaApp.documents = {};
+      nawaApp.documents[docKey] = docRecord;
+      nawaApp.updatedAt = now;
+    }
+
+    this.saveDatabase();
+    return docRecord;
+  }
+
+  public approveNawaDocument(
+    userId: number,
+    docKey: NawaDocumentKey,
+    reviewerId?: number
+  ): NawaDocumentRecord | undefined {
+    const user = this.getUser(userId);
+    if (!user.nawaDocuments || !user.nawaDocuments[docKey]) return undefined;
+
+    const doc = user.nawaDocuments[docKey]!;
+    doc.status = "approved";
+    doc.reviewedAt = new Date().toISOString();
+    doc.reviewedBy = reviewerId;
+    doc.counselorFeedback = undefined;
+
+    const nawaApp = this.getUserNawaApplications(userId)[0];
+    if (nawaApp) {
+      if (!nawaApp.documents) nawaApp.documents = {};
+      nawaApp.documents[docKey] = { ...doc };
+      nawaApp.updatedAt = new Date().toISOString();
+    }
+
+    this.saveDatabase();
+    return doc;
+  }
+
+  public rejectNawaDocument(
+    userId: number,
+    docKey: NawaDocumentKey,
+    feedback: string,
+    reviewerId?: number
+  ): NawaDocumentRecord | undefined {
+    const user = this.getUser(userId);
+    if (!user.nawaDocuments || !user.nawaDocuments[docKey]) return undefined;
+
+    const doc = user.nawaDocuments[docKey]!;
+    doc.status = "needs_correction";
+    doc.reviewedAt = new Date().toISOString();
+    doc.reviewedBy = reviewerId;
+    doc.counselorFeedback = feedback;
+
+    const nawaApp = this.getUserNawaApplications(userId)[0];
+    if (nawaApp) {
+      if (!nawaApp.documents) nawaApp.documents = {};
+      nawaApp.documents[docKey] = { ...doc };
+      nawaApp.updatedAt = new Date().toISOString();
+    }
+
+    this.saveDatabase();
+    return doc;
+  }
+
+  public approveAllNawaDocuments(nawaId: string, reviewerId?: number): boolean {
+    const app = this.getNawaApplication(nawaId);
+    if (!app) return false;
+
+    const user = this.getUser(app.userId);
+    if (!user.nawaDocuments) user.nawaDocuments = {};
+    if (!app.documents) app.documents = {};
+
+    const now = new Date().toISOString();
+    (Object.keys(defaultNawaDefinitions) as NawaDocumentKey[]).forEach((k) => {
+      const userDoc = user.nawaDocuments?.[k];
+      if (userDoc && (userDoc.status === "reviewing" || userDoc.status === "needs_correction" || !!userDoc.fileId || !!userDoc.value)) {
+        userDoc.status = "approved";
+        userDoc.reviewedAt = now;
+        userDoc.reviewedBy = reviewerId;
+        userDoc.counselorFeedback = undefined;
+        app.documents![k] = { ...userDoc };
+      }
+    });
+
+    app.updatedAt = now;
+    this.saveDatabase();
+    return true;
+  }
+
   public createNawaApplication(
     userId: number,
-    data: {
-      passportNumber: string;
-      country: string;
-      diplomaLink: string;
-      apostilleLink?: string;
-    }
+    data: Partial<NawaApplicationRecord> = {}
   ): NawaApplicationRecord {
+    if (!this.data.nawaApplications) {
+      this.data.nawaApplications = {};
+    }
+
     const user = this.getUser(userId);
+    const existing = this.getUserNawaApplications(userId)[0];
+    if (existing) {
+      if (data.country) existing.country = data.country;
+      existing.updatedAt = new Date().toISOString();
+      if (user.nawaDocuments) {
+        existing.documents = { ...user.nawaDocuments };
+      }
+      this.saveDatabase();
+      return existing;
+    }
+
     const id = `NAWA-${Date.now().toString().slice(-5)}`;
     const now = new Date().toISOString().split("T")[0];
 
@@ -1780,14 +2024,12 @@ export class DatabaseService {
       userId,
       studentName: user.fullName || user.firstName || "Student",
       studentUsername: user.username,
-      country: data.country,
-      passportNumber: data.passportNumber,
-      diplomaLink: data.diplomaLink,
-      apostilleLink: data.apostilleLink,
-      translationStatus: "Needed",
-      feePaid: false,
+      studentPhone: user.phone,
+      country: data.country || user.country || "Uzbekistan",
       stage: "Submitted",
       submittedAt: now,
+      updatedAt: now,
+      documents: user.nawaDocuments ? { ...user.nawaDocuments } : {},
     };
 
     this.data.nawaApplications[id] = item;
@@ -1804,6 +2046,7 @@ export class DatabaseService {
     if (!item) return undefined;
     item.stage = stage;
     if (note) item.counselorNote = note;
+    item.updatedAt = new Date().toISOString();
     this.saveDatabase();
     return item;
   }

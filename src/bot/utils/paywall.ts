@@ -1,6 +1,7 @@
 import { Context, InlineKeyboard } from "grammy";
 import { UserSessionData } from "../types";
 import { db } from "../services/db";
+import { config } from "../config";
 import { escapeHtml } from "./format";
 
 /**
@@ -81,7 +82,7 @@ export async function checkPremiumAccess(
     const kb = new InlineKeyboard()
       .text(isUz ? "🔑 Promokodni Faollashtirish" : "🔑 Activate Promo Code", "premium_enter_code")
       .row()
-      .url(isUz ? "💬 Maslahatchi bilan Bog'lanish" : "💬 Contact Consultant", "https://t.me/poland_admissions_bot")
+      .url(isUz ? "💬 Maslahatchi bilan Bog'lanish" : "💬 Contact Consultant", `https://t.me/${config.advisorUsername}`)
       .row()
       .text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu");
 
@@ -133,7 +134,7 @@ export async function checkPremiumAccess(
   const kb = new InlineKeyboard()
     .text(isUz ? "🎟️ Promokod bormi?" : "🎟️ Have a promo code?", "premium_enter_code")
     .row()
-    .url(isUz ? "💬 Maslahatchi bilan Bog'lanish" : "💬 Contact Consultant", "https://t.me/poland_admissions_bot")
+    .url(isUz ? "💬 Maslahatchi bilan Bog'lanish" : "💬 Contact Consultant", `https://t.me/${config.advisorUsername}`)
     .row()
     .text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu");
 

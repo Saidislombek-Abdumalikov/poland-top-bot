@@ -1,8 +1,9 @@
 import { InlineKeyboard, Keyboard } from "grammy";
-import { Language, University, Program, ExamSubject, StudentReview, TestMaterial } from "../types";
+import { Language, University, Program, ExamSubject, StudentReview, TestMaterial, NawaDocumentKey, NawaDocumentRecord } from "../types";
 import { t } from "../locales";
 import { universities } from "../data/universities";
 import { programs } from "../data/programs";
+import { config } from "../config";
 
 export function getPhoneRequestKeyboard(lang: Language): Keyboard {
   const isUz = lang === "uz";
@@ -190,7 +191,13 @@ export function getProgramDetailKeyboard(
 }
 
 export function getNawaKeyboard(lang: Language): InlineKeyboard {
+  const isUz = lang === "uz";
   return new InlineKeyboard()
+    .text(
+      isUz ? "📁 NAWA Hujjatlar Dosyesi (5 ta hujjat)" : "📁 My NAWA Documents & Dossier",
+      "nawa_my_dossier"
+    )
+    .row()
     .text(t(lang, "nawa_btn_steps"), "nawa_view_steps")
     .row()
     .text(t(lang, "nawa_btn_check"), "nawa_check_eligibility")
@@ -200,6 +207,45 @@ export function getNawaKeyboard(lang: Language): InlineKeyboard {
     .text(t(lang, "nawa_btn_faq"), "nawa_faq")
     .row()
     .text(t(lang, "nav_main_menu"), "go_main_menu");
+}
+
+export function getNawaDocumentsKeyboard(
+  lang: Language,
+  nawaDocs: Partial<Record<NawaDocumentKey, NawaDocumentRecord>> = {}
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  const items: { key: NawaDocumentKey; icon: string; nameUz: string; nameEn: string }[] = [
+    { key: "attestat", icon: "📜", nameUz: "Attestat (11-sinf)", nameEn: "Attestat (High School)" },
+    { key: "shahodatnoma", icon: "📜", nameUz: "Shahodatnoma (9-sinf)", nameEn: "Shahodatnoma (9th Grade)" },
+    { key: "email", icon: "📧", nameUz: "Email Manzili", nameEn: "Email Address" },
+    { key: "home_address", icon: "🏠", nameUz: "Yashash Manzili", nameEn: "Home Address" },
+    { key: "passport_red", icon: "📕", nameUz: "Pasport (qizil)", nameEn: "Passport (Red)" },
+  ];
+
+  items.forEach((item) => {
+    const doc = nawaDocs[item.key];
+    const status = doc?.status || "missing";
+    const statusIcon =
+      status === "approved"
+        ? "✅"
+        : status === "reviewing"
+        ? "🟡"
+        : status === "needs_correction"
+        ? "🔴"
+        : "⚪";
+
+    const name = isUz ? item.nameUz : item.nameEn;
+    kb.text(`${statusIcon} ${item.icon} ${name}`, `nawa_doc_prompt_${item.key}`).row();
+  });
+
+  kb.text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "nawa_my_dossier")
+    .text(isUz ? "◀️ NAWA Menyusi" : "◀️ NAWA Menu", "menu_nawa")
+    .row()
+    .text(t(lang, "nav_main_menu"), "go_main_menu");
+
+  return kb;
 }
 
 export function getDocumentsKeyboard(
@@ -301,7 +347,7 @@ export function getPremiumKeyboard(
 
   kb.url(
     isUz ? "💬 Maslahatchi bilan bog'lanish" : "💬 Contact Admissions Consultant",
-    "https://t.me/poland_admissions_bot"
+    `https://t.me/${config.advisorUsername}`
   )
     .row()
     .text(t(lang, "nav_main_menu"), "go_main_menu");

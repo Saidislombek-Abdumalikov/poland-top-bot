@@ -161,20 +161,44 @@ export interface ApplicationRecord {
   updatedAt: string;
 }
 
+export type NawaDocumentKey =
+  | "attestat"
+  | "shahodatnoma"
+  | "email"
+  | "home_address"
+  | "passport_red";
+
+export interface NawaDocumentRecord {
+  id: NawaDocumentKey;
+  status: DocStatus; // "approved" | "reviewing" | "needs_correction" | "missing"
+  type: "file" | "text";
+  value?: string; // Text value (for email, home_address) or link
+  fileId?: string; // Telegram fileId for photo/document
+  fileName?: string;
+  fileType?: "photo" | "document" | "link";
+  counselorFeedback?: string;
+  uploadedAt?: string;
+  reviewedAt?: string;
+  reviewedBy?: number;
+}
+
 export interface NawaApplicationRecord {
   id: string;
   userId: number;
   studentName: string;
   studentUsername?: string;
+  studentPhone?: string;
   country: string;
-  passportNumber: string;
-  diplomaLink: string;
+  passportNumber?: string;
+  diplomaLink?: string;
   apostilleLink?: string;
-  translationStatus: "Needed" | "In Progress" | "Completed";
-  feePaid: boolean;
+  translationStatus?: "Needed" | "In Progress" | "Completed";
+  feePaid?: boolean;
   stage: "Submitted" | "Under Evaluation" | "Decision Issued" | "Requires Action";
   counselorNote?: string;
   submittedAt: string;
+  updatedAt?: string;
+  documents?: Partial<Record<NawaDocumentKey, NawaDocumentRecord>>;
 }
 
 export interface PromoCodeRecord {
@@ -283,6 +307,7 @@ export interface UserSessionData {
   acceptedOfertaAt?: string;
   savedPrograms: string[];
   documents: Record<string, DocumentRecord>;
+  nawaDocuments?: Partial<Record<NawaDocumentKey, NawaDocumentRecord>>;
   activeQuiz?: {
     examId: string;
     currentQ: number;
@@ -296,12 +321,14 @@ export interface UserSessionData {
     | "registration_level"
     | "waiting_oferta_acceptance"
     | "document_upload"
+    | "nawa_document_upload"
     | "premium_code"
     | "review_text"
     | "assistant_question"
     | "admin_auth"
     | "admin_feedback_app"
     | "admin_feedback_nawa"
+    | "admin_feedback_nawa_doc"
     | "admin_feedback_doc"
     | "admin_create_promo"
     | "admin_broadcast_text"

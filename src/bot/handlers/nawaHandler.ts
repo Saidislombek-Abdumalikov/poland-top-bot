@@ -1,9 +1,10 @@
 import { Bot, Context } from "grammy";
-import { db } from "../services/db";
+import { db, defaultNawaDefinitions } from "../services/db";
 import { nawaGuide } from "../data/nawaGuide";
-import { getNawaKeyboard } from "../keyboards/menuKeyboards";
+import { getNawaKeyboard, getNawaDocumentsKeyboard } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
 import { checkPremiumAccess } from "../utils/paywall";
+import { NawaDocumentKey } from "../types";
 
 export function setupNawaHandler(bot: Bot) {
   const handleNawaMenu = async (ctx: Context) => {
@@ -168,6 +169,208 @@ export function setupNawaHandler(bot: Bot) {
     });
   });
 
+  // Dedicated NAWA Documents & Dossier View
+  const handleNawaDossierView = async (ctx: Context) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
+
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "NAWA SYRENA Legalization Dossier & Document Upload",
+        uz: "NAWA Nostrifikatsiya Hujjatlar Dosyesi va Nazorati",
+      },
+      "NAWA"
+    );
+    if (!hasAccess) return;
+
+    // Ensure NAWA application is created
+    let nawaApp = db.getUserNawaApplications(userId)[0];
+    if (!nawaApp) {
+      nawaApp = db.createNawaApplication(userId);
+    }
+
+    const nawaDocs = db.getUserNawaDocuments(userId);
+    const docKeys: NawaDocumentKey[] = ["attestat", "shahodatnoma", "email", "home_address", "passport_red"];
+    const totalCount = docKeys.length;
+    const approvedCount = docKeys.filter((k) => nawaDocs[k]?.status === "approved").length;
+    const reviewingCount = docKeys.filter((k) => nawaDocs[k]?.status === "reviewing").length;
+    const correctionCount = docKeys.filter((k) => nawaDocs[k]?.status === "needs_correction").length;
+    const uploadedCount = docKeys.filter(
+      (k) => nawaDocs[k]?.status !== "missing" && (!!nawaDocs[k]?.fileId || !!nawaDocs[k]?.value)
+    ).length;
+
+    const filled = Math.max(0, Math.min(10, Math.round((approvedCount / totalCount) * 10)));
+    const progressBar = "🟩".repeat(filled) + "⬜".repeat(10 - filled);
+
+    let docChecklistText = "";
+    docKeys.forEach((key, idx) => {
+      const def = defaultNawaDefinitions[key];
+      const doc = nawaDocs[key];
+      const name = isUz ? def.name.uz : def.name.en;
+      const statusIcon =
+        doc?.status === "approved"
+          ? "✅"
+          : doc?.status === "reviewing"
+          ? "🟡"
+          : doc?.status === "needs_correction"
+          ? "🔴"
+          : "⚪";
+      const statusText = isUz
+        ? doc?.status === "approved"
+          ? "Qabul qilingan"
+          : doc?.status === "reviewing"
+          ? "Tekshiruvda"
+          : doc?.status === "needs_correction"
+          ? "Qayta yuklash kerak"
+          : "Kiritilmagan"
+        : doc?.status === "approved"
+        ? "Approved"
+        : doc?.status === "reviewing"
+        ? "In Review"
+        : doc?.status === "needs_correction"
+        ? "Correction Required"
+        : "Missing";
+
+      let detailVal = "";
+      if (doc?.value) {
+        detailVal = ` (<code>${escapeHtml(doc.value)}</code>)`;
+      } else if (doc?.fileName) {
+        detailVal = ` (<code>${escapeHtml(doc.fileName)}</code>)`;
+      }
+
+      let feedbackNote = "";
+      if (doc?.counselorFeedback) {
+        feedbackNote = `\n   ↳ <i>💬 Izoh: ${escapeHtml(doc.counselorFeedback)}</i>`;
+      }
+
+      docChecklistText += `${idx + 1}. ${def.icon} <b>${escapeHtml(name)}:</b> ${statusIcon} ${statusText}${detailVal}${feedbackNote}\n`;
+    });
+
+    const text = isUz
+      ? `🏛️ <b>NAWA NOSTRIFIKATSIYA HUJJATLAR DOSYESI</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 <b>Talaba:</b> <b>${escapeHtml(user.fullName || user.firstName || "Talaba")}</b>\n` +
+        `• 📌 <b>Ariza Holati:</b> <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        (nawaApp.counselorNote ? `• 💬 <b>Maslahatchi Xabari:</b> <i>\"${escapeHtml(nawaApp.counselorNote)}\"</i>\n` : "") +
+        `• 📊 <b>NAWA Tayyorgarligi:</b> <b>${approvedCount}/${totalCount} Tasdiqlangan</b> (${Math.round((approvedCount / totalCount) * 100)}%)\n` +
+        `${progressBar}\n\n` +
+        `📋 <b>NAWA Uchun Talab Qilinadigan 5 ta Hujjat:</b>\n` +
+        `${docChecklistText}\n` +
+        `👇 <i>Hujjat faylini yuklash yoki ma'lumotni kiritish uchun quyidagi tugmalardan birini bosing:</i>`
+      : `🏛️ <b>NAWA LEGALIZATION DOCUMENT DOSSIER</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 <b>Student:</b> <b>${escapeHtml(user.fullName || user.firstName || "Student")}</b>\n` +
+        `• 📌 <b>Application Stage:</b> <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        (nawaApp.counselorNote ? `• 💬 <b>Advisor Note:</b> <i>\"${escapeHtml(nawaApp.counselorNote)}\"</i>\n` : "") +
+        `• 📊 <b>NAWA Readiness:</b> <b>${approvedCount}/${totalCount} Approved</b> (${Math.round((approvedCount / totalCount) * 100)}%)\n` +
+        `${progressBar}\n\n` +
+        `📋 <b>Required 5 NAWA Documents:</b>\n` +
+        `${docChecklistText}\n` +
+        `👇 <i>Tap below to upload files or enter data for each requirement:</i>`;
+
+    const kb = getNawaDocumentsKeyboard(user.lang, nawaDocs);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+
+    await ctx.reply(text, { parse_mode: "HTML", reply_markup: kb });
+  };
+
+  bot.callbackQuery("nawa_my_dossier", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await handleNawaDossierView(ctx);
+  });
+
+  // Prompt for specific NAWA document upload / text entry
+  bot.callbackQuery(/^nawa_doc_prompt_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^nawa_doc_prompt_(.+)$/);
+    if (!match) return;
+    const docKey = match[1] as NawaDocumentKey;
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
+
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "NAWA SYRENA Legalization Dossier & Document Upload",
+        uz: "NAWA Nostrifikatsiya Hujjatlar Dosyesi va Nazorati",
+      },
+      "NAWA"
+    );
+    if (!hasAccess) return;
+
+    const def = defaultNawaDefinitions[docKey];
+    if (!def) return;
+
+    db.setWaitingFor(userId, "nawa_document_upload", { nawaDocKey: docKey });
+    await ctx.answerCallbackQuery();
+
+    const docName = isUz ? def.name.uz : def.name.en;
+    const docDesc = isUz ? def.description.uz : def.description.en;
+
+    let promptText = "";
+    if (docKey === "email") {
+      promptText = isUz
+        ? `📧 <b>Email pochta manzilingizni kiriting:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `Iltimos, o'zingizning doimiy va faol elektron pochta manzilingizni yozib yuboring:\n` +
+          `(Masalan: <code>talaba@gmail.com</code>)`
+        : `📧 <b>Enter your active Email Address:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `Please send your primary email address in chat:\n` +
+          `(Example: <code>student@gmail.com</code>)`;
+    } else if (docKey === "home_address") {
+      promptText = isUz
+        ? `🏠 <b>Yashash manzilingizni kiriting:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `Iltimos, to'liq yashash manzilingizni yozib yuboring:\n` +
+          `(Masalan: <i>Toshkent shahar, Yunusobod tumani, 4-mavze, 12-uy, 45-xonadon</i>)`
+        : `🏠 <b>Enter your Home Address:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `Please send your full residential home address in chat:\n` +
+          `(Example: <i>Tashkent city, Yunusabad district, Block 4, House 12, Apt 45</i>)`;
+    } else {
+      promptText = isUz
+        ? `📤 <b>${def.icon} ${escapeHtml(docName)} hujjatini yuklash:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `Siz quyidagi usullardan birini tanlashingiz mumkin:\n` +
+          `1. 📁 <b>PDF fayl</b> yuboring\n` +
+          `2. 🖼️ <b>Sifatli fotosurat</b> yuboring\n` +
+          `3. 🔗 <b>Google Drive havolasini</b> yozib yuboring\n\n` +
+          `<i>Hujjat fayli yoki fotosuratini shu chatga yuboring:</i>`
+        : `📤 <b>${def.icon} Upload ${escapeHtml(docName)}:</b>\n\n` +
+          `• ℹ️ <i>${escapeHtml(docDesc)}</i>\n\n` +
+          `You can:\n` +
+          `1. 📁 <b>Send a PDF document</b>\n` +
+          `2. 🖼️ <b>Send a high-resolution Photo scan</b>\n` +
+          `3. 🔗 <b>Paste a Google Drive / OneDrive link</b>\n\n` +
+          `<i>Send your file or photo scan in the chat now:</i>`;
+    }
+
+    const kb = {
+      inline_keyboard: [
+        [{ text: isUz ? "◀️ NAWA Dosyesiga Qaytish" : "◀️ Back to NAWA Dossier", callback_data: "nawa_my_dossier" }],
+      ],
+    };
+
+    const msg = await ctx.reply(promptText, { parse_mode: "HTML", reply_markup: kb });
+    db.setLastPromptMsgId(userId, msg.message_id);
+  });
+
   // NAWA Dossier Wizard (Premium Gated)
   bot.callbackQuery("nawa_apply_wizard", async (ctx) => {
     const userId = ctx.from?.id;
@@ -175,33 +378,48 @@ export function setupNawaHandler(bot: Bot) {
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
 
-    const hasAccess = await checkPremiumAccess(ctx, user, {
-      en: "NAWA SYRENA Legalization Assistance Dossier",
-      uz: "NAWA SYRENA Nostrifikatsiya Huquqiy Ko'magi",
-    });
+    const hasAccess = await checkPremiumAccess(
+      ctx,
+      user,
+      {
+        en: "NAWA SYRENA Legalization Assistance Dossier",
+        uz: "NAWA SYRENA Nostrifikatsiya Huquqiy Ko'magi",
+      },
+      "NAWA"
+    );
     if (!hasAccess) return;
 
     db.createNawaApplication(userId, {
       country: user.country || "Uzbekistan",
-      passportNumber: "Pending Upload",
-      diplomaLink: "Pending Upload",
     });
 
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `🏛️ <b>NAWA Nostrifikatsiya Hujjatlar Paketi Ro'yxatdan O'tkazildi!</b>\n\n` +
+      ? `🏛️ <b>NAWA Nostrifikatsiya Hujjatlar Paketi Ochildi!</b>\n\n` +
         `• 📋 Qabul Koordinatoringiz: <b>PTU Legal Team</b>\n` +
         `• 📌 Holati: <b>Hujjatlarni Qabul Qilish (Topshirilgan)</b>\n\n` +
-        `Iltimos, pastdagi tugma orqali <b>Hujjatlar Nazorati</b> bo'limiga o'ting va pasport, attestat/diplom, apostil va qasamyodli tarjimalaringizni yuklang!`
+        `NAWA nostrifikatsiyasi uchun quyidagi 5 ta hujjat talab etiladi:\n` +
+        `1. 📜 <b>Attestat</b> (11-sinf maktab attestati)\n` +
+        `2. 📜 <b>Shahodatnoma</b> (9-sinf shahodatnomasi)\n` +
+        `3. 📧 <b>Email</b> (Faol elektron pochta)\n` +
+        `4. 🏠 <b>Yashash Manzili</b> (Home address)\n` +
+        `5. 📕 <b>Pasport (qizil)</b> (Xorijga chiqish pasporti)\n\n` +
+        `<i>Hujjatlarni yuklash uchun pastdagi tugmani bosing:</i>`
       : `🏛️ <b>NAWA Legalization Dossier Initiated!</b>\n\n` +
         `• 📋 Assigned Advisor: <b>PTU Legal Team</b>\n` +
         `• 📌 Status: <b>Dossier Opened (Submitted)</b>\n\n` +
-        `Please tap below to open the <b>Document Checklist</b> and upload your passport, diploma, apostille, and sworn translations!`;
+        `The following 5 dedicated documents are required for NAWA recognition:\n` +
+        `1. 📜 <b>Attestat</b> (High School Certificate)\n` +
+        `2. 📜 <b>Shahodatnoma</b> (9th Grade Certificate)\n` +
+        `3. 📧 <b>Email</b> (Active Email Address)\n` +
+        `4. 🏠 <b>Home Address</b> (Full Residential Address)\n` +
+        `5. 📕 <b>Passport (Red)</b> (International Passport)\n\n` +
+        `<i>Tap below to open your NAWA Document Dossier and begin uploading:</i>`;
 
     const kb = {
       inline_keyboard: [
-        [{ text: isUz ? "📁 Hujjatlarni Yuklash & Nazorat" : "📁 Document Checklist & Upload", callback_data: "menu_docs" }],
+        [{ text: isUz ? "📁 NAWA Hujjatlar Dosyesi" : "📁 NAWA Document Dossier", callback_data: "nawa_my_dossier" }],
         [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
       ],
     };

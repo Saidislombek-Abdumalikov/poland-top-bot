@@ -1,5 +1,5 @@
 import { Bot, Context, InlineKeyboard } from "grammy";
-import { db } from "../services/db";
+import { db, defaultNawaDefinitions } from "../services/db";
 import { config } from "../config";
 import {
   isAuthorizedAdmin,
@@ -46,7 +46,7 @@ import {
   getAdminNawaListKeyboard,
   getAdminNawaDetailKeyboard,
 } from "../keyboards/adminKeyboards";
-import { AppStage, DocStatus, Language, NawaApplicationRecord } from "../types";
+import { AppStage, DocStatus, Language, NawaApplicationRecord, NawaDocumentKey } from "../types";
 import { escapeHtml } from "../utils/format";
 
 export function setupAdminHandler(bot: Bot) {
@@ -937,63 +937,75 @@ export function setupAdminHandler(bot: Bot) {
     const match = ctx.callbackQuery?.data?.match(/^admin_view_nawa_(.+)$/);
     if (!match) return;
     const nawaId = match[1];
-    const nawaApp = db.getNawaApplication(nawaId);
+    let nawaApp = db.getNawaApplication(nawaId);
+
+    // Support lookup by userId if prefix is by_user_
+    if (!nawaApp && nawaId.startsWith("by_user_")) {
+      const uId = parseInt(nawaId.replace("by_user_", ""), 10);
+      nawaApp = db.getUserNawaApplications(uId)[0];
+    }
+
     if (!nawaApp) {
       await ctx.answerCallbackQuery({ text: "NAWA application not found." });
       return;
     }
 
     const adminId = ctx.from?.id;
-    const adminUser = adminId ? db.getUser(adminId) : undefined;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
     const isUz = adminUser?.lang === "uz";
     const student = db.getUser(nawaApp.userId);
 
-    const docDefs = db.getDocumentDefinitions();
-    const userDocs = student.documents || {};
+    const nawaDocs = db.getUserNawaDocuments(nawaApp.userId);
+    const docKeys: NawaDocumentKey[] = ["attestat", "shahodatnoma", "email", "home_address", "passport_red"];
 
-    const nawaDocKeys = ["passport", "diploma", "apostille", "translation"];
     let docsSummaryText = "";
-    nawaDocKeys.forEach((key, idx) => {
-      const def = docDefs[key];
-      const doc = userDocs[key];
-      const name = def?.name[adminUser?.lang || "uz"] || def?.name.en || key;
+    docKeys.forEach((key, idx) => {
+      const def = defaultNawaDefinitions[key];
+      const doc = nawaDocs[key] || nawaApp?.documents?.[key];
+      const name = isUz ? def.name.uz : def.name.en;
 
       if (!doc || doc.status === "missing") {
-        docsSummaryText += `\n<b>${idx + 1}. ⚪ ${escapeHtml(name)}</b>: ${isUz ? "⚪ Yuklanmagan" : "⚪ Missing"}`;
+        docsSummaryText += `\n<b>${idx + 1}. ⚪ ${def.icon} ${escapeHtml(name)}</b>: ${isUz ? "⚪ Yuklanmagan" : "⚪ Missing"}`;
       } else if (doc.status === "approved") {
-        docsSummaryText += `\n<b>${idx + 1}. ✅ ${escapeHtml(name)}</b>: ${isUz ? "✅ Tasdiqlangan" : "✅ Approved"}` +
-          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "");
+        const valStr = doc.value ? ` (<code>${escapeHtml(doc.value)}</code>)` : doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "";
+        docsSummaryText += `\n<b>${idx + 1}. ✅ ${def.icon} ${escapeHtml(name)}</b>: ${isUz ? "✅ Tasdiqlangan" : "✅ Approved"}${valStr}`;
       } else if (doc.status === "reviewing") {
-        docsSummaryText += `\n<b>${idx + 1}. 🟡 ${escapeHtml(name)}</b>: ${isUz ? "🟡 Kutilmoqda" : "🟡 Under Review"}` +
-          (doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "");
+        const valStr = doc.value ? ` (<code>${escapeHtml(doc.value)}</code>)` : doc.fileName ? ` (<code>${escapeHtml(doc.fileName)}</code>)` : "";
+        docsSummaryText += `\n<b>${idx + 1}. 🟡 ${def.icon} ${escapeHtml(name)}</b>: ${isUz ? "🟡 Tekshiruvda" : "🟡 In Review"}${valStr}`;
       } else if (doc.status === "needs_correction") {
-        docsSummaryText += `\n<b>${idx + 1}. 🔴 ${escapeHtml(name)}</b>: ${isUz ? "🔴 Tuzatishda" : "🔴 Needs Correction"}`;
+        const fbStr = doc.counselorFeedback ? ` [<i>${escapeHtml(doc.counselorFeedback)}</i>]` : "";
+        docsSummaryText += `\n<b>${idx + 1}. 🔴 ${def.icon} ${escapeHtml(name)}</b>: ${isUz ? "🔴 Qayta yuklash kerak" : "🔴 Needs Correction"}${fbStr}`;
       }
     });
+
+    const approvedCount = docKeys.filter((k) => nawaDocs[k]?.status === "approved").length;
 
     const text = isUz
       ? `🏛️ <b>NAWA NOSTRIFIKATSIYA ARIZASI #${escapeHtml(nawaApp.id)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `• 👤 Talaba: <b>${escapeHtml(nawaApp.studentName)}</b> (<code>${nawaApp.userId}</code>)\n` +
+        `• 👤 Talaba: <b>${escapeHtml(nawaApp.studentName)}</b> (ID: <code>${nawaApp.userId}</code>)\n` +
         `• 📞 Telefon: <code>${escapeHtml(student.phone || "kiritilmagan")}</code>\n` +
         `• 🌍 Fuqaroligi: <b>${escapeHtml(nawaApp.country || "O'zbekiston")}</b>\n` +
         `• 📌 NAWA Holati: <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        `• 📊 Hujjatlar Tayyorgarligi: <b>${approvedCount}/5 Tasdiqlangan</b>\n` +
         (nawaApp.counselorNote ? `• 💬 Maslahatchi Izohi: <i>"${escapeHtml(nawaApp.counselorNote)}"</i>\n` : "") +
         `• 📅 Topshirilgan: ${escapeHtml(nawaApp.submittedAt)}\n\n` +
-        `📑 <b>NAWA UCHUN TALAB QILINADIGAN HUJJATLAR:</b>${docsSummaryText}\n\n` +
-        `<i>Hujjatlarni tekshirish yoki NAWA bosqichini o'zgartirish uchun quyidagi tugmalardan foydalaning:</i>`
+        `📑 <b>NAWA UCHUN TALAB QILINADIGAN 5 TA HUJJAT:</b>${docsSummaryText}\n\n` +
+        `<i>Hujjatlarni ko'rish va tasdiqlash uchun quyidagi tugmalardan foydalaning:</i>`
       : `🏛️ <b>NAWA LEGALIZATION APPLICATION #${escapeHtml(nawaApp.id)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `• 👤 Student: <b>${escapeHtml(nawaApp.studentName)}</b> (<code>${nawaApp.userId}</code>)\n` +
+        `• 👤 Student: <b>${escapeHtml(nawaApp.studentName)}</b> (ID: <code>${nawaApp.userId}</code>)\n` +
         `• 📞 Phone: <code>${escapeHtml(student.phone || "not set")}</code>\n` +
         `• 🌍 Country: <b>${escapeHtml(nawaApp.country || "Uzbekistan")}</b>\n` +
         `• 📌 NAWA Stage: <code>${escapeHtml(nawaApp.stage)}</code>\n` +
+        `• 📊 Readiness: <b>${approvedCount}/5 Approved</b>\n` +
         (nawaApp.counselorNote ? `• 💬 Counselor Note: <i>"${escapeHtml(nawaApp.counselorNote)}"</i>\n` : "") +
         `• 📅 Submitted: ${escapeHtml(nawaApp.submittedAt)}\n\n` +
-        `📑 <b>REQUIRED NAWA DOSSIER DOCUMENTS:</b>${docsSummaryText}\n\n` +
+        `📑 <b>REQUIRED 5 NAWA DOCUMENTS:</b>${docsSummaryText}\n\n` +
         `<i>Inspect documents or update NAWA stage below:</i>`;
 
-    const kb = getAdminNawaDetailKeyboard(nawaApp, userDocs, docDefs, adminUser?.lang);
+    const kb = getAdminNawaDetailKeyboard(nawaApp, nawaDocs, adminUser?.lang);
 
     await ctx.answerCallbackQuery();
     if (ctx.callbackQuery?.message) {
@@ -1009,6 +1021,240 @@ export function setupAdminHandler(bot: Bot) {
       parse_mode: "HTML",
       reply_markup: kb,
     });
+  });
+
+  // Admin View Individual NAWA Document / Text Data
+  bot.callbackQuery(/^admin_view_nawa_doc_(\d+)_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_view_nawa_doc_(\d+)_(.+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    const docKey = match[2] as NawaDocumentKey;
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
+    const isUz = adminUser?.lang === "uz";
+
+    const student = db.getUser(targetUserId);
+    const nawaDocs = db.getUserNawaDocuments(targetUserId);
+    const doc = nawaDocs[docKey];
+    const def = defaultNawaDefinitions[docKey];
+    const docName = def ? (isUz ? def.name.uz : def.name.en) : docKey;
+
+    await ctx.answerCallbackQuery();
+
+    const kb = new InlineKeyboard()
+      .text(isUz ? "✅ Tasdiqlash" : "✅ Approve", `admin_approve_nawa_doc_${targetUserId}_${docKey}`)
+      .text(isUz ? "🔴 Qayta Yuklashni So'rash" : "🔴 Request Correction", `admin_reject_nawa_doc_feedback_prompt_${targetUserId}_${docKey}`)
+      .row()
+      .text(isUz ? "◀️ NAWA Arizasiga Qaytish" : "◀️ Back to NAWA Application", `admin_view_nawa_by_user_${targetUserId}`);
+
+    const statusBadge =
+      doc?.status === "approved"
+        ? "✅ Tasdiqlangan (Approved)"
+        : doc?.status === "reviewing"
+        ? "🟡 Tekshiruvda (In Review)"
+        : doc?.status === "needs_correction"
+        ? "🔴 Qayta yuklash kerak (Needs Correction)"
+        : "⚪ Yuklanmagan (Missing)";
+
+    const header = isUz
+      ? `🏛️ <b>NAWA Hujjati Ko'rib Chiqish</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 Talaba: <b>${escapeHtml(student.fullName || student.firstName || "Talaba")}</b> (ID: <code>${targetUserId}</code>)\n` +
+        `• 📄 Hujjat: <b>${escapeHtml(docName)}</b>\n` +
+        `• 📌 Holati: <b>${statusBadge}</b>\n` +
+        (doc?.counselorFeedback ? `• 💬 Maslahatchi Izohi: <i>\"${escapeHtml(doc.counselorFeedback)}\"</i>\n` : "")
+      : `🏛️ <b>NAWA Document Review</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 👤 Student: <b>${escapeHtml(student.fullName || student.firstName || "Student")}</b> (ID: <code>${targetUserId}</code>)\n` +
+        `• 📄 Document: <b>${escapeHtml(docName)}</b>\n` +
+        `• 📌 Status: <b>${statusBadge}</b>\n` +
+        (doc?.counselorFeedback ? `• 💬 Counselor Note: <i>\"${escapeHtml(doc.counselorFeedback)}\"</i>\n` : "");
+
+    if (doc?.fileId && doc.fileType === "photo") {
+      try {
+        await ctx.replyWithPhoto(doc.fileId, {
+          caption: `${header}\n🖼️ <i>Hujjat fotosurati yuqorida keltirilgan.</i>`,
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    } else if (doc?.fileId && doc.fileType === "document") {
+      try {
+        await ctx.replyWithDocument(doc.fileId, {
+          caption: `${header}\n📎 <b>Fayl nomi:</b> <code>${escapeHtml(doc.fileName || "document.pdf")}</code>`,
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    } else if (doc?.value) {
+      await ctx.reply(
+        `${header}\n📝 <b>Kiritilgan Ma'lumot:</b>\n<code>${escapeHtml(doc.value)}</code>`,
+        {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        }
+      );
+      return;
+    }
+
+    await ctx.reply(
+      `${header}\n⚠️ <i>Ushbu hujjat talaba tomonidan hali yuklanmagan yoki ma'lumot kiritilmagan.</i>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: kb,
+      }
+    );
+  });
+
+  // Admin Approve Individual NAWA Document
+  bot.callbackQuery(/^admin_approve_nawa_doc_(\d+)_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_approve_nawa_doc_(\d+)_(.+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    const docKey = match[2] as NawaDocumentKey;
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
+
+    const doc = db.approveNawaDocument(targetUserId, docKey, adminId);
+    await ctx.answerCallbackQuery({ text: "NAWA document approved! ✅" });
+
+    const def = defaultNawaDefinitions[docKey];
+    const docName = def ? def.name.uz : docKey;
+
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "NAWA_DOC_APPROVE",
+      `Approved NAWA document '${docKey}' for Student #${targetUserId}`,
+      `Student #${targetUserId}`
+    );
+
+    // Notify student in Telegram
+    try {
+      const student = db.getUser(targetUserId);
+      const isUz = student.lang === "uz";
+      const studentMsg = isUz
+        ? `✅ <b>NAWA Hujjatingiz Tasdiqlandi!</b>\n\n` +
+          `• 📄 <b>Hujjat:</b> <b>${escapeHtml(def ? def.name.uz : docKey)}</b>\n` +
+          `• 🟢 <b>Holati:</b> Qabul maslahatchilari tomonidan qabul qilindi va tasdiqlandi.`
+        : `✅ <b>NAWA Document Approved!</b>\n\n` +
+          `• 📄 <b>Document:</b> <b>${escapeHtml(def ? def.name.en : docKey)}</b>\n` +
+          `• 🟢 <b>Status:</b> Verified and accepted by admissions team.`;
+
+      await bot.api.sendMessage(targetUserId, studentMsg, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: isUz ? "📁 NAWA Hujjatlar Dosyesi" : "📁 NAWA Document Dossier", callback_data: "nawa_my_dossier" }],
+          ],
+        },
+      });
+    } catch {}
+
+    const nawaApp = db.getUserNawaApplications(targetUserId)[0];
+    const nawaDocs = db.getUserNawaDocuments(targetUserId);
+
+    await ctx.reply(
+      `✅ <b>NAWA Hujjati '${escapeHtml(docName)}' muvaffaqiyatli tasdiqlandi!</b>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: nawaApp
+          ? getAdminNawaDetailKeyboard(nawaApp, nawaDocs, adminUser?.lang)
+          : {
+              inline_keyboard: [
+                [{ text: "◀️ NAWA Arizalari Ro'yxati", callback_data: "admin_menu_nawa" }],
+              ],
+            },
+      }
+    );
+  });
+
+  // Admin Prompt Rejection Feedback for NAWA Document
+  bot.callbackQuery(/^admin_reject_nawa_doc_feedback_prompt_(\d+)_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_reject_nawa_doc_feedback_prompt_(\d+)_(.+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    const docKey = match[2] as NawaDocumentKey;
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+
+    db.setWaitingFor(adminId, "admin_feedback_nawa_doc", { targetUserId, docKey });
+    await ctx.answerCallbackQuery();
+
+    const def = defaultNawaDefinitions[docKey];
+    const docName = def ? def.name.uz : docKey;
+
+    const msg = await ctx.reply(
+      `💬 <b>NAWA hujjati (${escapeHtml(docName)}) uchun tuzatish izohini kiriting:</b>\n\n` +
+        `Talaba #${targetUserId} ga ushbu hujjatni nima uchun qayta yuklashi kerakligini yozib yuboring:`,
+      { parse_mode: "HTML" }
+    );
+    db.setLastPromptMsgId(adminId, msg.message_id);
+  });
+
+  // Bulk Approve All NAWA Documents
+  bot.callbackQuery(/^admin_approve_all_nawa_docs_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_approve_all_nawa_docs_(.+)$/);
+    if (!match) return;
+    const nawaId = match[1];
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
+
+    const success = db.approveAllNawaDocuments(nawaId, adminId);
+    if (!success) {
+      await ctx.answerCallbackQuery({ text: "NAWA application not found." });
+      return;
+    }
+
+    const nawaApp = db.getNawaApplication(nawaId);
+    if (nawaApp) {
+      db.updateNawaStage(nawaId, "Under Evaluation");
+      db.logAdminAction(
+        adminId,
+        adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+        "NAWA_DOCS_BULK_APPROVE",
+        `Approved all NAWA documents for Application #${nawaId} (Student #${nawaApp.userId})`,
+        `NAWA #${nawaId}`
+      );
+
+      // Notify student in Telegram
+      try {
+        const student = db.getUser(nawaApp.userId);
+        const isUz = student.lang === "uz";
+        const studentMsg = isUz
+          ? `🎉 <b>Barcha NAWA Hujjatlaringiz Qabul Qilindi va Tasdiqlandi!</b>\n\n` +
+            `• Ariza: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
+            `• Yangi Holat: <b>NAWA/Kuratoriumda ko'rib chiqilmoqda 🔍</b>\n\n` +
+            `Nostrifikatsiya jarayoni boshlandi. Yangiliklar bo'yicha bot orqali xabar beriladi!`
+          : `🎉 <b>All Your NAWA Documents Have Been Verified & Approved!</b>\n\n` +
+            `• Application: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
+            `• New Stage: <b>Under Evaluation 🔍</b>\n\n` +
+            `Your recognition dossier has been forwarded for processing.`;
+
+        await bot.api.sendMessage(nawaApp.userId, studentMsg, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 NAWA Hujjatlar Dosyesi" : "📁 NAWA Document Dossier", callback_data: "nawa_my_dossier" }],
+            ],
+          },
+        });
+      } catch {}
+
+      const nawaDocs = db.getUserNawaDocuments(nawaApp.userId);
+      await ctx.answerCallbackQuery({ text: "All NAWA documents approved! ✅" });
+      await ctx.reply(
+        `✅ <b>NAWA arizasi #${escapeHtml(nawaApp.id)} bo'yicha barcha hujjatlar muvaffaqiyatli tasdiqlandi!</b>\n\n` +
+          `Ariza holati 'Under Evaluation' ga o'tkazildi va talaba xabardor qilindi.`,
+        {
+          parse_mode: "HTML",
+          reply_markup: getAdminNawaDetailKeyboard(nawaApp, nawaDocs, adminUser?.lang),
+        }
+      );
+    }
   });
 
   // Update NAWA Stage
@@ -1048,11 +1294,11 @@ export function setupAdminHandler(bot: Bot) {
           ? `🏛️ <b>NAWA Nostrifikatsiya Arizangiz Holati Yangilandi!</b>\n\n` +
             `• Ariza: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
             `• Yangi Holat: <b>${stageUzMap[newStage] || newStage}</b>\n\n` +
-            `Arizangiz bo'yicha batafsil ma'lumotni /nawa yoki /profile bo'limida ko'rishingiz mumkin.`
+            `Arizangiz bo'yicha batafsil ma'lumotni /nawa bo'limida ko'rishingiz mumkin.`
           : `🏛️ <b>Your NAWA Application Status Has Been Updated!</b>\n\n` +
             `• Application: <code>#${escapeHtml(nawaApp.id)}</code>\n` +
             `• New Stage: <b>${newStage}</b>\n\n` +
-            `You can check your application status via /nawa or /profile.`;
+            `You can check your application status via /nawa.`;
 
         await bot.api.sendMessage(
           nawaApp.userId,
@@ -1061,22 +1307,20 @@ export function setupAdminHandler(bot: Bot) {
             parse_mode: "HTML",
             reply_markup: {
               inline_keyboard: [
-                [{ text: isUz ? "🏛️ NAWA Bo'limi" : "🏛️ NAWA Section", callback_data: "menu_nawa" }],
+                [{ text: isUz ? "🏛️ NAWA Dosyesi" : "🏛️ NAWA Dossier", callback_data: "nawa_my_dossier" }],
               ],
             },
           }
         );
       } catch {}
 
-      const student = db.getUser(nawaApp.userId);
-      const docDefs = db.getDocumentDefinitions();
-      const userDocs = student.documents || {};
+      const nawaDocs = db.getUserNawaDocuments(nawaApp.userId);
 
       await ctx.editMessageText(
         `✅ NAWA Application <b>${escapeHtml(nawaApp.id)}</b> updated to <b>${escapeHtml(newStage)}</b> and student notified!`,
         {
           parse_mode: "HTML",
-          reply_markup: getAdminNawaDetailKeyboard(nawaApp, userDocs, docDefs, adminUser?.lang),
+          reply_markup: getAdminNawaDetailKeyboard(nawaApp, nawaDocs, adminUser?.lang),
         }
       );
     }

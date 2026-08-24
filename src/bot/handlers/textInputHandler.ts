@@ -1,5 +1,5 @@
 import { Bot, Context } from "grammy";
-import { db } from "../services/db";
+import { db, defaultNawaDefinitions } from "../services/db";
 import {
   authenticatePasscode,
   startAdminSession,
@@ -17,9 +17,11 @@ import {
   getOnboardingDegreeKeyboard,
   getPhoneRequestKeyboard,
   getOfertaKeyboard,
+  getNawaDocumentsKeyboard,
 } from "../keyboards/menuKeyboards";
-import { DegreeLevel, PremiumTier, UserSessionData } from "../types";
+import { DegreeLevel, PremiumTier, UserSessionData, NawaDocumentKey } from "../types";
 import { escapeHtml } from "../utils/format";
+import { config } from "../config";
 
 export function setupTextInputHandler(bot: Bot) {
   // Helper to cleanup user message and previous bot prompt
@@ -230,6 +232,55 @@ export function setupTextInputHandler(bot: Bot) {
         });
       }
     }
+
+    if (user.waitingFor === "nawa_document_upload") {
+      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
+      if (nawaDocKey) {
+        const isUz = user.lang === "uz";
+        const def = defaultNawaDefinitions[nawaDocKey];
+        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
+
+        // Size validation (max 20MB)
+        if (document.file_size && document.file_size > 20 * 1024 * 1024) {
+          await ctx.reply(
+            isUz
+              ? `⚠️ <b>Fayl hajmi juda katta!</b>\n\nMaksimal 20 MB gacha bo'lgan fayllarni yuborishingiz mumkin.`
+              : `⚠️ <b>File size exceeds limit!</b>\n\nPlease upload a file smaller than 20 MB.`,
+            { parse_mode: "HTML" }
+          );
+          return;
+        }
+
+        db.submitNawaDocument(userId, nawaDocKey, {
+          fileId: document.file_id,
+          fileName: document.file_name || "document.pdf",
+          fileType: "document",
+        });
+        db.setWaitingFor(userId, null);
+
+        const replyText = isUz
+          ? `✅ <b>NAWA Hujjati Qabul Qilindi!</b>\n\n` +
+            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
+            `📎 <b>Fayl:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
+            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
+            `<i>NAWA koordinatori hujjatingizni ko'rib chiqishi bilan xabar beriladi!</i>`
+          : `✅ <b>NAWA Document File Received!</b>\n\n` +
+            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
+            `📎 <b>File Name:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
+            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
+            `<i>You will be notified as soon as counselors verify your submission!</i>`;
+
+        await ctx.reply(replyText, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+            ],
+          },
+        });
+      }
+    }
   });
 
   // Handle photo uploads (PNG, JPG)
@@ -273,6 +324,45 @@ export function setupTextInputHandler(bot: Bot) {
           reply_markup: {
             inline_keyboard: [
               [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+            ],
+          },
+        });
+      }
+    }
+
+    if (user.waitingFor === "nawa_document_upload") {
+      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
+      if (nawaDocKey) {
+        const isUz = user.lang === "uz";
+        const def = defaultNawaDefinitions[nawaDocKey];
+        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
+
+        const largestPhoto = photos[photos.length - 1];
+        db.submitNawaDocument(userId, nawaDocKey, {
+          fileId: largestPhoto.file_id,
+          fileName: `${nawaDocKey}_scan.jpg`,
+          fileType: "photo",
+        });
+        db.setWaitingFor(userId, null);
+
+        const replyText = isUz
+          ? `✅ <b>NAWA Hujjati Fotosurati Qabul Qilindi!</b>\n\n` +
+            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
+            `🖼️ <b>Fayl:</b> Sifatli rasm nusxasi\n` +
+            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
+            `<i>NAWA koordinatori hujjatingizni ko'rib chiqishi bilan xabar beriladi!</i>`
+          : `✅ <b>NAWA Document Photo Received!</b>\n\n` +
+            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
+            `🖼️ <b>Image File:</b> High-Resolution Scan\n` +
+            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
+            `<i>You will be notified as soon as counselors verify your submission!</i>`;
+
+        await ctx.reply(replyText, {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
               [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
             ],
           },
@@ -687,7 +777,7 @@ export function setupTextInputHandler(bot: Bot) {
                 parse_mode: "HTML",
                 reply_markup: {
                   inline_keyboard: [
-                    [{ text: isUz ? "📁 Hujjatlar Nazorati" : "📁 Document Checklist", callback_data: "menu_docs" }],
+                    [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
                   ],
                 },
               }
@@ -708,6 +798,66 @@ export function setupTextInputHandler(bot: Bot) {
             }
           );
         }
+        return;
+      }
+    }
+
+    // 1c. Admin Counselor Feedback Note on Specific NAWA Document
+    if (user.waitingFor === "admin_feedback_nawa_doc") {
+      await cleanUpInput(ctx, userId);
+      const targetUserId = user.waitingPayload?.targetUserId;
+      const docKey = user.waitingPayload?.docKey as NawaDocumentKey;
+      if (targetUserId && docKey) {
+        db.rejectNawaDocument(targetUserId, docKey, text.trim(), userId);
+        db.setWaitingFor(userId, null);
+
+        const def = defaultNawaDefinitions[docKey];
+        const docName = def ? def.name.uz : docKey;
+
+        db.logAdminAction(
+          userId,
+          user.fullName || user.username || `Admin #${userId}`,
+          "NAWA_DOC_REJECT",
+          `Requested correction for NAWA document '${docKey}' for Student #${targetUserId}: "${text}"`,
+          `Student #${targetUserId}`
+        );
+
+        try {
+          const student = db.getUser(targetUserId);
+          const isUz = student.lang === "uz";
+          const studentMsg = isUz
+            ? `⚠️ <b>NAWA Hujjatini Qayta Yuklash Talab Qilinadi!</b>\n\n` +
+              `• 📄 <b>Hujjat:</b> <b>${escapeHtml(def ? def.name.uz : docKey)}</b>\n` +
+              `• 💬 <b>Maslahatchi Izohi:</b> <i>\"${escapeHtml(text)}\"</i>\n\n` +
+              `Iltimos, pastdagi tugma orqali NAWA dosyesiga o'ting va ushbu hujjatni to'g'rilab qayta yuklang:`
+            : `⚠️ <b>NAWA Document Correction Requested!</b>\n\n` +
+              `• 📄 <b>Document:</b> <b>${escapeHtml(def ? def.name.en : docKey)}</b>\n` +
+              `• 💬 <b>Advisor Feedback:</b> <i>\"${escapeHtml(text)}\"</i>\n\n` +
+              `Please open your NAWA dossier below and upload a corrected file/data:`;
+
+          await bot.api.sendMessage(targetUserId, studentMsg, {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📁 NAWA Hujjatlar Dosyesi" : "📁 NAWA Document Dossier", callback_data: "nawa_my_dossier" }],
+              ],
+            },
+          });
+        } catch {}
+
+        await ctx.reply(
+          `✅ <b>Izoh saqlandi va talabaga yuborildi!</b>\n\n` +
+            `Hujjat holati <b>'needs_correction' (Qayta yuklash kerak)</b> ga o'zgartirildi.`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "◀️ NAWA Arizasiga Qaytish", callback_data: `admin_view_nawa_by_user_${targetUserId}` }],
+                [{ text: "◀️ NAWA Arizalari Ro'yxati", callback_data: "admin_menu_nawa" }],
+              ],
+            },
+          }
+        );
         return;
       }
     }
@@ -1140,6 +1290,156 @@ export function setupTextInputHandler(bot: Bot) {
       }
     }
 
+    // 7b. Student NAWA Document / Text Data Submission
+    if (user.waitingFor === "nawa_document_upload") {
+      await cleanUpInput(ctx, userId);
+      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
+      if (nawaDocKey) {
+        const isUz = user.lang === "uz";
+        const def = defaultNawaDefinitions[nawaDocKey];
+        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
+
+        if (nawaDocKey === "email") {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(text.trim())) {
+            const warnMsg = await ctx.reply(
+              isUz
+                ? `⚠️ <b>Noto'g'ri email formati!</b>\n\nIltimos, to'g'ri email manzilini kiriting (masalan: <code>talaba@gmail.com</code>):`
+                : `⚠️ <b>Invalid email format!</b>\n\nPlease enter a valid email address (e.g. <code>student@gmail.com</code>):`,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: isUz ? "◀️ NAWA Dosyesiga Qaytish" : "◀️ Back to NAWA Dossier", callback_data: "nawa_my_dossier" }],
+                  ],
+                },
+              }
+            );
+            db.setLastPromptMsgId(userId, warnMsg.message_id);
+            return;
+          }
+
+          db.submitNawaDocument(userId, "email", { value: text.trim() });
+          db.setWaitingFor(userId, null);
+
+          await ctx.reply(
+            isUz
+              ? `✅ <b>Email Manzili Qabul Qilindi!</b>\n\n` +
+                `📧 <b>Email:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
+                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
+              : `✅ <b>Email Address Received!</b>\n\n` +
+                `📧 <b>Email:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
+                `<i>You will be notified as soon as counselors review your submission!</i>`,
+            {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+                ],
+              },
+            }
+          );
+          return;
+        }
+
+        if (nawaDocKey === "home_address") {
+          if (text.trim().length < 5) {
+            const warnMsg = await ctx.reply(
+              isUz
+                ? `⚠️ <b>Yashash manzili juda qisqa!</b>\n\nIltimos, to'liq yashash manzilingizni kiriting (Viloyat, shahar/tuman, ko'cha, uy):`
+                : `⚠️ <b>Address is too short!</b>\n\nPlease enter your full residential address:`,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: isUz ? "◀️ NAWA Dosyesiga Qaytish" : "◀️ Back to NAWA Dossier", callback_data: "nawa_my_dossier" }],
+                  ],
+                },
+              }
+            );
+            db.setLastPromptMsgId(userId, warnMsg.message_id);
+            return;
+          }
+
+          db.submitNawaDocument(userId, "home_address", { value: text.trim() });
+          db.setWaitingFor(userId, null);
+
+          await ctx.reply(
+            isUz
+              ? `✅ <b>Yashash Manzili Qabul Qilindi!</b>\n\n` +
+                `🏠 <b>Manzil:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
+                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
+              : `✅ <b>Home Address Received!</b>\n\n` +
+                `🏠 <b>Address:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
+                `<i>You will be notified as soon as counselors review your submission!</i>`,
+            {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+                ],
+              },
+            }
+          );
+          return;
+        }
+
+        // For file requirements: accept cloud links (Google Drive, OneDrive, etc.)
+        if (text.startsWith("http://") || text.startsWith("https://")) {
+          db.submitNawaDocument(userId, nawaDocKey, { value: text.trim(), fileType: "link" });
+          db.setWaitingFor(userId, null);
+
+          await ctx.reply(
+            isUz
+              ? `✅ <b>NAWA Hujjat Havolasi Qabul Qilindi!</b>\n\n` +
+                `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
+                `🔗 <b>Havola:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
+                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
+              : `✅ <b>NAWA Document Link Received!</b>\n\n` +
+                `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
+                `🔗 <b>Link:</b> <code>${escapeHtml(text.trim())}</code>\n` +
+                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
+                `<i>You will be notified as soon as counselors review your submission!</i>`,
+            {
+              parse_mode: "HTML",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
+                ],
+              },
+            }
+          );
+          return;
+        }
+
+        // If user typed plain text for file requirement
+        await ctx.reply(
+          isUz
+            ? `⚠️ <b>Fayl yoki fotosurat yuklash talab qilinadi!</b>\n\n` +
+              `Iltimos, <b>${escapeHtml(docName)}</b> uchun toza PDF fayl yoki sifatli fotosurat yuboring (yoki Google Drive havolasini yuboring).`
+            : `⚠️ <b>File or photo upload required!</b>\n\n` +
+              `Please send a clean PDF document or photo scan for <b>${escapeHtml(docName)}</b>.`,
+          {
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+              ],
+            },
+          }
+        );
+        return;
+      }
+    }
+
     // 8. Student Review - Step 2: Program -> Step 3: Text Prompt
     if (user.waitingFor === "student_review_program") {
       await cleanUpInput(ctx, userId);
@@ -1277,7 +1577,7 @@ export function setupTextInputHandler(bot: Bot) {
               [{ text: isUz ? "🔑 Qayta Kiritish" : "🔑 Try Again", callback_data: "premium_enter_code" }],
               [{
                 text: isUz ? "💬 Maslahatchidan Kod Olish" : "💬 Contact Advisor for Access Code",
-                url: "https://t.me/poland_admissions_bot",
+                url: `https://t.me/${config.advisorUsername}`,
               }],
               [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
             ],

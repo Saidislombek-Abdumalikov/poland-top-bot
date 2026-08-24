@@ -14,6 +14,8 @@ import {
   OfertaRecord,
   TestMaterial,
   NawaApplicationRecord,
+  NawaDocumentKey,
+  NawaDocumentRecord,
 } from "../types";
 
 export function getAdminDashboardKeyboard(
@@ -323,34 +325,48 @@ export function getAdminNawaListKeyboard(
 
 export function getAdminNawaDetailKeyboard(
   app: NawaApplicationRecord,
-  userDocs: Record<string, DocumentRecord> = {},
-  docDefs: Record<string, DocumentDefinition> = {},
+  nawaDocs: Partial<Record<NawaDocumentKey, NawaDocumentRecord>> = {},
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  // Document buttons for NAWA relevant docs (passport, diploma, apostille, translation)
-  const nawaDocKeys = ["passport", "diploma", "apostille", "translation"];
-  nawaDocKeys.forEach((key) => {
-    const def = docDefs[key];
-    const doc = userDocs[key];
-    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 18);
+  const items: { key: NawaDocumentKey; icon: string; nameUz: string; nameEn: string }[] = [
+    { key: "attestat", icon: "📜", nameUz: "Attestat (11-sinf)", nameEn: "Attestat (High School)" },
+    { key: "shahodatnoma", icon: "📜", nameUz: "Shahodatnoma (9-sinf)", nameEn: "Shahodatnoma (9th Grade)" },
+    { key: "email", icon: "📧", nameUz: "Email", nameEn: "Email" },
+    { key: "home_address", icon: "🏠", nameUz: "Yashash Manzili", nameEn: "Home Address" },
+    { key: "passport_red", icon: "📕", nameUz: "Pasport (qizil)", nameEn: "Passport (Red)" },
+  ];
 
-    if (doc && doc.status !== "missing") {
-      const icon = doc.status === "approved" ? "✅" : doc.status === "reviewing" ? "🟡" : "🔴";
-      kb.text(`${icon} ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-    } else {
-      kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-    }
+  items.forEach((item) => {
+    const doc = nawaDocs[item.key] || app.documents?.[item.key];
+    const status = doc?.status || "missing";
+    const statusIcon =
+      status === "approved"
+        ? "✅"
+        : status === "reviewing"
+        ? "🟡"
+        : status === "needs_correction"
+        ? "🔴"
+        : "⚪";
+
+    const name = isUz ? item.nameUz : item.nameEn;
+    kb.text(`${statusIcon} ${item.icon} ${name}`, `admin_view_nawa_doc_${app.userId}_${item.key}`).row();
   });
 
+  // Bulk approve all NAWA docs
+  kb.text(
+    isUz ? "✅ Barcha NAWA Hujjatlarini Tasdiqlash" : "✅ Approve All NAWA Documents",
+    `admin_approve_all_nawa_docs_${app.id}`
+  ).row();
+
   // Stage change buttons
-  kb.text(isUz ? "🟡 Holat: Topshirilgan" : "🟡 Set: Submitted", `admin_set_nawa_stage_${app.id}_Submitted`)
-    .text(isUz ? "🏛️ Holat: Baholanmoqda" : "🏛️ Set: Under Evaluation", `admin_set_nawa_stage_${app.id}_Under Evaluation`)
+  kb.text(isUz ? "🟡 Topshirilgan" : "🟡 Submitted", `admin_set_nawa_stage_${app.id}_Submitted`)
+    .text(isUz ? "🏛️ Baholanmoqda" : "🏛️ In Review", `admin_set_nawa_stage_${app.id}_Under Evaluation`)
     .row()
-    .text(isUz ? "✅ Holat: Qaror Chiqdi" : "✅ Set: Decision Issued", `admin_set_nawa_stage_${app.id}_Decision Issued`)
-    .text(isUz ? "🔴 Holat: Tuzatish Kerak" : "🔴 Set: Requires Action", `admin_set_nawa_stage_${app.id}_Requires Action`)
+    .text(isUz ? "✅ Qaror Chiqdi" : "✅ Decision Issued", `admin_set_nawa_stage_${app.id}_Decision Issued`)
+    .text(isUz ? "🔴 Tuzatish Kerak" : "🔴 Requires Action", `admin_set_nawa_stage_${app.id}_Requires Action`)
     .row()
     .text(isUz ? "💬 Maslahatchi Izohi Yuborish" : "💬 Send Feedback Note to Student", `admin_feedback_nawa_prompt_${app.id}`)
     .row()
