@@ -27,6 +27,7 @@ import {
   TestMaterial,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
+import { aiValidator } from "./aiValidation";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const DB_FILE = process.env.DB_FILE_PATH
@@ -669,6 +670,42 @@ export class DatabaseService {
         }
         if (defaults.lastName && current.lastName !== defaults.lastName) {
           current.lastName = defaults.lastName;
+          changed = true;
+        }
+        if (defaults.fullName && current.fullName !== defaults.fullName) {
+          current.fullName = defaults.fullName;
+          changed = true;
+        }
+        if (defaults.phone && current.phone !== defaults.phone) {
+          current.phone = defaults.phone;
+          changed = true;
+        }
+        if (defaults.preferredLevel && current.preferredLevel !== defaults.preferredLevel) {
+          current.preferredLevel = defaults.preferredLevel;
+          changed = true;
+        }
+        if (defaults.isRegistered !== undefined && current.isRegistered !== defaults.isRegistered) {
+          current.isRegistered = defaults.isRegistered;
+          changed = true;
+        }
+        if (defaults.isPremium !== undefined && current.isPremium !== defaults.isPremium) {
+          current.isPremium = defaults.isPremium;
+          changed = true;
+        }
+        if ("premiumTier" in defaults && defaults.premiumTier && current.premiumTier !== defaults.premiumTier) {
+          current.premiumTier = defaults.premiumTier;
+          changed = true;
+        }
+        if ("isAdmin" in defaults && current.isAdmin !== Boolean(defaults.isAdmin)) {
+          current.isAdmin = Boolean(defaults.isAdmin);
+          changed = true;
+        }
+        if ("isSuperAdmin" in defaults && current.isSuperAdmin !== Boolean(defaults.isSuperAdmin)) {
+          current.isSuperAdmin = Boolean(defaults.isSuperAdmin);
+          changed = true;
+        }
+        if ("adminRole" in defaults && current.adminRole !== defaults.adminRole) {
+          current.adminRole = defaults.adminRole;
           changed = true;
         }
       }
@@ -1633,6 +1670,55 @@ export class DatabaseService {
     return user;
   }
 
+  // ================= WORKFLOW ACCESS CONTROL =================
+  public validateWorkflowAccess(
+    userId: number,
+    workflow: "NAWA" | "UNIVERSITY_APPLICATION"
+  ): { allowed: boolean; reason?: string } {
+    const user = this.getUser(userId);
+    if (user.isAdmin || user.isSuperAdmin || user.adminRole === "admin" || user.adminRole === "super_admin") {
+      return { allowed: true };
+    }
+
+    if (workflow === "NAWA") {
+      // Allowed for NAWA ($15), NAWA_FULL ($60), Full Premium, VIP Admissions
+      if (
+        user.isPremium &&
+        (user.premiumTier === "NAWA" ||
+          user.premiumTier === "NAWA_FULL" ||
+          user.premiumTier === "Full Premium" ||
+          user.premiumTier === "VIP Admissions")
+      ) {
+        return { allowed: true };
+      }
+      return {
+        allowed: false,
+        reason: "NAWA access required. Please activate NAWA or Full Package.",
+      };
+    }
+
+    if (workflow === "UNIVERSITY_APPLICATION") {
+      // Allowed ONLY for Full Package (NAWA_FULL, Full Premium, VIP Admissions). NAWA-only is strictly blocked!
+      if (
+        user.isPremium &&
+        (user.premiumTier === "NAWA_FULL" ||
+          user.premiumTier === "Full Premium" ||
+          user.premiumTier === "VIP Admissions")
+      ) {
+        return { allowed: true };
+      }
+      return {
+        allowed: false,
+        reason:
+          user.premiumTier === "NAWA"
+            ? "Your current package is NAWA-only. Please upgrade to Full Application + NAWA package to submit university documents."
+            : "Full Application package required. Please activate Full Application + NAWA package.",
+      };
+    }
+
+    return { allowed: false, reason: "Invalid workflow" };
+  }
+
   // ================= DOCUMENTS SUBMISSION CRUD =================
   public submitDocument(
     userId: number,
@@ -1644,12 +1730,22 @@ export class DatabaseService {
       fileType: "document" | "photo" | "link";
     }
   ): DocumentRecord {
+    const access = this.validateWorkflowAccess(userId, "UNIVERSITY_APPLICATION");
+    if (!access.allowed) {
+      throw new Error(access.reason || "Unauthorized workflow access");
+    }
+
     const user = this.getUser(userId);
     if (!user.documents) user.documents = {};
 
     const docDefs = this.getDocumentDefinitions();
     const def = docDefs[docKey];
     const docName = def ? def.name : { en: docKey, uz: docKey };
+
+    // Run temporary AI validation (with auto-cleanup of temp buffers/payloads)
+    try {
+      aiValidator.validateDocument(docKey, submission);
+    } catch {}
 
     const doc: DocumentRecord = {
       id: docKey,
@@ -1881,6 +1977,32 @@ export class DatabaseService {
     return result;
   }
 
+  public getPendingNawaDocuments(): {
+    userId: number;
+    user: UserSessionData;
+    docKey: NawaDocumentKey;
+    doc: NawaDocumentRecord;
+  }[] {
+    const results: {
+      userId: number;
+      user: UserSessionData;
+      docKey: NawaDocumentKey;
+      doc: NawaDocumentRecord;
+    }[] = [];
+    Object.values(this.data.users || {}).forEach((u) => {
+      if (this.isSuperAdminUser(u)) return;
+      if (u.nawaDocuments) {
+        (Object.keys(u.nawaDocuments) as NawaDocumentKey[]).forEach((k) => {
+          const d = u.nawaDocuments![k];
+          if (d && d.status === "reviewing") {
+            results.push({ userId: u.userId, user: u, docKey: k, doc: d });
+          }
+        });
+      }
+    });
+    return results;
+  }
+
   public submitNawaDocument(
     userId: number,
     docKey: NawaDocumentKey,
@@ -1891,8 +2013,23 @@ export class DatabaseService {
       value?: string;
     }
   ): NawaDocumentRecord {
+    const access = this.validateWorkflowAccess(userId, "NAWA");
+    if (!access.allowed) {
+      throw new Error(access.reason || "Unauthorized NAWA access");
+    }
+
     const user = this.getUser(userId);
     if (!user.nawaDocuments) user.nawaDocuments = {};
+
+    // Run temporary AI validation (with auto-cleanup of temp buffers/payloads)
+    try {
+      aiValidator.validateDocument(docKey, {
+        fileId: data.fileId,
+        fileName: data.fileName,
+        fileType: data.fileType || "document",
+        value: data.value,
+      });
+    } catch {}
 
     const now = new Date().toISOString();
     const docRecord: NawaDocumentRecord = {

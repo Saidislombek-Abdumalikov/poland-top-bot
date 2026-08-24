@@ -511,6 +511,7 @@ export function setupTextInputHandler(bot: Bot) {
             usersCount: db.getAllUsers().length,
             appsCount: db.getAllApplications().length,
             pendingDocsCount: db.getPendingDocuments().length,
+            pendingNawaDocsCount: db.getPendingNawaDocuments().length,
             nawaCount: db.getAllNawaApplications().length,
             reviewsCount: db.getAllReviews().length,
             adminsCount: db.getAllAdmins(false).length,

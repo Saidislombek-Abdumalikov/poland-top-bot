@@ -170,8 +170,18 @@ async function runSecurityTestSuite() {
     const studentId = 777701;
     const superAdminId = 777702;
 
-    db.getUser(studentId, { fullName: "UniqueStudentAlpha", isRegistered: true });
-    db.getUser(superAdminId, { fullName: "Master Super Admin", isSuperAdmin: true, adminRole: "super_admin" });
+    db.getUser(studentId, {
+      fullName: "UniqueStudentAlpha",
+      isRegistered: true,
+      isAdmin: false,
+      isSuperAdmin: false,
+      adminRole: undefined,
+    });
+    db.getUser(superAdminId, {
+      fullName: "Master Super Admin",
+      isSuperAdmin: true,
+      adminRole: "super_admin",
+    });
 
     const allUsers = db.getAllUsers();
     assert.equal(allUsers.some((u) => u.userId === superAdminId), false, "Super Admin MUST NOT be in getAllUsers()");
@@ -275,7 +285,12 @@ async function runSecurityTestSuite() {
   // 8. Oferta Acceptance Immortality & Registration Lock
   test("Accepted Oferta immortality preserves registration and prevents repeated prompts on restart", () => {
     const studentId = 500201;
-    db.getUser(studentId, { fullName: "Dilshod Aliyev", phone: "+998909998877", preferredLevel: "Bachelor" });
+    db.getUser(studentId, {
+      fullName: "Dilshod Aliyev",
+      phone: "+998909998877",
+      preferredLevel: "Bachelor",
+      isRegistered: false,
+    });
 
     // Initial state: not registered until Oferta is accepted
     assert.equal(db.getUser(studentId).isRegistered, false);

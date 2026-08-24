@@ -45,6 +45,9 @@ import {
   getAdminDeleteTestConfirmKeyboard,
   getAdminNawaListKeyboard,
   getAdminNawaDetailKeyboard,
+  getAdminNawaHubKeyboard,
+  getAdminPendingNawaDocsKeyboard,
+  getAdminNawaDocReviewKeyboard,
 } from "../keyboards/adminKeyboards";
 import { AppStage, DocStatus, Language, NawaApplicationRecord, NawaDocumentKey } from "../types";
 import { escapeHtml } from "../utils/format";
@@ -80,6 +83,7 @@ export function setupAdminHandler(bot: Bot) {
     const users = db.getAllUsers();
     const apps = db.getAllApplications();
     const pendingDocs = db.getPendingDocuments();
+    const pendingNawaDocs = db.getPendingNawaDocuments();
     const nawaApps = db.getAllNawaApplications();
     const allRevs = db.getAllReviews();
     const pendingRevs = db.getPendingReviews();
@@ -92,8 +96,8 @@ export function setupAdminHandler(bot: Bot) {
         `📊 <b>Tizim Statistikasi:</b>\n` +
         `• 👥 Ro'yxatdan o'tgan talabalar: <b>${users.length}</b> ta\n` +
         `• 📋 Universitet arizalari: <b>${apps.length}</b> ta\n` +
-        `• 📁 Tasdiqlash kutilayotgan hujjatlar: <b>${pendingDocs.length}</b> ta\n` +
-        `• 🏛️ NAWA arizalari: <b>${nawaApps.length}</b> ta\n` +
+        `• 📁 Universitet hujjatlari navbati: <b>${pendingDocs.length}</b> ta kutilmoqda\n` +
+        `• 🏛️ NAWA: <b>${nawaApps.length}</b> ta ariza (<b>${pendingNawaDocs.length}</b> ta hujjat kutilmoqda)\n` +
         `• ⭐ Talabalar sharhlari: <b>${allRevs.length} ta (${pendingRevs.length} ta kutilmoqda)</b>\n\n` +
         `<i>Boshqarish uchun quyidagi bo'limlardan birini tanlang:</i>`
       : `🎛️ <b>PTU Admin CRM Dashboard</b>\n` +
@@ -101,8 +105,8 @@ export function setupAdminHandler(bot: Bot) {
         `📊 <b>Live System Overview:</b>\n` +
         `• 👥 Registered Students: <b>${users.length}</b>\n` +
         `• 📋 University Applications: <b>${apps.length}</b>\n` +
-        `• 📁 Documents Awaiting Review: <b>${pendingDocs.length}</b>\n` +
-        `• 🏛️ NAWA Applications: <b>${nawaApps.length}</b>\n` +
+        `• 📁 University Docs Queue: <b>${pendingDocs.length}</b> pending\n` +
+        `• 🏛️ NAWA Hub: <b>${nawaApps.length}</b> apps (<b>${pendingNawaDocs.length}</b> docs pending)\n` +
         `• ⭐ Student Reviews: <b>${allRevs.length} (${pendingRevs.length} pending)</b>\n\n` +
         `<i>Select a management section below:</i>`;
 
@@ -111,6 +115,7 @@ export function setupAdminHandler(bot: Bot) {
         usersCount: users.length,
         appsCount: apps.length,
         pendingDocsCount: pendingDocs.length,
+        pendingNawaDocsCount: pendingNawaDocs.length,
         nawaCount: nawaApps.length,
         reviewsCount: allRevs.length,
         adminsCount: db.getAllAdmins(isSuper).length,
@@ -866,8 +871,114 @@ export function setupAdminHandler(bot: Bot) {
     db.setLastPromptMsgId(userId, msg.message_id);
   });
 
-  // ================= NAWA APPLICATIONS CRM =================
+  // ================= NAWA HUB & SEPARATE FLOWS =================
   bot.callbackQuery("admin_menu_nawa", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const nawaApps = db.getAllNawaApplications();
+    const pendingNawaDocs = db.getPendingNawaDocuments();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `🏛️ <b>NAWA Nostrifikatsiya Boshqaruvi</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 📋 Jami NAWA Arizalari: <b>${nawaApps.length}</b> ta\n` +
+        `• 📁 Tekshiruv Kutilayotgan NAWA Hujjatlari: <b>${pendingNawaDocs.length}</b> ta\n\n` +
+        `<i>Kerakli bo'limni tanlang:</i>`
+      : `🏛️ <b>NAWA Legalization Management Hub</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `• 📋 Total NAWA Applications: <b>${nawaApps.length}</b>\n` +
+        `• 📁 NAWA Documents Pending Review: <b>${pendingNawaDocs.length}</b>\n\n` +
+        `<i>Select a section below:</i>`;
+
+    const kb = getAdminNawaHubKeyboard(nawaApps.length, pendingNawaDocs.length, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  // NAWA Document Review Queue
+  bot.callbackQuery("admin_nawa_queue", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const pendingDocs = db.getPendingNawaDocuments();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `📁 <b>NAWA Kutilayotgan Hujjatlar Navbati (${pendingDocs.length} ta kutilmoqda)</b>\n\n` +
+        `<i>Hujjatni tekshirish, tasdiqlash yoki qaytarish uchun ro'yxatdan tanlang:</i>`
+      : `📁 <b>NAWA Pending Documents Review Queue (${pendingDocs.length} pending)</b>\n\n` +
+        `<i>Select a NAWA document below to review, approve, or request revision:</i>`;
+
+    const kb = getAdminPendingNawaDocsKeyboard(pendingDocs, 0, 6, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  bot.callbackQuery(/^admin_nawa_queue_page_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_nawa_queue_page_(\d+)$/);
+    if (!match) return;
+    const page = parseInt(match[1], 10);
+    const userId = ctx.from?.id;
+    if (!userId || !checkAdminAuth(userId)) return;
+    const adminUser = db.getUser(userId);
+    const isUz = adminUser.lang === "uz";
+
+    const pendingDocs = db.getPendingNawaDocuments();
+    await ctx.answerCallbackQuery();
+
+    const text = isUz
+      ? `📁 <b>NAWA Kutilayotgan Hujjatlar Navbati (${pendingDocs.length} ta kutilmoqda)</b>\n\n<i>${page + 1}-sahifa:</i>`
+      : `📁 <b>NAWA Pending Documents Review Queue (${pendingDocs.length} pending)</b>\n\n<i>Page ${page + 1}:</i>`;
+
+    const kb = getAdminPendingNawaDocsKeyboard(pendingDocs, page, 6, adminUser.lang);
+
+    if (ctx.callbackQuery?.message) {
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: "HTML",
+          reply_markup: kb,
+        });
+        return;
+      } catch {}
+    }
+    await ctx.reply(text, {
+      parse_mode: "HTML",
+      reply_markup: kb,
+    });
+  });
+
+  // NAWA Applications List
+  bot.callbackQuery("admin_nawa_apps", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId || !checkAdminAuth(userId)) return;
     const adminUser = db.getUser(userId);
@@ -877,10 +988,10 @@ export function setupAdminHandler(bot: Bot) {
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `🏛️ <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n` +
-        `<i>Talabaning NAWA arizasi, topshirgan hujjatlari va bosqichini boshqarish uchun arizani tanlang:</i>`
-      : `🏛️ <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n` +
-        `<i>Select any NAWA application below to inspect documents, update legalization stage, or send notes:</i>`;
+      ? `📋 <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n` +
+        `<i>Talabaning NAWA jarayoni va 5 ta hujjat dosyesini ko'rish uchun arizani tanlang:</i>`
+      : `📋 <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n` +
+        `<i>Select any NAWA application below to inspect the student's 5-document dossier and stage:</i>`;
 
     const kb = getAdminNawaListKeyboard(nawaApps, 0, 6, adminUser.lang);
 
@@ -912,8 +1023,8 @@ export function setupAdminHandler(bot: Bot) {
     await ctx.answerCallbackQuery();
 
     const text = isUz
-      ? `🏛️ <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n<i>${page + 1}-sahifa:</i>`
-      : `🏛️ <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n<i>Page ${page + 1}:</i>`;
+      ? `📋 <b>NAWA Nostrifikatsiya Arizalari (${nawaApps.length} ta)</b>\n\n<i>${page + 1}-sahifa:</i>`
+      : `📋 <b>NAWA Legalization Applications (${nawaApps.length} total)</b>\n\n<i>Page ${page + 1}:</i>`;
 
     const kb = getAdminNawaListKeyboard(nawaApps, page, 6, adminUser.lang);
 
@@ -1042,11 +1153,7 @@ export function setupAdminHandler(bot: Bot) {
 
     await ctx.answerCallbackQuery();
 
-    const kb = new InlineKeyboard()
-      .text(isUz ? "✅ Tasdiqlash" : "✅ Approve", `admin_approve_nawa_doc_${targetUserId}_${docKey}`)
-      .text(isUz ? "🔴 Qayta Yuklashni So'rash" : "🔴 Request Correction", `admin_reject_nawa_doc_feedback_prompt_${targetUserId}_${docKey}`)
-      .row()
-      .text(isUz ? "◀️ NAWA Arizasiga Qaytish" : "◀️ Back to NAWA Application", `admin_view_nawa_by_user_${targetUserId}`);
+    const kb = getAdminNawaDocReviewKeyboard(targetUserId, docKey, adminUser?.lang);
 
     const statusBadge =
       doc?.status === "approved"
@@ -1164,9 +1271,77 @@ export function setupAdminHandler(bot: Bot) {
           ? getAdminNawaDetailKeyboard(nawaApp, nawaDocs, adminUser?.lang)
           : {
               inline_keyboard: [
-                [{ text: "◀️ NAWA Arizalari Ro'yxati", callback_data: "admin_menu_nawa" }],
+                [{ text: "◀️ NAWA Navbatiga Qaytish", callback_data: "admin_nawa_queue" }],
+                [{ text: "◀️ NAWA Arizalari Ro'yxati", callback_data: "admin_nawa_apps" }],
               ],
             },
+      }
+    );
+  });
+
+  // Admin Direct Reject Individual NAWA Document (sets to needs_correction)
+  bot.callbackQuery(/^admin_reject_nawa_doc_direct_(\d+)_(.+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^admin_reject_nawa_doc_direct_(\d+)_(.+)$/);
+    if (!match) return;
+    const targetUserId = parseInt(match[1], 10);
+    const docKey = match[2] as NawaDocumentKey;
+    const adminId = ctx.from?.id;
+    if (!adminId || !checkAdminAuth(adminId)) return;
+    const adminUser = db.getUser(adminId);
+    const isUz = adminUser.lang === "uz";
+
+    const defaultReason = isUz
+      ? "Hujjat talabga javob bermaydi yoki sifat past. Iltimos, qayta tekshirib yuklang."
+      : "Document does not meet specifications or scan quality is low. Please re-upload.";
+
+    db.rejectNawaDocument(targetUserId, docKey, defaultReason, adminId);
+    await ctx.answerCallbackQuery({ text: "NAWA document rejected (needs correction)" });
+
+    const def = defaultNawaDefinitions[docKey];
+    const docName = def ? (isUz ? def.name.uz : def.name.en) : docKey;
+
+    db.logAdminAction(
+      adminId,
+      adminUser.fullName || adminUser.username || `Admin #${adminId}`,
+      "NAWA_DOC_REJECT_DIRECT",
+      `Directly requested correction for NAWA document '${docKey}' for Student #${targetUserId}`,
+      `Student #${targetUserId}`
+    );
+
+    // Notify student
+    try {
+      const student = db.getUser(targetUserId);
+      const studentIsUz = student.lang === "uz";
+      const studentMsg = studentIsUz
+        ? `⚠️ <b>NAWA Hujjatini Qayta Yuklash Talab Qilinadi!</b>\n\n` +
+          `• 📄 <b>Hujjat:</b> <b>${escapeHtml(def ? def.name.uz : docKey)}</b>\n` +
+          `• 💬 <b>Holati:</b> Qayta yuklash kerak (Tuzatishda)\n\n` +
+          `Iltimos, NAWA dosyesiga o'ting va ushbu hujjatni qayta yuklang:`
+        : `⚠️ <b>NAWA Document Correction Required!</b>\n\n` +
+          `• 📄 <b>Document:</b> <b>${escapeHtml(def ? def.name.en : docKey)}</b>\n` +
+          `• 💬 <b>Status:</b> Correction Required\n\n` +
+          `Please open your NAWA dossier and re-upload this document:`;
+
+      await bot.api.sendMessage(targetUserId, studentMsg, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: studentIsUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
+          ],
+        },
+      });
+    } catch {}
+
+    await ctx.reply(
+      `🔴 <b>NAWA Hujjati '${escapeHtml(docName)}' rad etildi (qayta yuklash talab qilindi)!</b>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "◀️ NAWA Navbatiga Qaytish", callback_data: "admin_nawa_queue" }],
+            [{ text: "◀️ NAWA Arizasiga Qaytish", callback_data: `admin_view_nawa_by_user_${targetUserId}` }],
+          ],
+        },
       }
     );
   });

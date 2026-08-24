@@ -17,12 +17,14 @@ import {
   NawaDocumentKey,
   NawaDocumentRecord,
 } from "../types";
+import { defaultNawaDefinitions } from "../services/db";
 
 export function getAdminDashboardKeyboard(
   stats: {
     usersCount: number;
     appsCount: number;
     pendingDocsCount: number;
+    pendingNawaDocsCount?: number;
     nawaCount: number;
     reviewsCount?: number;
     adminsCount?: number;
@@ -32,29 +34,28 @@ export function getAdminDashboardKeyboard(
   isSuperAdminUser: boolean = false
 ): InlineKeyboard {
   const isUz = lang === "uz";
-
   const kb = new InlineKeyboard();
 
   if (isSuperAdminUser) {
     kb.text(
-      isUz ? `👑 SUPER ADMIN HQ (Master Loglar & Boshqaruv)` : `👑 SUPER ADMIN HQ (Logs & Master Control)`,
+      isUz ? `🛡️ Tizim Boshqaruvi & Loglar` : `🛡️ System Operations & Logs`,
       "admin_super_hq"
     ).row();
   }
 
-  kb.text(isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Users CRM (${stats.usersCount})`, "admin_menu_users")
-    .text(isUz ? `📋 Arizalar (${stats.appsCount})` : `📋 Applications (${stats.appsCount})`, "admin_menu_apps")
+  kb.text(isUz ? `📋 Universitet Arizalari (${stats.appsCount})` : `📋 Uni Applications (${stats.appsCount})`, "admin_menu_apps")
+    .text(isUz ? `📁 Hujjatlar Navbati (${stats.pendingDocsCount})` : `📁 Doc Queue (${stats.pendingDocsCount})`, "admin_menu_docs")
     .row()
-    .text(isUz ? `📁 Hujjatlar (${stats.pendingDocsCount} ta kutilmoqda)` : `📁 Review Queue (${stats.pendingDocsCount})`, "admin_menu_docs")
-    .text(isUz ? `🏛️ NAWA Arizalari (${stats.nawaCount})` : `🏛️ NAWA Apps (${stats.nawaCount})`, "admin_menu_nawa")
+    .text(isUz ? `🏛️ NAWA Boshqaruvi (${stats.nawaCount} ariza)` : `🏛️ NAWA Hub (${stats.nawaCount} apps)`, "admin_menu_nawa")
+    .text(isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Users CRM (${stats.usersCount})`, "admin_menu_users")
     .row()
-    .text(isUz ? `🏛️ Universitetlar Boshqaruvi` : `🏛️ Manage Universities`, "admin_menu_manage_unis")
+    .text(isUz ? `🏛️ Universitetlar` : `🏛️ Universities`, "admin_menu_manage_unis")
     .text(isUz ? `📑 Hujjat Turlari` : `📑 Document Types`, "admin_menu_manage_docdefs")
     .row()
     .text(isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`, "admin_menu_reviews")
     .text(isUz ? `⚡ Promokodlar` : `⚡ Promo Codes`, "admin_menu_promos")
     .row()
-    .text(isUz ? `📝 Testlar Boshqaruvi` : `📝 Manage Test Materials`, "admin_menu_tests")
+    .text(isUz ? `📝 Testlar` : `📝 Test Materials`, "admin_menu_tests")
     .text(isUz ? `📢 Global Xabar` : `📢 Broadcast`, "admin_broadcast_start")
     .row()
     .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
@@ -277,6 +278,93 @@ export function getAdminPendingDocsKeyboard(
     .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
 
   return kb;
+}
+
+export function getAdminNawaHubKeyboard(
+  appsCount: number,
+  pendingCount: number,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(
+      isUz ? `📁 NAWA Hujjatlar Navbati (${pendingCount} ta kutilmoqda)` : `📁 NAWA Review Queue (${pendingCount} pending)`,
+      "admin_nawa_queue"
+    )
+    .row()
+    .text(
+      isUz ? `📋 NAWA Arizalari (${appsCount} ta ariza)` : `📋 NAWA Applications (${appsCount} total)`,
+      "admin_nawa_apps"
+    )
+    .row()
+    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+}
+
+export function getAdminPendingNawaDocsKeyboard(
+  pendingDocs: {
+    userId: number;
+    user: UserSessionData;
+    docKey: NawaDocumentKey;
+    doc: NawaDocumentRecord;
+  }[],
+  page: number = 0,
+  pageSize: number = 6,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  const kb = new InlineKeyboard();
+
+  if (pendingDocs.length === 0) {
+    kb.text(
+      isUz
+        ? "🎉 NAWA navbatida hujjatlar yo'q (Barchasi tekshirilgan)"
+        : "🎉 No pending NAWA documents (All reviewed)",
+      "admin_nawa_apps"
+    ).row();
+  } else {
+    const start = page * pageSize;
+    const pageItems = pendingDocs.slice(start, start + pageSize);
+
+    pageItems.forEach((item) => {
+      const u = item.user;
+      const name = u.fullName || u.firstName || `User #${item.userId}`;
+      const docDef = defaultNawaDefinitions[item.docKey];
+      const docName = (docDef ? (isUz ? docDef.name.uz : docDef.name.en) : item.docKey).slice(0, 16);
+
+      kb.text(
+        `🟡 ${name.slice(0, 14)} — ${docName}`,
+        `admin_view_nawa_doc_${item.userId}_${item.docKey}`
+      ).row();
+    });
+
+    const totalPages = Math.ceil(pendingDocs.length / pageSize) || 1;
+    if (page > 0) kb.text("⬅️ Prev", `admin_nawa_queue_page_${page - 1}`);
+    if (page < totalPages - 1) kb.text("Next ➡️", `admin_nawa_queue_page_${page + 1}`);
+    if (page > 0 || page < totalPages - 1) kb.row();
+  }
+
+  kb.text(isUz ? "📋 NAWA Arizalari" : "📋 NAWA Applications", "admin_nawa_apps")
+    .text(isUz ? "🏛️ NAWA Boshqaruv" : "🏛️ NAWA Hub", "admin_menu_nawa")
+    .row()
+    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+
+  return kb;
+}
+
+export function getAdminNawaDocReviewKeyboard(
+  userId: number,
+  docKey: NawaDocumentKey,
+  lang: Language = "en"
+): InlineKeyboard {
+  const isUz = lang === "uz";
+  return new InlineKeyboard()
+    .text(isUz ? "✅ Tasdiqlash (Qabul)" : "✅ Approve (Verified)", `admin_approve_nawa_doc_${userId}_${docKey}`)
+    .text(isUz ? "🔴 Rad Etish (To'g'ridan)" : "🔴 Reject (Direct)", `admin_reject_nawa_doc_direct_${userId}_${docKey}`)
+    .row()
+    .text(isUz ? "💬 Sabab Izohi Bilan Rad Etish" : "💬 Reject with Feedback Note", `admin_reject_nawa_doc_feedback_prompt_${userId}_${docKey}`)
+    .row()
+    .text(isUz ? "🏛️ NAWA Arizasini Ko'rish" : "🏛️ View NAWA Application", `admin_view_nawa_by_user_${userId}`)
+    .text(isUz ? "◀️ NAWA Navbatiga" : "◀️ Back to NAWA Queue", "admin_nawa_queue");
 }
 
 export function getAdminNawaListKeyboard(

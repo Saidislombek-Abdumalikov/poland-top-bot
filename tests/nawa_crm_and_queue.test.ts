@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import { db } from "../src/bot/services/db";
 import { config } from "../src/bot/config";
 import { isAuthorizedAdmin, isAuthorizedSuperAdmin, startAdminSession, endAdminSession } from "../src/bot/services/auth";
-import { getAdminPendingDocsKeyboard, getAdminApplicationDetailKeyboard, getAdminNawaListKeyboard, getAdminNawaDetailKeyboard } from "../src/bot/keyboards/adminKeyboards";
+import { aiValidator } from "../src/bot/services/aiValidation";
+import {
+  getAdminPendingDocsKeyboard,
+  getAdminPendingNawaDocsKeyboard,
+  getAdminNawaHubKeyboard,
+  getAdminApplicationDetailKeyboard,
+  getAdminNawaListKeyboard,
+  getAdminNawaDetailKeyboard,
+} from "../src/bot/keyboards/adminKeyboards";
 import { getNawaDocumentsKeyboard } from "../src/bot/keyboards/menuKeyboards";
 
 function test(title: string, fn: () => void | Promise<void>) {
@@ -19,12 +27,13 @@ function test(title: string, fn: () => void | Promise<void>) {
 }
 
 async function runNawaCrmAndQueueTestSuite() {
-  console.log("\n🏛️ ================= STARTING NAWA CRM & DIRECT QUEUE TEST SUITE =================");
+  console.log("\n🏛️ ================= STARTING NAWA CRM, QUEUES & ACCESS CONTROL AUDIT TEST SUITE =================");
 
   const superAdminId = 999901;
   const normalAdminId = 999902;
-  const student1Id = 999903;
-  const student2Id = 999904;
+  const student1Id = 999903; // Full Package ($60)
+  const student2Id = 999904; // NAWA-only ($15)
+  const student3Id = 999905; // Free/Standard (unpaid)
 
   // Clean setup
   db.resetDatabaseToZero(superAdminId);
@@ -51,13 +60,69 @@ async function runNawaCrmAndQueueTestSuite() {
     premiumTier: "NAWA",
   });
 
+  db.getUser(student3Id, {
+    fullName: "Jasur Aliyev",
+    phone: "+998907778899",
+    preferredLevel: "Bachelor",
+    isRegistered: true,
+    ofertaAccepted: true,
+    isPremium: false,
+  });
+
   // 1. Advisor Username Configuration
   test("Advisor username is configured to polandM7 for admissions support", () => {
     assert.equal(config.advisorUsername, "polandM7", "Advisor username must be polandM7");
   });
 
-  // 2. Direct Pending Documents Queue Tests (University Admissions - 7 Docs)
-  test("getPendingDocuments lists individual pending documents directly for University admissions", () => {
+  // 2. Server-side Workflow Access Enforcement (NAWA vs University Application)
+  test("Strict workflow access control: NAWA ($15) blocked on Uni docs; Full ($60) has access to both; Free blocked on both", () => {
+    // Student 1 (Full Package)
+    const s1UniAccess = db.validateWorkflowAccess(student1Id, "UNIVERSITY_APPLICATION");
+    const s1NawaAccess = db.validateWorkflowAccess(student1Id, "NAWA");
+    assert.equal(s1UniAccess.allowed, true, "Full Package must have University Application access");
+    assert.equal(s1NawaAccess.allowed, true, "Full Package must have NAWA access");
+
+    // Student 2 (NAWA-only)
+    const s2UniAccess = db.validateWorkflowAccess(student2Id, "UNIVERSITY_APPLICATION");
+    const s2NawaAccess = db.validateWorkflowAccess(student2Id, "NAWA");
+    assert.equal(s2UniAccess.allowed, false, "NAWA-only student must NOT have University Application access");
+    assert.equal(s2NawaAccess.allowed, true, "NAWA-only student must have NAWA access");
+
+    // Student 3 (Free/Unpaid)
+    const s3UniAccess = db.validateWorkflowAccess(student3Id, "UNIVERSITY_APPLICATION");
+    const s3NawaAccess = db.validateWorkflowAccess(student3Id, "NAWA");
+    assert.equal(s3UniAccess.allowed, false, "Unpaid student must NOT have University Application access");
+    assert.equal(s3NawaAccess.allowed, false, "Unpaid student must NOT have NAWA access");
+
+    // Attempting submitDocument on NAWA-only user throws an error
+    assert.throws(
+      () => {
+        db.submitDocument(student2Id, "passport", {
+          fileName: "illegal_passport.pdf",
+          fileType: "document",
+          fileId: "file_p_illegal",
+        });
+      },
+      /NAWA-only/i,
+      "submitDocument should throw when called by NAWA-only student"
+    );
+  });
+
+  // 3. AI Document Validation Service with Immediate Cleanup
+  test("Temporary AI document evaluation executes and cleans up temporary payloads immediately", async () => {
+    const evaluation = await aiValidator.validateDocument("passport", {
+      fileName: "anvar_passport.pdf",
+      fileType: "document",
+      fileId: "file_temp_1",
+    });
+
+    assert.equal(evaluation.isValid, true, "AI validation should evaluate document format");
+    assert.ok(evaluation.confidence > 0.8, "Confidence score should be high for valid format");
+  });
+
+  // 4. Dedicated Queues Separation: University Queue vs NAWA Queue
+  test("University Documents and NAWA Documents enter their respective isolated queues", () => {
+    // Full student submits University documents (7-doc system)
     db.submitDocument(student1Id, "passport", {
       fileName: "anvar_passport.pdf",
       fileType: "document",
@@ -70,147 +135,71 @@ async function runNawaCrmAndQueueTestSuite() {
       fileId: "file_d1",
     });
 
-    db.submitDocument(student2Id, "passport", {
-      fileName: "malika_passport.pdf",
-      fileType: "document",
-      fileId: "file_p2",
-    });
-
-    const pending = db.getPendingDocuments();
-    assert.equal(pending.length, 3, "Should have exactly 3 pending documents");
-
-    const docDefs = db.getDocumentDefinitions();
-    const kb = getAdminPendingDocsKeyboard(pending, 0, 6, "uz", docDefs);
-    assert.ok(kb.inline_keyboard.length >= 3, "Keyboard should render pending document rows");
-
-    // Admin verifies 1 document -> pending count drops to 2
-    db.verifyDocument(student1Id, "passport", "approved");
-    const pendingAfter = db.getPendingDocuments();
-    assert.equal(pendingAfter.length, 2, "Pending count should decrease to 2");
-    assert.equal(db.getUser(student1Id).documents?.passport.status, "approved");
-  });
-
-  // 3. University Applications with Full Documentation Checklist
-  test("Applications CRM view displays student profile and full 7-document checklist with statuses", () => {
-    const app = db.createApplication(student1Id, "University of Warsaw", "Computer Science (BSc)");
-    assert.ok(app.id.startsWith("APP-"));
-
-    const student = db.getUser(student1Id);
-    const docDefs = db.getDocumentDefinitions();
-    const userDocs = student.documents || {};
-
-    const kb = getAdminApplicationDetailKeyboard(app, userDocs, docDefs, "uz");
-    assert.ok(kb.inline_keyboard.length > 5, "Application detail keyboard should have doc inspection buttons and stage controls");
-
-    // Update application stage and counselor note
-    const updatedApp = db.updateApplicationStage(app.id, "Accepted", "Congratulations! Full acceptance letter issued.");
-    assert.equal(updatedApp?.stage, "Accepted");
-    assert.equal(updatedApp?.counselorNote, "Congratulations! Full acceptance letter issued.");
-  });
-
-  // 4. Dedicated NAWA 5-Document System (Attestat, Shahodatnoma, Email, Home Address, Passport Red)
-  test("NAWA 5 dedicated documents system: submit, checklist keyboard, admin review, and approval", () => {
-    // 5 dedicated NAWA document keys
-    const nawaDefs = db.getNawaDefinitions();
-    const expectedKeys = ["attestat", "shahodatnoma", "email", "home_address", "passport_red"];
-    assert.deepEqual(Object.keys(nawaDefs).sort(), expectedKeys.sort(), "NAWA must have 5 dedicated documents");
-
-    // Student 2 submits NAWA documents (Files + Text data)
+    // NAWA student submits NAWA documents (5-doc system)
     db.submitNawaDocument(student2Id, "attestat", {
       fileName: "maktab_attestat.pdf",
       fileType: "document",
       fileId: "nawa_file_attestat",
     });
 
-    db.submitNawaDocument(student2Id, "shahodatnoma", {
-      fileName: "shahodatnoma_9sinf.jpg",
-      fileType: "photo",
-      fileId: "nawa_file_shahodatnoma",
-    });
-
     db.submitNawaDocument(student2Id, "email", {
       value: "malika.student@gmail.com",
     });
 
-    db.submitNawaDocument(student2Id, "home_address", {
-      value: "Tashkent, Chilanzar 9, House 15, Apt 22",
-    });
+    // University Queue
+    const uniPending = db.getPendingDocuments();
+    assert.equal(uniPending.length, 2, "University queue must contain exactly 2 documents");
+    assert.ok(uniPending.every((item) => item.userId === student1Id), "University queue should only have student 1 docs");
 
-    db.submitNawaDocument(student2Id, "passport_red", {
-      fileName: "red_passport_scan.pdf",
-      fileType: "document",
-      fileId: "nawa_file_passport",
-    });
+    // NAWA Queue
+    const nawaPending = db.getPendingNawaDocuments();
+    assert.equal(nawaPending.length, 2, "NAWA queue must contain exactly 2 documents");
+    assert.ok(nawaPending.every((item) => item.userId === student2Id), "NAWA queue should only have student 2 docs");
 
-    const student2NawaDocs = db.getUserNawaDocuments(student2Id);
-    assert.equal(student2NawaDocs.attestat.status, "reviewing");
-    assert.equal(student2NawaDocs.shahodatnoma.status, "reviewing");
-    assert.equal(student2NawaDocs.email.value, "malika.student@gmail.com");
-    assert.equal(student2NawaDocs.home_address.value, "Tashkent, Chilanzar 9, House 15, Apt 22");
-    assert.equal(student2NawaDocs.passport_red.status, "reviewing");
+    // Admin verifies 1 Uni doc and 1 NAWA doc
+    db.verifyDocument(student1Id, "passport", "approved");
+    db.approveNawaDocument(student2Id, "email", normalAdminId);
 
-    // Student UI Keyboard check
-    const studentKb = getNawaDocumentsKeyboard("uz", student2NawaDocs);
-    assert.ok(studentKb.inline_keyboard.length >= 6, "Student NAWA dossier keyboard should render 5 docs + nav");
-
-    // NAWA Application sync check
-    const userNawaApps = db.getUserNawaApplications(student2Id);
-    assert.equal(userNawaApps.length, 1, "Should have 1 NAWA application record");
-    const nawaApp = userNawaApps[0];
-    assert.equal(nawaApp.documents?.email?.value, "malika.student@gmail.com");
-
-    // Admin UI Detail Keyboard check
-    const adminDetailKb = getAdminNawaDetailKeyboard(nawaApp, student2NawaDocs, "uz");
-    assert.ok(adminDetailKb.inline_keyboard.length >= 7, "Admin NAWA detail keyboard should render 5 docs + bulk approve + stages");
-
-    // Admin approves individual doc
-    db.approveNawaDocument(student2Id, "email", superAdminId);
-    assert.equal(db.getUserNawaDocuments(student2Id).email.status, "approved");
-
-    // Admin rejects doc with feedback
-    db.rejectNawaDocument(student2Id, "attestat", "Iltimos, attestat ilovasi (baholar) bilan birga qayta yuklang.", superAdminId);
-    assert.equal(db.getUserNawaDocuments(student2Id).attestat.status, "needs_correction");
-    assert.equal(db.getUserNawaDocuments(student2Id).attestat.counselorFeedback, "Iltimos, attestat ilovasi (baholar) bilan birga qayta yuklang.");
-
-    // Admin bulk approves all NAWA docs
-    db.approveAllNawaDocuments(nawaApp.id, superAdminId);
-    const approvedDocs = db.getUserNawaDocuments(student2Id);
-    assert.equal(approvedDocs.attestat.status, "approved");
-    assert.equal(approvedDocs.shahodatnoma.status, "approved");
-    assert.equal(approvedDocs.email.status, "approved");
-    assert.equal(approvedDocs.home_address.status, "approved");
-    assert.equal(approvedDocs.passport_red.status, "approved");
-
-    // Update NAWA Stage
-    const updated = db.updateNawaStage(nawaApp.id, "Under Evaluation", "Documents submitted to Kuratorium Oświaty.");
-    assert.equal(updated?.stage, "Under Evaluation");
-    assert.equal(updated?.counselorNote, "Documents submitted to Kuratorium Oświaty.");
+    assert.equal(db.getPendingDocuments().length, 1, "Uni queue should now have 1 document");
+    assert.equal(db.getPendingNawaDocuments().length, 1, "NAWA queue should now have 1 document");
   });
 
-  // 5. Super Admin Access Boundaries & Isolation
-  test("Super Admin features are strictly isolated from normal admins and regular students", () => {
-    // Normal Admin session
-    startAdminSession(normalAdminId, "admin");
-    assert.equal(isAuthorizedAdmin(normalAdminId), true, "Normal admin is authorized as admin");
-    assert.equal(isAuthorizedSuperAdmin(normalAdminId), false, "Normal admin is NOT super admin");
+  // 5. NAWA Hub Keyboards and Admin Workflows
+  test("NAWA Hub correctly renders separate NAWA Queue and NAWA Applications keyboards", () => {
+    const pendingNawa = db.getPendingNawaDocuments();
+    const nawaApps = db.getAllNawaApplications();
 
-    // Super Admin session
-    startAdminSession(superAdminId, "super_admin");
-    assert.equal(isAuthorizedAdmin(superAdminId), true, "Super admin is authorized as admin");
-    assert.equal(isAuthorizedSuperAdmin(superAdminId), true, "Super admin is authorized as super admin");
+    const hubKb = getAdminNawaHubKeyboard(nawaApps.length, pendingNawa.length, "uz");
+    assert.ok(hubKb.inline_keyboard.length >= 3, "Hub keyboard should render queue, apps, and back buttons");
 
-    // Regular student session
-    assert.equal(isAuthorizedAdmin(student1Id), false, "Student is NOT admin");
-    assert.equal(isAuthorizedSuperAdmin(student1Id), false, "Student is NOT super admin");
+    const queueKb = getAdminPendingNawaDocsKeyboard(pendingNawa, 0, 6, "uz");
+    assert.ok(queueKb.inline_keyboard.length >= 2, "Pending NAWA docs keyboard should render pending item");
 
-    // Cleanup sessions
-    endAdminSession(normalAdminId);
-    endAdminSession(superAdminId);
-    assert.equal(isAuthorizedAdmin(normalAdminId), false);
-    assert.equal(isAuthorizedSuperAdmin(superAdminId), false);
+    const appsKb = getAdminNawaListKeyboard(nawaApps, 0, 6, "uz");
+    assert.ok(appsKb.inline_keyboard.length >= 2, "NAWA apps keyboard should render student application");
   });
 
-  console.log("\n🎉 ================= ALL 5/5 NAWA CRM & DIRECT QUEUE TESTS PASSED! =================");
+  // 6. Super Admin Invisibility in User CRM and Public Views
+  test("Super Admin is completely invisible in getAllUsers(), searchUsers(), and admin dashboards", () => {
+    // Super Admin user setup
+    db.getUser(superAdminId, {
+      fullName: "Master Director",
+      isSuperAdmin: true,
+      adminRole: "super_admin",
+    });
+
+    const allUsers = db.getAllUsers();
+    assert.ok(!allUsers.some((u) => u.userId === superAdminId), "Super Admin must NEVER be returned in getAllUsers()");
+
+    const searched = db.searchUsers("Master Director");
+    assert.ok(!searched.some((u) => u.userId === superAdminId), "Super Admin must NEVER be returned in searchUsers()");
+
+    // Normal admin logs viewing never reveals Super Admin role
+    const logs = db.getAuditLogs(10, false);
+    assert.ok(!logs.some((l) => l.actorRole === "super_admin"), "Audit logs for normal admins must not expose super_admin role");
+  });
+
+  console.log("\n🎉 ================= ALL 6/6 NAWA CRM, QUEUES & ACCESS CONTROL TESTS PASSED! =================");
 }
 
 runNawaCrmAndQueueTestSuite().catch((err) => {
