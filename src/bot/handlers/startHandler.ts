@@ -14,8 +14,8 @@ import { Language } from "../types";
 import { escapeHtml } from "../utils/format";
 
 export function setupStartHandler(bot: Bot) {
-  // /start command
-  bot.command("start", async (ctx: Context) => {
+  // /start and /portal command
+  bot.command(["start", "portal"], async (ctx: Context) => {
     const userId = ctx.from?.id;
     if (!userId) return;
 

@@ -13,7 +13,7 @@ export function getPhoneRequestKeyboard(lang: Language): Keyboard {
 
 export function getMainMenuKeyboard(lang: Language): InlineKeyboard {
   const isUz = lang === "uz";
-  const webappUrl = config.webappUrl || "https://poland-bot.onrender.com";
+  const webappUrl = config.webappUrl || "https://poland-top-bot.onrender.com";
 
   return new InlineKeyboard()
     .webApp(isUz ? "🚀 Portalga Kirish" : "🚀 Open Student Portal", webappUrl)

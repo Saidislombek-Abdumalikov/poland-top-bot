@@ -25,7 +25,7 @@ export const config = {
   webappUrl:
     process.env.WEBAPP_URL ||
     process.env.PUBLIC_URL ||
-    "https://poland-bot.onrender.com",
+    "https://poland-top-bot.onrender.com",
 };
 
 export function validateConfig() {
