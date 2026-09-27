@@ -2,17 +2,15 @@ export const en = {
   // Common
   welcome_title: "🎓 Welcome to Poland Top Universities (PTU)!",
   welcome_desc:
-    "Your official mobile gateway to higher education in Poland 🇵🇱\n\nFind top universities, explore English-taught degrees, track document recognition (NAWA), and practice entrance exams.",
+    "Your official mobile gateway to higher education in Poland 🇵🇱\n\nFind top universities, explore English-taught degrees, track application documents, and practice entrance exams.",
   choose_language: "🌐 Please select your language / Tilni tanlang:",
   language_set: "✅ Language set to English 🇬🇧",
 
-  // Main menu buttons (Reply Keyboard)
+  // Main menu buttons
   btn_universities: "🎓 Universities",
   btn_programs: "📚 Degree Programs",
-  btn_nawa: "🏛️ NAWA Recognition",
   btn_documents: "📋 Document Checklist",
   btn_exams: "📝 Test Materials",
-  btn_premium: "💎 Premium Access",
   btn_reviews: "⭐ Student Reviews",
   btn_profile: "👤 My Profile",
   btn_help: "ℹ️ Help & FAQ",
@@ -26,23 +24,23 @@ export const en = {
   nav_page: "Page",
 
   // Universities Section
-  uni_list_title: "🎓 <b>Top Polish Universities</b>\nSelect an institution below to view degree programs, rankings, and admission requirements:",
+  uni_list_title: "🎓 <b>Top Universities in Poland</b>\nSelect a university to inspect faculties, rankings, and requirements:",
   uni_filter_all: "All Cities",
   uni_filter_public: "🏛️ Public Universities",
   uni_filter_private: "🏢 Private Universities",
-  uni_filter_city: "🏙️ Filter by City",
+  uni_filter_city: "🏙️ By City",
   uni_details_title: "🎓 <b>{name} ({abbr})</b>",
-  uni_stats_programs: "Available Degrees:",
-  uni_stats_students: "Total Students:",
+  uni_stats_programs: "Available programs:",
+  uni_stats_students: "Total students:",
   uni_stats_ranking: "Ranking:",
-  uni_stats_tuition: "Tuition Range:",
+  uni_stats_tuition: "Tuition:",
   uni_stats_website: "Official Website:",
-  uni_btn_view_programs: "📚 View {abbr} Programs",
-  uni_btn_apply: "📝 Apply to this University",
+  uni_btn_view_programs: "📚 View {abbr} programs",
+  uni_btn_apply: "📝 Apply to University",
 
   // Programs Section
   prog_list_title: "📚 <b>Degree Programs in Poland</b>",
-  prog_filter_level: "🎓 Study Level",
+  prog_filter_level: "🎓 Degree Level",
   prog_filter_field: "🔬 Study Field",
   prog_filter_city: "🏙️ City",
   prog_filter_clear: "🔄 Clear Filters",
@@ -53,25 +51,17 @@ export const en = {
   prog_details_title: "📚 <b>{name}</b>",
   prog_university: "University:",
   prog_city: "City:",
-  prog_level: "Degree Level:",
-  prog_lang: "Language of Instruction:",
-  prog_tuition: "Tuition Fee:",
+  prog_level: "Level:",
+  prog_lang: "Language:",
+  prog_tuition: "Tuition fee:",
   prog_duration: "Duration:",
-  prog_deadline: "Application Deadline:",
-  prog_requirements: "Admission Requirements:",
-  prog_documents: "Required Documents:",
+  prog_deadline: "Deadline:",
+  prog_field: "Field:",
   prog_btn_save: "⭐ Save Program",
-  prog_btn_unsave: "❌ Remove from Saved",
+  prog_btn_unsave: "⭐ Saved (Tap to remove)",
   prog_btn_apply: "📝 Start Application",
   prog_saved_success: "✅ Program saved to your profile!",
   prog_unsaved_success: "🗑️ Program removed from your saved list.",
-
-  // NAWA Section
-  nawa_title: "🏛️ <b>NAWA Document Recognition & Legalization</b>",
-  nawa_btn_steps: "📋 Step-by-Step Roadmap",
-  nawa_btn_check: "🔍 Do I Need NAWA?",
-  nawa_btn_apply_wizard: "📝 Start NAWA Assistance",
-  nawa_btn_faq: "❓ Frequently Asked Questions",
 
   // Document Checklist Section
   docs_title: "📋 <b>Document Verification Checklist</b>\nTrack and upload your required admission documents:",
@@ -87,23 +77,19 @@ export const en = {
   exams_title: "📝 <b>Entrance Exams & Sample Test Papers (PDF)</b>\nOfficial entrance test papers, language assessment files, and sample solutions for Polish university admissions:",
   exam_choose_subject: "Select a test material below to view specifications and download files:",
 
-  // Premium Section
-  premium_title: "💎 <b>VIP Admissions & Premium Access</b>",
-  premium_benefits:
-    "• 🏛️ Direct University Application Filing & Dossier Submission\n" +
-    "• 📁 Certified Document Verification by Licensed Admissions Advisors\n" +
-    "• 🏛️ Official NAWA Legalization & Sworn Translation (Tłumacz Przysięgły)\n" +
-    "• ✍️ Full University Entrance & Placement Exam Preparations\n" +
-    "• 💬 1-on-1 Personal Admissions Consultant Support",
-  premium_btn_activate_code: "🔑 Activate Access Code",
-  premium_btn_contact: "💬 Get Access Code from Advisor",
-  premium_prompt_code: "Please enter your activation code (e.g. <code>PTU-DGRZ-JWHB</code>):",
-  premium_success: "🎉 Premium access activated successfully!",
-  premium_invalid_code: "❌ Invalid or already used activation code.",
-
   // Profile Section
   profile_title: "👤 <b>Student Profile</b>",
-  profile_application_status: "Active Applications:",
-  profile_btn_saved: "⭐ Saved Degrees ({count})",
-  profile_btn_switch_lang: "🌐 Switch Language (EN / UZ)",
+  profile_full_name: "Full Name:",
+  profile_phone: "Phone:",
+  profile_email: "Email:",
+  profile_level: "Target Degree:",
+  profile_city: "Preferred City:",
+  profile_saved_count: "Saved Programs:",
+  profile_docs_status: "Verified Documents:",
+  profile_btn_saved: "⭐ Saved Programs ({count})",
+  profile_btn_edit: "✏️ Edit Profile",
+
+  // Review Section
+  reviews_title: "⭐ <b>Student Reviews & Experiences</b>\nReal stories from international students studying in Poland:",
+  review_btn_write: "✍️ Write Review",
 };

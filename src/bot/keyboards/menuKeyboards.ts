@@ -1,8 +1,6 @@
 import { InlineKeyboard, Keyboard } from "grammy";
-import { Language, University, Program, ExamSubject, StudentReview, TestMaterial, NawaDocumentKey, NawaDocumentRecord } from "../types";
+import { Language, University, Program, StudentReview, TestMaterial } from "../types";
 import { t } from "../locales";
-import { universities } from "../data/universities";
-import { programs } from "../data/programs";
 import { config } from "../config";
 
 export function getPhoneRequestKeyboard(lang: Language): Keyboard {
@@ -14,18 +12,19 @@ export function getPhoneRequestKeyboard(lang: Language): Keyboard {
 }
 
 export function getMainMenuKeyboard(lang: Language): InlineKeyboard {
+  const isUz = lang === "uz";
   return new InlineKeyboard()
     .text(t(lang, "btn_universities"), "menu_unis")
     .text(t(lang, "btn_programs"), "menu_progs")
     .row()
-    .text(t(lang, "btn_nawa"), "menu_nawa")
     .text(t(lang, "btn_documents"), "menu_docs")
-    .row()
     .text(t(lang, "btn_exams"), "menu_exams")
-    .text(t(lang, "btn_premium"), "menu_premium")
     .row()
     .text(t(lang, "btn_reviews"), "menu_reviews")
-    .text(t(lang, "btn_profile"), "menu_profile");
+    .text(t(lang, "btn_profile"), "menu_profile")
+    .row()
+    .text(isUz ? "📄 Ommaviy Oferta" : "📄 Terms & Oferta", "menu_oferta")
+    .url(isUz ? "💬 Maslahatchi" : "💬 Advisor", `https://t.me/${config.advisorUsername}`);
 }
 
 export function getLanguageInlineKeyboard(): InlineKeyboard {
@@ -190,64 +189,6 @@ export function getProgramDetailKeyboard(
     .text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 
-export function getNawaKeyboard(lang: Language): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(
-      isUz ? "📁 NAWA Hujjatlar Dosyesi (5 ta hujjat)" : "📁 My NAWA Documents & Dossier",
-      "nawa_my_dossier"
-    )
-    .row()
-    .text(t(lang, "nawa_btn_steps"), "nawa_view_steps")
-    .row()
-    .text(t(lang, "nawa_btn_check"), "nawa_check_eligibility")
-    .row()
-    .text(t(lang, "nawa_btn_apply_wizard"), "nawa_apply_wizard")
-    .row()
-    .text(t(lang, "nawa_btn_faq"), "nawa_faq")
-    .row()
-    .text(t(lang, "nav_main_menu"), "go_main_menu");
-}
-
-export function getNawaDocumentsKeyboard(
-  lang: Language,
-  nawaDocs: Partial<Record<NawaDocumentKey, NawaDocumentRecord>> = {}
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  const items: { key: NawaDocumentKey; icon: string; nameUz: string; nameEn: string }[] = [
-    { key: "attestat", icon: "📜", nameUz: "Attestat (11-sinf)", nameEn: "Attestat (High School)" },
-    { key: "shahodatnoma", icon: "📜", nameUz: "Shahodatnoma (9-sinf)", nameEn: "Shahodatnoma (9th Grade)" },
-    { key: "email", icon: "📧", nameUz: "Email Manzili", nameEn: "Email Address" },
-    { key: "home_address", icon: "🏠", nameUz: "Yashash Manzili", nameEn: "Home Address" },
-    { key: "passport_red", icon: "📕", nameUz: "Pasport (qizil)", nameEn: "Passport (Red)" },
-  ];
-
-  items.forEach((item) => {
-    const doc = nawaDocs[item.key];
-    const status = doc?.status || "missing";
-    const statusIcon =
-      status === "approved"
-        ? "✅"
-        : status === "reviewing"
-        ? "🟡"
-        : status === "needs_correction"
-        ? "🔴"
-        : "⚪";
-
-    const name = isUz ? item.nameUz : item.nameEn;
-    kb.text(`${statusIcon} ${item.icon} ${name}`, `nawa_doc_prompt_${item.key}`).row();
-  });
-
-  kb.text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "nawa_my_dossier")
-    .text(isUz ? "◀️ NAWA Menyusi" : "◀️ NAWA Menu", "menu_nawa")
-    .row()
-    .text(t(lang, "nav_main_menu"), "go_main_menu");
-
-  return kb;
-}
-
 export function getDocumentsKeyboard(
   lang: Language,
   docs: Record<string, { status: string; link?: string }>,
@@ -279,9 +220,8 @@ export function getTestsListKeyboard(lang: Language, tests: TestMaterial[]): Inl
   const kb = new InlineKeyboard();
 
   tests.forEach((test) => {
-    const badge = test.isFree ? "🟢 [Free] " : "🔒 [VIP] ";
     const title = test.title[lang] || test.title.en;
-    kb.text(`${badge}${title}`, `view_test_${test.id}`).row();
+    kb.text(`📄 ${title}`, `view_test_${test.id}`).row();
   });
 
   kb.text(t(lang, "nav_main_menu"), "go_main_menu");
@@ -312,58 +252,13 @@ export function getTestDetailKeyboard(lang: Language, test: TestMaterial): Inlin
   return kb;
 }
 
-export function getExamsListKeyboard(lang: Language, examList: any[]): InlineKeyboard {
-  const kb = new InlineKeyboard();
-  examList.forEach((exam) => {
-    const title = exam.title ? (exam.title[lang] || exam.title.en) : (exam.name ? (exam.name[lang] || exam.name.en) : "Test");
-    const badge = exam.isFree ? "🟢 [Free] " : "🔒 [VIP] ";
-    kb.text(`${badge}${title}`, `view_test_${exam.id}`).row();
-  });
-  kb.text(t(lang, "nav_main_menu"), "go_main_menu");
-  return kb;
-}
-
-
-
-export function getPremiumKeyboard(
-  lang: Language,
-  isPremium: boolean,
-  tier?: string,
-  fullPrice: number = 60
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (!isPremium) {
-    kb.text(isUz ? "🎟️ Promokod bormi?" : "🎟️ Have a promo code?", "premium_enter_code").row();
-  } else if (tier === "NAWA") {
-    kb.text(
-      isUz ? `💎 Full Application + NAWA ($${fullPrice}) ga oshirish` : `💎 Upgrade to Full Application + NAWA ($${fullPrice})`,
-      "premium_enter_code"
-    ).row();
-  }
-
-  kb.text(isUz ? "📄 Foydalanish Shartlari & Oferta" : "📄 Terms & Oferta", "menu_oferta").row();
-
-  kb.url(
-    isUz ? "💬 Maslahatchi bilan bog'lanish" : "💬 Contact Admissions Consultant",
-    `https://t.me/${config.advisorUsername}`
-  )
-    .row()
-    .text(t(lang, "nav_main_menu"), "go_main_menu");
-
-  return kb;
-}
-
 export function getOfertaKeyboard(lang: Language = "uz"): InlineKeyboard {
   const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "✅ Roziman" : "✅ I Agree", "accept_oferta");
+  return new InlineKeyboard().text(isUz ? "✅ Roziman" : "✅ I Agree", "accept_oferta");
 }
 
 export function getOfertaViewKeyboard(lang: Language = "uz"): InlineKeyboard {
-  return new InlineKeyboard()
-    .text(t(lang, "nav_main_menu"), "go_main_menu");
+  return new InlineKeyboard().text(t(lang, "nav_main_menu"), "go_main_menu");
 }
 
 export function getReviewsKeyboard(

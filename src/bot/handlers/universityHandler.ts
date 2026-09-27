@@ -7,7 +7,6 @@ import {
   getUniversityDetailKeyboard,
 } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
-import { checkPremiumAccess } from "../utils/paywall";
 import { programs } from "../data/programs";
 
 export function setupUniversityHandler(bot: Bot) {
@@ -194,17 +193,6 @@ export function setupUniversityHandler(bot: Bot) {
     if (!userId) return;
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
-
-    const hasAccess = await checkPremiumAccess(
-      ctx,
-      user,
-      {
-        en: "Direct University Application Submission",
-        uz: "Universitetga To'g'ridan-to'g'ri Ariza Topshirish",
-      },
-      "NAWA_FULL"
-    );
-    if (!hasAccess) return;
 
     const uni = db.getUniversity(uniId);
     if (!uni) return;

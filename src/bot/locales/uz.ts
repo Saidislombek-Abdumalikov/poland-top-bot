@@ -2,17 +2,15 @@ export const uz = {
   // Common
   welcome_title: "🎓 Poland Top Universities (PTU) ga xush kelibsiz!",
   welcome_desc:
-    "Polshada oliy ta'lim olish bo'yicha rasmiy mobil yo'lboshchingiz 🇵🇱\n\nYetakchi universitetlarni toping, ingliz tilidagi ta'lim dasturlarini tanlang, NAWA nostrifikatsiyasi va hujjatlarni tayyorlang hamda imtihon testlariga mashq qiling.",
+    "Polshada oliy ta'lim olish bo'yicha rasmiy mobil yo'lboshchingiz 🇵🇱\n\nYetakchi universitetlarni toping, ingliz tilidagi ta'lim dasturlarini tanlang, qabul hujjatlarini tayyorlang hamda imtihon testlariga mashq qiling.",
   choose_language: "🌐 Iltimos, tilni tanlang / Choose language:",
   language_set: "✅ Til o'zbek tiliga o'zgartirildi 🇺🇿",
 
-  // Main menu buttons (Reply Keyboard)
+  // Main menu buttons
   btn_universities: "🎓 Universitetlar",
   btn_programs: "📚 Ta'lim Dasturlari",
-  btn_nawa: "🏛️ NAWA Nostrifikatsiya",
   btn_documents: "📋 Hujjatlar Nazorati",
   btn_exams: "📝 Testlar",
-  btn_premium: "💎 Premium A'zolik",
   btn_reviews: "⭐ Talabalar Sharhlari",
   btn_profile: "👤 Mening Profilim",
   btn_help: "ℹ️ Yordam & Qoidalar",
@@ -58,52 +56,40 @@ export const uz = {
   prog_tuition: "Kontrakt narxi:",
   prog_duration: "Davomiyligi:",
   prog_deadline: "Qabul muddati:",
-  prog_requirements: "Asosiy talablar:",
-  prog_documents: "Kerakli hujjatlar:",
-  prog_btn_save: "⭐ Saqlanganlarga qo'shish",
-  prog_btn_unsave: "❌ Saqlanganlardan o'chirish",
+  prog_field: "Soha:",
+  prog_btn_save: "⭐ Saqlash",
+  prog_btn_unsave: "⭐ Saqlangan (O'chirish)",
   prog_btn_apply: "📝 Ariza topshirish",
   prog_saved_success: "✅ Dastur profilingizga saqlandi!",
-  prog_unsaved_success: "🗑️ Dastur saqlanganlardan olib tashlandi.",
-
-  // NAWA Section
-  nawa_title: "🏛️ <b>NAWA Hujjatlarni Tan Olish (Nostrifikatsiya)</b>",
-  nawa_btn_steps: "📋 Bosqichma-bosqich yo'riqnoma",
-  nawa_btn_check: "🔍 Menga NAWA kerakmi?",
-  nawa_btn_apply_wizard: "📝 NAWA yordamiga yozilish",
-  nawa_btn_faq: "❓ Ko'p beriladigan savollar",
+  prog_unsaved_success: "🗑️ Dastur saqlanganlar ro'yxatidan o'chirildi.",
 
   // Document Checklist Section
-  docs_title: "📋 <b>Hujjatlar Nazorati va Holati</b>\nUniversitet uchun zarur hujjatlaringiz holatini onlayn kuzating va yuklang:",
-  docs_approved: "✅ Qabul qilindi va Tasdiqlandi",
-  docs_reviewing: "🟡 Tekshirilmoqda",
-  docs_needs_correction: "🔴 Tuzatish talab etiladi",
+  docs_title: "📋 <b>Hujjatlar Nazorati va Holati</b>\nPolsha oliygohlariga kerakli hujjatlaringizni yuklang va tekshiring:",
+  docs_approved: "✅ Tasdiqlangan",
+  docs_reviewing: "🟡 Tekshiruvda",
+  docs_needs_correction: "🔴 Tuzatish Kerak",
   docs_missing: "⚪ Yuklanmagan",
-  docs_btn_submit_link: "📤 Hujjat yoki Havola Yuborish",
-  docs_submit_prompt: "Iltimos, <b>{docName}</b> hujjati uchun PDF fayl, fotosurat yoki Google Drive havolasini yuboring:",
-  docs_submit_success: "✅ Hujjat qabul qilindi! Maslahatchilarimiz tez orada tekshirib chiqadi.",
+  docs_btn_submit_link: "📤 Fayl yoki Havola Yuborish",
+  docs_submit_prompt: "<b>{docName}</b> uchun PDF fayl, sifatli rasm yoki bulutli havola (Google Drive) yuboring:",
+  docs_submit_success: "✅ Hujjatingiz qabul qilindi! Maslahatchi tez orada tekshiradi.",
 
   // Test Materials Section
-  exams_title: "📝 <b>Oliygohlar Kirish Testlari & Namunaviy Variantlar (PDF)</b>\nPolsha universitetlariga kirish imtihonlari, til sertifikatlari va yo'nalishlar bo'yicha rasmiy test to'plamlari va PDF materiallar:",
-  exam_choose_subject: "Ko'rish yoki PDF faylni yuklab olish uchun test materiallaridan birini tanlang:",
-
-  // Premium Section
-  premium_title: "💎 <b>VIP Qabul & Premium A'zolik</b>",
-  premium_benefits:
-    "• 🏛️ Universitetlarga to'g'ridan-to'g'ri ariza va hujjat topshirish\n" +
-    "• 📁 Rasmiy maslahatchilar tomonidan hujjatlarni tekshirish va tasdiqlash\n" +
-    "• 🏛️ NAWA SYRENA nostrifikatsiyasi va Polsha qasamyodli tarjimasi (Tłumacz Przysięgły)\n" +
-    "• ✍️ Barcha kirish imtihonlari va yo'nalish testlariga to'liq kirish\n" +
-    "• 💬 Shaxsiy qabul koordinatori bilan to'g'ridan-to'g'ri aloqa",
-  premium_btn_activate_code: "🔑 Promokodni Faollashtirish",
-  premium_btn_contact: "💬 Maslahatchidan Kod Olish",
-  premium_prompt_code: "Iltimos, faollashtirish promokodini kiriting (masalan: <code>PTU-DGRZ-JWHB</code>):",
-  premium_success: "🎉 Premium a'zolik muvaffaqiyatli faollashtirildi!",
-  premium_invalid_code: "❌ Noto'g'ri yoki allaqachon ishlatilgan faollashtirish kodi.",
+  exams_title: "📝 <b>Kirish Testlari & Namunaviy Imtihonlar (PDF)</b>\nPolsha universitetlariga kirish sinovlari, til sertifikatlari va namunaviy test to'plamlari:",
+  exam_choose_subject: "Batafsil ma'lumot va yuklab olish uchun kerakli testni tanlang:",
 
   // Profile Section
   profile_title: "👤 <b>Talaba Profili</b>",
-  profile_application_status: "Faol Arizalar:",
+  profile_full_name: "To'liq ism:",
+  profile_phone: "Telefon:",
+  profile_email: "Email:",
+  profile_level: "Maqsad qilingan bosqich:",
+  profile_city: "Tanlangan shahar:",
+  profile_saved_count: "Saqlangan dasturlar:",
+  profile_docs_status: "Tasdiqlangan hujjatlar:",
   profile_btn_saved: "⭐ Saqlangan Dasturlar ({count})",
-  profile_btn_switch_lang: "🌐 Tilni O'zgartirish (UZ / EN)",
+  profile_btn_edit: "✏️ Profilni Tahrirlash",
+
+  // Review Section
+  reviews_title: "⭐ <b>Talabalar Sharhlari va Tajribalari</b>\nPolshada tahsil olayotgan xalqaro talabalarning haqiqiy fikrlari:",
+  review_btn_write: "✍️ Sharh Qoldirish",
 };

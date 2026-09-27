@@ -24,18 +24,8 @@ export function setupStartHandler(bot: Bot) {
       lastName: ctx.from.last_name,
     });
 
-    // Handle deep-linked promo code (e.g. /start promo_K7X9P2LM or /start K7X9P2LM)
-    const startPayload = ctx.match ? ctx.match.toString().trim() : "";
-    if (startPayload) {
-      const candidateCode = startPayload.replace(/^promo_/, "").toUpperCase().trim();
-      const maybePromo = db.getPromoCode(candidateCode);
-      if (maybePromo && maybePromo.isActive && !maybePromo.isExpired) {
-        db.redeemPromoCode(candidateCode, userId);
-      }
-    }
-
-    // If user is not yet registered (and not premium/admin), guide them to their current onboarding step without flickering!
-    if (!user.isRegistered && !user.isPremium && !user.isAdmin && !user.isSuperAdmin && !user.acceptedOfertaAt) {
+    // If user is not yet registered, guide them to their current onboarding step
+    if (!user.isRegistered && !user.isAdmin && !user.acceptedOfertaAt) {
       const isUz = user.lang === "uz";
 
       // 1. If info is complete, show Oferta with [ ✅ Roziman ]
@@ -125,8 +115,7 @@ export function setupStartHandler(bot: Bot) {
     const welcomeMsg =
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
       `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
-      `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
+      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>`;
 
     const msg = await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",
@@ -271,10 +260,8 @@ export function setupStartHandler(bot: Bot) {
       `• /register - Update registration details\n` +
       `• /universities - Browse top Polish universities\n` +
       `• /programs - Search degree programs\n` +
-      `• /nawa - NAWA document recognition guide\n` +
       `• /documents - Track application document status\n` +
       `• /tests - Entrance exams & sample test papers (PDF)\n` +
-      `• /premium - Activate VIP support with access code\n` +
       `• /profile - View saved programs & application status\n` +
       `• /admin - Access Admin CRM panel (for advisors)\n` +
       `• /lang - Change language (English / O'zbekcha)`;
@@ -306,8 +293,7 @@ export function setupStartHandler(bot: Bot) {
     const welcomeMsg =
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
       `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n` +
-      `💎 ${user.lang === "uz" ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>`;
+      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>`;
 
     await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",
@@ -380,8 +366,7 @@ export function setupStartHandler(bot: Bot) {
       `🎉 <b>${isUz ? "TABRIKLAYMIZ!" : "CONGRATULATIONS!"}</b>\n\n` +
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
       `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>${isUz ? "Xush kelibsiz" : "Welcome"}, ${escapeHtml(firstName)}!</b>\n` +
-      `💎 ${isUz ? "A'zolik darajasi" : "Membership"}: <b>${escapeHtml(user.premiumTier || "Free")}</b>\n\n` +
+      `👋 <b>${isUz ? "Xush kelibsiz" : "Welcome"}, ${escapeHtml(firstName)}!</b>\n\n` +
       `🚀 ${isUz ? "Endi siz Polsha universitetlarini ko'rishingiz, arizangizni topshirishingiz va barcha imkoniyatlardan foydalanishingiz mumkin." : "You can now explore Polish universities, apply for programs, and access all bot features."}`;
 
     try {

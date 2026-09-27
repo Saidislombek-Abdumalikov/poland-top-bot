@@ -2,7 +2,6 @@ import { Bot, Context } from "grammy";
 import { db } from "../services/db";
 import { getDocumentsKeyboard } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
-import { checkPremiumAccess } from "../utils/paywall";
 
 export function setupDocumentHandler(bot: Bot) {
   const handleDocumentsMenu = async (ctx: Context) => {
@@ -23,17 +22,6 @@ export function setupDocumentHandler(bot: Bot) {
       );
       return;
     }
-
-    const hasAccess = await checkPremiumAccess(
-      ctx,
-      user,
-      {
-        en: "Document Checklist & Advisor Verification",
-        uz: "Hujjatlar Nazorati va Qabul Hujjatlarini Tekshirish",
-      },
-      "NAWA_FULL"
-    );
-    if (!hasAccess) return;
 
     const docDefs = db.getDocumentDefinitions();
     const docs = user.documents || {};
@@ -190,17 +178,6 @@ export function setupDocumentHandler(bot: Bot) {
     if (!userId) return;
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
-
-    const hasAccess = await checkPremiumAccess(
-      ctx,
-      user,
-      {
-        en: "Certified Document Verification & Counselor Review",
-        uz: "Hujjatlarni Rasmiy Tekshirish va Maslahatchi Tasdig'i",
-      },
-      "NAWA_FULL"
-    );
-    if (!hasAccess) return;
 
     const docDef = db.getDocumentDefinition(docKey);
     const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;

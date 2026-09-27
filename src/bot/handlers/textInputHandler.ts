@@ -1,15 +1,12 @@
 import { Bot, Context } from "grammy";
-import { db, defaultNawaDefinitions } from "../services/db";
+import { db } from "../services/db";
 import {
   authenticatePasscode,
   startAdminSession,
-  grantAdminRole,
-  isAuthorizedSuperAdmin,
   isAuthorizedAdmin,
 } from "../services/auth";
 import {
   getAdminDashboardKeyboard,
-  getSuperAdminDashboardKeyboard,
   getAdminUsersListKeyboard,
 } from "../keyboards/adminKeyboards";
 import {
@@ -17,11 +14,10 @@ import {
   getOnboardingDegreeKeyboard,
   getPhoneRequestKeyboard,
   getOfertaKeyboard,
-  getNawaDocumentsKeyboard,
+  getReviewRatingKeyboard,
 } from "../keyboards/menuKeyboards";
-import { DegreeLevel, PremiumTier, UserSessionData, NawaDocumentKey } from "../types";
+import { DegreeLevel, UserSessionData } from "../types";
 import { escapeHtml } from "../utils/format";
-import { config } from "../config";
 
 export function setupTextInputHandler(bot: Bot) {
   // Helper to cleanup user message and previous bot prompt
@@ -89,7 +85,7 @@ export function setupTextInputHandler(bot: Bot) {
     }
   });
 
-  // Handle file uploads (PDF, DOCX, etc.)
+  // Handle document file uploads (PDF, DOCX, etc.)
   bot.on("message:document", async (ctx: Context) => {
     const userId = ctx.from?.id;
     const document = ctx.message?.document;
@@ -98,192 +94,63 @@ export function setupTextInputHandler(bot: Bot) {
     await cleanUpInput(ctx, userId);
     const user = db.getUser(userId);
 
-    if (user.waitingFor === "admin_add_test_file") {
+    // Admin adding test file
+    if (user.waitingFor === "admin_add_test_file" && user.waitingPayload) {
       const payload = user.waitingPayload;
-      if (payload && payload.title && payload.subject) {
-        const isUz = user.lang === "uz";
-        const newTest = db.createTest(
-          {
-            id: `test-${Date.now().toString(36)}`,
-            title: {
-              en: payload.title,
-              uz: payload.title,
-            },
-            subject: payload.subject,
-            description: {
-              en: `Entrance examination test file for ${payload.subject}.`,
-              uz: `${payload.subject} fani bo'yicha namunaviy kirish imtihoni testi.`,
-            },
-            fileId: document.file_id,
-            fileName: document.file_name || "test_material.pdf",
-            fileType: "document",
-            isFree: false,
-          },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
+      const testId = `test-${Date.now()}`;
+      db.saveTest({
+        id: testId,
+        title: { en: payload.title, uz: payload.title },
+        subject: payload.subject,
+        fileId: document.file_id,
+        fileName: document.file_name || "test_material.pdf",
+        fileType: "document",
+        isFree: true,
+        createdAt: new Date().toISOString().split("T")[0],
+        addedByName: user.fullName || "Admin",
+      });
 
-        db.setWaitingFor(userId, null);
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Yangi Test Materiali Muvaffaqiyatli Qo'shildi!</b>\n\n` +
-              `🏷️ <b>Nomi:</b> ${escapeHtml(newTest.title.uz)}\n` +
-              `📚 <b>Fani:</b> ${escapeHtml(newTest.subject)}\n` +
-              `📁 <b>Fayl:</b> <code>${escapeHtml(newTest.fileName || "")}</code>\n` +
-              `💎 <b>Turi:</b> 🔒 VIP Imtihon To'plami`
-            : `✅ <b>New Test Material Created Successfully!</b>\n\n` +
-              `🏷️ <b>Title:</b> ${escapeHtml(newTest.title.en)}\n` +
-              `📚 <b>Subject:</b> ${escapeHtml(newTest.subject)}\n` +
-              `📁 <b>File:</b> <code>${escapeHtml(newTest.fileName || "")}</code>\n` +
-              `💎 <b>Tier:</b> 🔒 VIP Entrance Pack`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Testlar Ro'yxati" : "📝 Test Materials", callback_data: "admin_menu_tests" }],
-                [{ text: isUz ? "◀️ Admin Panel" : "◀️ Admin Panel", callback_data: "admin_panel" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
+      db.setWaitingFor(userId, null);
+      await ctx.reply(`✅ <b>Yangi test materiali muvaffaqiyatli saqlandi!</b>\nFayl: ${document.file_name}`, {
+        parse_mode: "HTML",
+      });
+      return;
     }
 
-    if (user.waitingFor === "admin_edit_test_file") {
-      const testId = user.waitingPayload?.testId;
-      if (testId) {
-        const isUz = user.lang === "uz";
-        const updated = db.updateTest(
-          testId,
-          {
-            fileId: document.file_id,
-            fileName: document.file_name || "test_material.pdf",
-            fileType: "document",
-          },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
-
-        db.setWaitingFor(userId, null);
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Test Fayli Muvaffaqiyatli Yangilandi!</b>\n\n📁 Yangi fayl: <code>${escapeHtml(document.file_name || "test.pdf")}</code>`
-            : `✅ <b>Test Document Successfully Updated!</b>\n\n📁 New file: <code>${escapeHtml(document.file_name || "test.pdf")}</code>`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
-                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
-              ],
-            },
-          }
-        );
-        return;
+    // Admin updating test file
+    if (user.waitingFor === "admin_edit_test_file" && user.waitingPayload?.testId) {
+      const test = db.getTest(user.waitingPayload.testId);
+      if (test) {
+        test.fileId = document.file_id;
+        test.fileName = document.file_name || test.fileName;
+        test.fileType = "document";
+        db.saveTest(test);
       }
+      db.setWaitingFor(userId, null);
+      await ctx.reply(`✅ <b>Test fayli muvaffaqiyatli yangilandi!</b>`, { parse_mode: "HTML" });
+      return;
     }
 
-    if (user.waitingFor === "document_upload") {
-      const docKey = user.waitingPayload?.docKey;
-      if (docKey) {
-        const isUz = user.lang === "uz";
-        const docDef = db.getDocumentDefinition(docKey);
-        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
+    // Student document upload
+    if (user.waitingFor === "document_upload" && user.waitingPayload?.docKey) {
+      const docKey = user.waitingPayload.docKey;
+      await db.saveUserDocument(userId, docKey, {
+        fileId: document.file_id,
+        fileName: document.file_name,
+        fileType: "document",
+      });
 
-        // Size validation (max 20MB)
-        if (document.file_size && document.file_size > 20 * 1024 * 1024) {
-          await ctx.reply(
-            isUz
-              ? `⚠️ <b>Fayl hajmi juda katta!</b>\n\nTelegram orqali maksimal 20 MB gacha bo'lgan fayllarni yuborishingiz mumkin. Iltimos, fayl hajmini qisqartiring yoki Google Drive havolasini yuboring.`
-              : `⚠️ <b>File size exceeds limit!</b>\n\nPlease upload a file smaller than 20 MB or share a cloud link (Google Drive / OneDrive).`,
-            { parse_mode: "HTML" }
-          );
-          return;
-        }
-
-        db.submitDocument(userId, docKey, {
-          fileId: document.file_id,
-          fileName: document.file_name || "document.pdf",
-          fileType: "document",
-        });
-        db.setWaitingFor(userId, null);
-
-        const replyText = isUz
-          ? `✅ <b>Hujjat Fayli Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `📎 <b>Fayl:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
-            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-          : `✅ <b>Document File Received!</b>\n\n` +
-            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `📎 <b>File Name:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
-            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `<i>You will be notified as soon as our counselors review your file!</i>`;
-
-        await ctx.reply(replyText, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-      }
-    }
-
-    if (user.waitingFor === "nawa_document_upload") {
-      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
-      if (nawaDocKey) {
-        const isUz = user.lang === "uz";
-        const def = defaultNawaDefinitions[nawaDocKey];
-        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
-
-        // Size validation (max 20MB)
-        if (document.file_size && document.file_size > 20 * 1024 * 1024) {
-          await ctx.reply(
-            isUz
-              ? `⚠️ <b>Fayl hajmi juda katta!</b>\n\nMaksimal 20 MB gacha bo'lgan fayllarni yuborishingiz mumkin.`
-              : `⚠️ <b>File size exceeds limit!</b>\n\nPlease upload a file smaller than 20 MB.`,
-            { parse_mode: "HTML" }
-          );
-          return;
-        }
-
-        db.submitNawaDocument(userId, nawaDocKey, {
-          fileId: document.file_id,
-          fileName: document.file_name || "document.pdf",
-          fileType: "document",
-        });
-        db.setWaitingFor(userId, null);
-
-        const replyText = isUz
-          ? `✅ <b>NAWA Hujjati Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `📎 <b>Fayl:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
-            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `<i>NAWA koordinatori hujjatingizni ko'rib chiqishi bilan xabar beriladi!</i>`
-          : `✅ <b>NAWA Document File Received!</b>\n\n` +
-            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `📎 <b>File Name:</b> <code>${escapeHtml(document.file_name || "document.pdf")}</code>\n` +
-            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `<i>You will be notified as soon as counselors verify your submission!</i>`;
-
-        await ctx.reply(replyText, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-      }
+      db.setWaitingFor(userId, null);
+      await ctx.reply(
+        `✅ <b>Hujjatingiz qabul qilindi va tekshiruvga yuborildi!</b>\n\n` +
+          `📁 <b>Fayl:</b> <code>${escapeHtml(document.file_name || "Hujjat")}</code>\n` +
+          `Qabul komissiyasi tekshirgach, natijasi haqida xabarnoma olasiz.`,
+        { parse_mode: "HTML" }
+      );
     }
   });
 
-  // Handle photo uploads (PNG, JPG)
+  // Handle photo uploads
   bot.on("message:photo", async (ctx: Context) => {
     const userId = ctx.from?.id;
     const photos = ctx.message?.photo;
@@ -291,121 +158,407 @@ export function setupTextInputHandler(bot: Bot) {
 
     await cleanUpInput(ctx, userId);
     const user = db.getUser(userId);
+    const photo = photos[photos.length - 1]; // Highest resolution
 
-    if (user.waitingFor === "document_upload") {
-      const docKey = user.waitingPayload?.docKey;
-      if (docKey) {
-        const isUz = user.lang === "uz";
-        const docDef = db.getDocumentDefinition(docKey);
-        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
+    if (user.waitingFor === "document_upload" && user.waitingPayload?.docKey) {
+      const docKey = user.waitingPayload.docKey;
+      await db.saveUserDocument(userId, docKey, {
+        fileId: photo.file_id,
+        fileName: `${docKey}_photo.jpg`,
+        fileType: "photo",
+      });
 
-        const largestPhoto = photos[photos.length - 1];
-        db.submitDocument(userId, docKey, {
-          fileId: largestPhoto.file_id,
-          fileName: "photo_scan.jpg",
-          fileType: "photo",
-        });
-        db.setWaitingFor(userId, null);
-
-        const replyText = isUz
-          ? `✅ <b>Hujjat Fotosurati Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🖼️ <b>Fayl:</b> Sifatli rasm nusxasi\n` +
-            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-          : `✅ <b>Document Photo Received!</b>\n\n` +
-            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🖼️ <b>Image File:</b> High-Resolution Scan\n` +
-            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `<i>You will be notified as soon as our counselors review your file!</i>`;
-
-        await ctx.reply(replyText, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-      }
-    }
-
-    if (user.waitingFor === "nawa_document_upload") {
-      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
-      if (nawaDocKey) {
-        const isUz = user.lang === "uz";
-        const def = defaultNawaDefinitions[nawaDocKey];
-        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
-
-        const largestPhoto = photos[photos.length - 1];
-        db.submitNawaDocument(userId, nawaDocKey, {
-          fileId: largestPhoto.file_id,
-          fileName: `${nawaDocKey}_scan.jpg`,
-          fileType: "photo",
-        });
-        db.setWaitingFor(userId, null);
-
-        const replyText = isUz
-          ? `✅ <b>NAWA Hujjati Fotosurati Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🖼️ <b>Fayl:</b> Sifatli rasm nusxasi\n` +
-            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `<i>NAWA koordinatori hujjatingizni ko'rib chiqishi bilan xabar beriladi!</i>`
-          : `✅ <b>NAWA Document Photo Received!</b>\n\n` +
-            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🖼️ <b>Image File:</b> High-Resolution Scan\n` +
-            `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-            `<i>You will be notified as soon as counselors verify your submission!</i>`;
-
-        await ctx.reply(replyText, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-      }
+      db.setWaitingFor(userId, null);
+      await ctx.reply(
+        `✅ <b>Hujjatingiz rasmi qabul qilindi va tekshiruvga yuborildi!</b>\n` +
+          `Qabul komissiyasi tekshirgach, natijasi haqida xabarnoma olasiz.`,
+        { parse_mode: "HTML" }
+      );
     }
   });
 
-  // Degree Level Selection Callback (Step 3: Target Degree Level) -> Send Oferta Message with [ ✅ Roziman ]
-  bot.callbackQuery(/^onboarding_level_(.+)$/, async (ctx: Context) => {
+  // Handle text messages
+  bot.on("message:text", async (ctx: Context) => {
+    const userId = ctx.from?.id;
+    const text = ctx.message?.text?.trim();
+    if (!userId || !text) return;
+
+    const user = db.getUser(userId);
+
+    // 1. Admin Authentication
+    if (user.waitingFor === "admin_auth") {
+      await cleanUpInput(ctx, userId);
+
+      if (authenticatePasscode(text)) {
+        startAdminSession(userId);
+        db.setWaitingFor(userId, null);
+
+        const users = db.getAllUsers();
+        const apps = db.getAllApplications();
+        const pendingDocs = db.getPendingDocuments();
+        const allRevs = db.getAllReviews();
+        const allTests = db.getAllTests();
+
+        const successText =
+          `✅ <b>Administrator Authentication Successful!</b>\n\n` +
+          `Welcome to the PTU Admin CRM Panel.`;
+
+        const kb = getAdminDashboardKeyboard(
+          {
+            usersCount: users.length,
+            appsCount: apps.length,
+            pendingDocsCount: pendingDocs.length,
+            reviewsCount: allRevs.length,
+            testsCount: allTests.length,
+          },
+          user.lang
+        );
+
+        await ctx.reply(successText, { parse_mode: "HTML", reply_markup: kb });
+      } else {
+        await ctx.reply(
+          `❌ <b>Invalid Passcode.</b>\n\nPlease try again or send /start to return to student mode:`,
+          { parse_mode: "HTML" }
+        );
+      }
+      return;
+    }
+
+    // 2. Student Registration Flow
+    if (user.waitingFor === "registration_name") {
+      await cleanUpInput(ctx, userId);
+
+      if (text.length < 3 || !text.includes(" ")) {
+        const errorText =
+          user.lang === "uz"
+            ? `⚠️ Iltimos, to'liq ism va familiyangizni kiriting (masalan: <code>Saidislom Karimov</code>):`
+            : `⚠️ Please enter your full first name and last name (e.g. <code>John Doe</code>):`;
+        const msg = await ctx.reply(errorText, { parse_mode: "HTML" });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      db.updateUser(userId, { fullName: text });
+      db.setWaitingFor(userId, "registration_phone");
+
+      const phonePrompt =
+        user.lang === "uz"
+          ? `👋 <b>Rahmat, ${escapeHtml(text)}!</b>\n\n` +
+            `📞 <b>2-Qadam (3 tadan): Telefon Raqamingiz</b>\n` +
+            `Pastdagi <b>[ 📱 Telefon raqamni yuborish ]</b> tugmasini bosing yoki telefon raqamingizni yozib yuboring (masalan: <code>+998901234567</code>):`
+          : `👋 <b>Thank you, ${escapeHtml(text)}!</b>\n\n` +
+            `📞 <b>Step 2 of 3: Phone Number</b>\n` +
+            `Tap the <b>[ 📱 Share Phone Number ]</b> button below or type your phone number (e.g. <code>+998901234567</code>):`;
+
+      const msg = await ctx.reply(phonePrompt, {
+        parse_mode: "HTML",
+        reply_markup: getPhoneRequestKeyboard(user.lang),
+      });
+      db.setLastPromptMsgId(userId, msg.message_id);
+      return;
+    }
+
+    if (user.waitingFor === "registration_phone") {
+      await cleanUpInput(ctx, userId);
+
+      const cleanPhone = text.replace(/[^\d+]/g, "");
+      if (cleanPhone.length < 9) {
+        const errorText =
+          user.lang === "uz"
+            ? `⚠️ Telefon raqam noto'g'ri shaklda. Iltimos, to'liq xalqaro formatda yozing (masalan: <code>+998901234567</code>):`
+            : `⚠️ Invalid phone number format. Please provide full format (e.g. <code>+998901234567</code>):`;
+        const msg = await ctx.reply(errorText, {
+          parse_mode: "HTML",
+          reply_markup: getPhoneRequestKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      if (db.isPhoneRegistered(cleanPhone, userId)) {
+        const errorMsg =
+          user.lang === "uz"
+            ? `⚠️ <b>Ushbu telefon raqam allaqachon ro'yxatdan o'tgan!</b> Iltimos, o'z telefon raqamingizni yuboring:`
+            : `⚠️ <b>This phone number is already registered!</b> Please enter your own phone number:`;
+        const msg = await ctx.reply(errorMsg, {
+          parse_mode: "HTML",
+          reply_markup: getPhoneRequestKeyboard(user.lang),
+        });
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      db.updateUser(userId, { phone: cleanPhone });
+      db.setWaitingFor(userId, "registration_level");
+
+      const levelPrompt =
+        user.lang === "uz"
+          ? `✅ <b>Telefon raqamingiz saqlandi:</b> <code>${escapeHtml(cleanPhone)}</code>\n\n` +
+            `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
+            `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
+          : `✅ <b>Phone number saved:</b> <code>${escapeHtml(cleanPhone)}</code>\n\n` +
+            `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
+            `Please choose the degree level you plan to study in Poland:`;
+
+      const msg = await ctx.reply(levelPrompt, {
+        parse_mode: "HTML",
+        reply_markup: getOnboardingDegreeKeyboard(user.lang),
+      });
+      db.setLastPromptMsgId(userId, msg.message_id);
+      return;
+    }
+
+    // 3. Admin Counselor Feedback on Application
+    if (user.waitingFor === "admin_feedback_app" && user.waitingPayload?.appId) {
+      await cleanUpInput(ctx, userId);
+      const appId = user.waitingPayload.appId;
+      const app = db.getApplication(appId);
+      if (app) {
+        db.updateApplicationStage(appId, app.stage, text);
+        try {
+          await bot.api.sendMessage(
+            app.userId,
+            `💬 <b>Qabul Koordinatori Xabari (Ariza #${escapeHtml(appId)}):</b>\n\n` +
+              `<i>"${escapeHtml(text)}"</i>`,
+            { parse_mode: "HTML" }
+          );
+        } catch {}
+      }
+      db.setWaitingFor(userId, null);
+      await ctx.reply(`✅ <b>Xabar talabaga yuborildi va arizaga saqlandi.</b>`, { parse_mode: "HTML" });
+      return;
+    }
+
+    // 4. Admin Document Feedback Note (Needs correction)
+    if (user.waitingFor === "admin_feedback_doc" && user.waitingPayload?.studentId) {
+      await cleanUpInput(ctx, userId);
+      const { studentId, docKey } = user.waitingPayload;
+      db.updateDocumentStatus(studentId, docKey, "needs_correction", text);
+
+      try {
+        await bot.api.sendMessage(
+          studentId,
+          `⚠️ <b>Hujjatingiz bo'yicha tuzatish talab etiladi:</b>\n` +
+            `📑 <b>Hujjat:</b> ${escapeHtml(docKey)}\n` +
+            `💬 <b>Maslahatchi izohi:</b> <i>"${escapeHtml(text)}"</i>\n\n` +
+            `Iltimos, Hujjatlar bo'limiga kirib to'g'ri nusxasini qayta yuklang.`,
+          { parse_mode: "HTML" }
+        );
+      } catch {}
+
+      db.setWaitingFor(userId, null);
+      await ctx.reply(`✅ <b>Tuzatish izohi talabaga yuborildi.</b>`, { parse_mode: "HTML" });
+      return;
+    }
+
+    // 5. Admin Search User
+    if (user.waitingFor === "admin_search_user") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const q = text.toLowerCase();
+      const matched = db.getAllUsers().filter((u) => {
+        return (
+          (u.fullName && u.fullName.toLowerCase().includes(q)) ||
+          (u.username && u.username.toLowerCase().includes(q)) ||
+          (u.phone && u.phone.includes(q)) ||
+          String(u.userId) === q
+        );
+      });
+
+      if (matched.length === 0) {
+        await ctx.reply(`🔍 <b>"${escapeHtml(text)}"</b> bo'yicha talaba topilmadi.`, { parse_mode: "HTML" });
+        return;
+      }
+
+      const kb = getAdminUsersListKeyboard(matched, 0, 6, user.lang);
+      await ctx.reply(`🔍 <b>Qidiruv natijalari (${matched.length} ta):</b>`, {
+        parse_mode: "HTML",
+        reply_markup: kb,
+      });
+      return;
+    }
+
+    // 6. Admin Broadcast
+    if (user.waitingFor === "admin_broadcast_text") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      const allUsers = db.getAllUsers();
+      let sentCount = 0;
+
+      for (const u of allUsers) {
+        try {
+          await bot.api.sendMessage(
+            u.userId,
+            `📢 <b>POLAND TOP UNIVERSITIES — RASMIY E'LON:</b>\n\n${escapeHtml(text)}`,
+            { parse_mode: "HTML" }
+          );
+          sentCount++;
+        } catch {}
+      }
+
+      await ctx.reply(
+        `✅ <b>Global xabar ${sentCount} ta talabaga muvaffaqiyatli yetkazildi!</b>`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    // 7. Student Document Link Submission
+    if (user.waitingFor === "document_upload" && user.waitingPayload?.docKey) {
+      await cleanUpInput(ctx, userId);
+      const docKey = user.waitingPayload.docKey;
+
+      if (text.startsWith("http://") || text.startsWith("https://")) {
+        await db.saveUserDocument(userId, docKey, {
+          link: text,
+          fileType: "link",
+          fileName: "Cloud Storage Link",
+        });
+
+        db.setWaitingFor(userId, null);
+        await ctx.reply(
+          `✅ <b>Hujjat havolasi qabul qilindi va tekshiruvga yuborildi!</b>\n` +
+            `🔗 <code>${escapeHtml(text)}</code>`,
+          { parse_mode: "HTML" }
+        );
+        return;
+      }
+    }
+
+    // 8. Admin Oferta Edit Text
+    if (user.waitingFor === "admin_edit_oferta_text") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, null);
+
+      db.updateOferta(text, user.fullName || "Admin");
+      await ctx.reply(`✅ <b>Ommaviy Oferta yangi matni muvaffaqiyatli saqlandi va chop etildi!</b>`, {
+        parse_mode: "HTML",
+      });
+      return;
+    }
+
+    // 9. Admin Add Test Material Flow
+    if (user.waitingFor === "admin_add_test_title") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, "admin_add_test_subject", { title: text });
+      await ctx.reply(
+        `📝 <b>(2/3) Test qaysi fan yoki yo'nalishga oid?</b>\n(Masalan: <i>Matematika</i>, <i>Ingliz tili (B2)</i>, <i>Polyak tili</i>):`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    if (user.waitingFor === "admin_add_test_subject" && user.waitingPayload?.title) {
+      await cleanUpInput(ctx, userId);
+      const title = user.waitingPayload.title;
+      db.setWaitingFor(userId, "admin_add_test_file", { title, subject: text });
+      await ctx.reply(
+        `📎 <b>(3/3) Endi test faylini (PDF) Telegram orqali yuboring:</b>\n` +
+          `Yoki yuklab olish havolasini (Google Drive / website link) matn sifatida yuboring:`,
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    if (user.waitingFor === "admin_add_test_file" && user.waitingPayload) {
+      await cleanUpInput(ctx, userId);
+      if (text.startsWith("http://") || text.startsWith("https://")) {
+        const payload = user.waitingPayload;
+        db.saveTest({
+          id: `test-${Date.now()}`,
+          title: { en: payload.title, uz: payload.title },
+          subject: payload.subject,
+          fileUrl: text,
+          fileType: "link",
+          fileName: "Download Link",
+          isFree: true,
+          createdAt: new Date().toISOString().split("T")[0],
+          addedByName: user.fullName || "Admin",
+        });
+        db.setWaitingFor(userId, null);
+        await ctx.reply(`✅ <b>Yangi test materiali havola orqali muvaffaqiyatli saqlandi!</b>`, {
+          parse_mode: "HTML",
+        });
+        return;
+      }
+    }
+
+    // 10. Student Review Submission Flow
+    if (user.waitingFor === "student_review_program") {
+      await cleanUpInput(ctx, userId);
+      db.setWaitingFor(userId, "student_review_text", {
+        university: user.waitingPayload?.university || "Polish University",
+        program: text,
+        rating: user.waitingPayload?.rating || 5,
+      });
+
+      const prompt =
+        user.lang === "uz"
+          ? `✍️ <b>Polshadagi taassurotlaringiz va maslahatlaringizni yozing:</b>\n\n(Sharhingiz admin tekshiruvidan so'ng botda ko'rinadi):`
+          : `✍️ <b>Please write your review and advice for prospective students:</b>:`;
+
+      await ctx.reply(prompt, { parse_mode: "HTML" });
+      return;
+    }
+
+    if (user.waitingFor === "student_review_text" && user.waitingPayload) {
+      await cleanUpInput(ctx, userId);
+      const p = user.waitingPayload;
+
+      db.addReview({
+        userId,
+        name: user.fullName || user.firstName || "Student",
+        country: user.country || "Uzbekistan",
+        university: p.university,
+        program: p.program,
+        rating: p.rating || 5,
+        year: String(new Date().getFullYear()),
+        text: { en: text, uz: text },
+        status: "pending",
+      });
+
+      db.setWaitingFor(userId, null);
+      const ack =
+        user.lang === "uz"
+          ? `🎉 <b>Rahmat! Sharhingiz qabul qilindi.</b>\nMaslahatchi tasdiqlaganidan so'ng botda barcha talabalarga ko'rinadi.`
+          : `🎉 <b>Thank you! Your review has been submitted for approval.</b>`;
+
+      await ctx.reply(ack, { parse_mode: "HTML" });
+      return;
+    }
+  });
+
+  // Handle Onboarding Degree Level Callback
+  bot.callbackQuery(/^onboarding_level_(.+)$/, async (ctx) => {
     const match = ctx.callbackQuery?.data?.match(/^onboarding_level_(.+)$/);
     if (!match) return;
     const level = match[1] as DegreeLevel;
     const userId = ctx.from?.id;
     if (!userId) return;
 
-    // Update degree preference and set waitingFor to waiting_oferta_acceptance
-    const user = db.updateUser(userId, {
-      preferredLevel: level,
-      isRegistered: false, // Remains false until Oferta is accepted!
-      waitingFor: "waiting_oferta_acceptance",
-      waitingPayload: null,
-    });
+    db.updateUser(userId, { preferredLevel: level });
+    db.setWaitingFor(userId, "waiting_oferta_acceptance");
 
-    await ctx.answerCallbackQuery();
-
-    const fullName = user.fullName || user.firstName || "Student";
-    const phone = user.phone || "(not set)";
+    const user = db.getUser(userId);
     const isUz = user.lang === "uz";
     const renderedOferta = db.getRenderedOferta();
 
+    await ctx.answerCallbackQuery();
+
     const ofertaMessage = isUz
       ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
-        `• 👤 <b>Ism:</b> ${escapeHtml(fullName)}\n` +
-        `• 📞 <b>Telefon:</b> ${escapeHtml(phone)}\n` +
+        `• 👤 <b>Ism:</b> ${escapeHtml(user.fullName || "")}\n` +
+        `• 📞 <b>Telefon:</b> ${escapeHtml(user.phone || "")}\n` +
         `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(level)}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${renderedOferta}\n` +
         `━━━━━━━━━━━━━━━━━━━━\n\n` +
         `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
       : `📋 <b>Your Profile Summary:</b>\n` +
-        `• 👤 <b>Name:</b> ${escapeHtml(fullName)}\n` +
-        `• 📞 <b>Phone:</b> ${escapeHtml(phone)}\n` +
+        `• 👤 <b>Name:</b> ${escapeHtml(user.fullName || "")}\n` +
+        `• 📞 <b>Phone:</b> ${escapeHtml(user.phone || "")}\n` +
         `• 🎓 <b>Target Degree:</b> ${escapeHtml(level)}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `${renderedOferta}\n` +
@@ -417,1770 +570,50 @@ export function setupTextInputHandler(bot: Bot) {
         parse_mode: "HTML",
         reply_markup: getOfertaKeyboard(user.lang),
       });
-      if (ctx.callbackQuery?.message?.message_id) {
-        db.setLastPromptMsgId(userId, ctx.callbackQuery.message.message_id);
-      }
     } catch {
-      const msg = await ctx.reply(ofertaMessage, {
+      await ctx.reply(ofertaMessage, {
         parse_mode: "HTML",
         reply_markup: getOfertaKeyboard(user.lang),
       });
-      db.setLastPromptMsgId(userId, msg.message_id);
     }
   });
 
-  // Handle text messages
-  bot.on("message:text", async (ctx: Context, next) => {
-    const text = ctx.message?.text?.trim();
+  // Handle Review Rating Selection Callback
+  bot.callbackQuery(/^rev_rate_(\d+)$/, async (ctx) => {
+    const match = ctx.callbackQuery?.data?.match(/^rev_rate_(\d+)$/);
+    if (!match) return;
+    const rating = parseInt(match[1], 10);
     const userId = ctx.from?.id;
-    if (!userId || !text) return next();
-
-    // Ignore commands or main menu reply buttons
-    if (
-      text.startsWith("/") ||
-      text.includes("🎓") ||
-      text.includes("📚") ||
-      text.includes("🏛️") ||
-      text.includes("📋") ||
-      text.includes("✍️") ||
-      text.includes("💎") ||
-      text.includes("👤")
-    ) {
-      return next();
-    }
-
+    if (!userId) return;
     const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
 
-    // ================= SECURE ADMIN AUTHENTICATION INPUT =================
-    if (user.waitingFor === "admin_auth") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
+    await ctx.answerCallbackQuery();
 
-      const secret = text.trim();
-      const authenticatedRole = authenticatePasscode(secret);
+    db.setWaitingFor(userId, "student_review_program", { rating });
 
-      if (authenticatedRole === "super_admin") {
-        startAdminSession(userId, "super_admin");
-        db.logAdminAction(
-          userId,
-          ctx.from?.first_name || "Super Admin",
-          "SUPER_ADMIN_LOGIN",
-          "Authenticated successfully into Super Admin Master session via prompt",
-          undefined,
-          "super_admin"
-        );
-        await ctx.reply(
-          `👑 <b>Super Admin Authentication Successful!</b>\n\n` +
-          `Welcome, Boss. Master Command HQ and complete audit logs are unlocked.`,
-          { parse_mode: "HTML" }
-        );
-        const allAdmins = db.getAllAdmins(true);
-        const auditLogs = db.getAuditLogs(100);
-        const allUsers = db.getAllUsers();
-        const kb = getSuperAdminDashboardKeyboard(
-          {
-            adminsCount: allAdmins.length,
-            auditLogsCount: auditLogs.length,
-            usersCount: allUsers.length,
-          },
-          user.lang
-        );
-        await ctx.reply(
-          user.lang === "uz"
-            ? `👑 <b>SUPER ADMIN BOSHQARMASI (MAXFIY)</b>\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>Peak Access Level:</b> Super Administrator (Boss)`
-            : `👑 <b>SUPER ADMIN HEADQUARTERS (MASTER)</b>\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>Peak Access Level:</b> Super Administrator (Boss)`,
-          { parse_mode: "HTML", reply_markup: kb }
-        );
-      } else if (authenticatedRole === "admin") {
-        startAdminSession(userId, "admin");
-        db.logAdminAction(
-          userId,
-          ctx.from?.first_name || "Admin",
-          "ADMIN_LOGIN",
-          "Authenticated successfully into Regular Admin session via prompt",
-          undefined,
-          "admin"
-        );
-        await ctx.reply(
-          `✅ <b>Administrator Authentication Successful!</b>\n\n` +
-          `Admin CRM panel unlocked.`,
-          { parse_mode: "HTML" }
-        );
-        const kb = getAdminDashboardKeyboard(
-          {
-            usersCount: db.getAllUsers().length,
-            appsCount: db.getAllApplications().length,
-            pendingDocsCount: db.getPendingDocuments().length,
-            pendingNawaDocsCount: db.getPendingNawaDocuments().length,
-            nawaCount: db.getAllNawaApplications().length,
-            reviewsCount: db.getAllReviews().length,
-            adminsCount: db.getAllAdmins(false).length,
-          },
-          user.lang,
-          false
-        );
-        await ctx.reply(
-          user.lang === "uz"
-            ? `🎛️ <b>PTU Administrator CRM Paneli</b>\n━━━━━━━━━━━━━━━━━━━━`
-            : `🎛️ <b>PTU Admin CRM Dashboard</b>\n━━━━━━━━━━━━━━━━━━━━`,
-          { parse_mode: "HTML", reply_markup: kb }
-        );
-      } else {
-        db.logAdminAction(
-          userId,
-          ctx.from?.first_name || "Unknown",
-          "FAILED_LOGIN_ATTEMPT",
-          "Failed authentication attempt with invalid passcode",
-          undefined,
-          "admin",
-          "failure"
-        );
-        await ctx.reply(
-          `⛔ <b>Authentication Failed:</b> Invalid credentials.`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
+    const prompt = isUz
+      ? `🏛️ <b>Qaysi universitet va yo'nalishda o'qiysiz?</b>\n(Masalan: <i>Warsaw University, Computer Science</i>):`
+      : `🏛️ <b>Which university and program do you attend?</b>\n(e.g. <i>Warsaw University, Computer Science</i>):`;
 
-    // ================= UPFRONT STUDENT ONBOARDING STEPS =================
-    const isAdminWorkflow = Boolean(user.waitingFor?.startsWith("admin_"));
-    const isAuthorized = user.isAdmin || user.isSuperAdmin || isAuthorizedAdmin(userId);
+    await ctx.reply(prompt, { parse_mode: "HTML" });
+  });
 
-    if (
-      !isAdminWorkflow &&
-      (user.waitingFor === "registration_name" ||
-        user.waitingFor === "registration_phone" ||
-        user.waitingFor === "registration_level" ||
-        user.waitingFor === "waiting_oferta_acceptance" ||
-        (!user.isRegistered && !isAuthorized))
-    ) {
-      if (user.lastPromptMsgId && ctx.chat) {
-        try {
-          await ctx.api.deleteMessage(ctx.chat.id, user.lastPromptMsgId);
-        } catch {}
-      }
+  bot.callbackQuery("review_write_start", async (ctx) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const user = db.getUser(userId);
+    const isUz = user.lang === "uz";
 
-      // Step 1: Full Name -> Prompt Phone with native share button
-      if (user.waitingFor === "registration_name") {
-        const parts = text.split(" ");
-        const firstName = parts[0] || text;
-        const lastName = parts.slice(1).join(" ") || "";
+    await ctx.answerCallbackQuery();
 
-        db.updateUser(userId, { fullName: text, firstName, lastName });
-        db.setWaitingFor(userId, "registration_phone");
+    const prompt = isUz
+      ? `⭐ <b>Polshadagi ta'limingizni qanday baholaysiz?</b>\nBaho tanlang:`
+      : `⭐ <b>How do you rate your study experience in Poland?</b>\nChoose rating:`;
 
-        const phonePrompt =
-          user.lang === "uz"
-            ? `👋 Tanishganimdan xursandman, <b>${escapeHtml(text)}</b>!\n\n` +
-              `📞 <b>2-Qadam (3 tadan): Telefon Raqamingiz</b>\n` +
-              `Pastdagi <b>[ 📱 Telefon raqamni yuborish ]</b> tugmasini bosing yoki telefon raqamingizni yozib yuboring (masalan: <code>+998901234567</code>):`
-            : `👋 Nice to meet you, <b>${escapeHtml(text)}</b>!\n\n` +
-              `📞 <b>Step 2 of 3: Phone Number</b>\n` +
-              `Tap the <b>[ 📱 Share Phone Number ]</b> button below or type your phone number (e.g. <code>+998901234567</code>):`;
-
-        const msg = await ctx.reply(phonePrompt, {
-          parse_mode: "HTML",
-          reply_markup: getPhoneRequestKeyboard(user.lang),
-        });
-        db.setLastPromptMsgId(userId, msg.message_id);
-        return;
-      }
-
-      // Step 2: Phone -> Prompt Degree Level Directly
-      if (user.waitingFor === "registration_phone") {
-        const cleanPhone = text.replace(/[^0-9+]/g, "");
-        const formattedPhone = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
-
-        if (cleanPhone.replace("+", "").length < 7) {
-          const invalidPrompt =
-            user.lang === "uz"
-              ? `⚠️ <b>Noto'g'ri telefon raqam formati!</b>\n\nIltimos, to'liq telefon raqamingizni kiriting (masalan: <code>+998901234567</code>) yoki pastdagi tugmani bosing:`
-              : `⚠️ <b>Invalid phone number format!</b>\n\nPlease enter a valid phone number (e.g. <code>+998901234567</code>) or use the button below:`;
-          const msg = await ctx.reply(invalidPrompt, {
-            parse_mode: "HTML",
-            reply_markup: getPhoneRequestKeyboard(user.lang),
-          });
-          db.setLastPromptMsgId(userId, msg.message_id);
-          return;
-        }
-
-        // Check if phone number is already registered by another account
-        if (db.isPhoneRegistered(formattedPhone, userId)) {
-          const errorMsg =
-            user.lang === "uz"
-              ? `⚠️ <b>Ushbu telefon raqam allaqachon ro'yxatdan o'tgan!</b>\n\n` +
-                `Bitta telefon raqam faqat bitta Telegram akkauntga biriktiriladi. Iltimos, o'zingizning shaxsiy telefon raqamingizni yuboring:`
-              : `⚠️ <b>This phone number is already registered!</b>\n\n` +
-                `Each phone number can only be linked to one Telegram account. Please share or type your own phone number:`;
-
-          const msg = await ctx.reply(errorMsg, {
-            parse_mode: "HTML",
-            reply_markup: getPhoneRequestKeyboard(user.lang),
-          });
-          db.setLastPromptMsgId(userId, msg.message_id);
-          return;
-        }
-
-        db.updateUser(userId, { phone: formattedPhone });
-        db.setWaitingFor(userId, "registration_level");
-
-        const levelPrompt =
-          user.lang === "uz"
-            ? `✅ <b>Telefon raqamingiz qabul qilindi:</b> <code>${escapeHtml(formattedPhone)}</code>\n\n` +
-              `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
-              `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-            : `✅ <b>Phone number received:</b> <code>${escapeHtml(formattedPhone)}</code>\n\n` +
-              `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
-              `Please choose the degree level you plan to study in Poland:`;
-
-        const msg = await ctx.reply(levelPrompt, {
-          parse_mode: "HTML",
-          reply_markup: getOnboardingDegreeKeyboard(user.lang),
-        });
-        db.setLastPromptMsgId(userId, msg.message_id);
-        return;
-      }
-
-      if (user.waitingFor === "registration_level") {
-        const msg = await ctx.reply(
-          user.lang === "uz"
-            ? "⚠️ <b>Iltimos, avval ro'yxatdan o'tishni yakunlash uchun ta'lim darajangizni tanlang:</b>"
-            : "⚠️ <b>Please select your target degree level above to complete registration:</b>",
-          {
-            parse_mode: "HTML",
-            reply_markup: getOnboardingDegreeKeyboard(user.lang),
-          }
-        );
-        db.setLastPromptMsgId(userId, msg.message_id);
-        return;
-      }
-
-      // Step 4: Waiting for Oferta Acceptance
-      if (user.waitingFor === "waiting_oferta_acceptance" || (user.fullName && user.phone && user.preferredLevel)) {
-        const renderedOferta = db.getRenderedOferta();
-        const reminder = user.lang === "uz"
-          ? `⚠️ <b>Iltimos, botdan foydalanishni boshlash uchun avval quyidagi Ommaviy Ofertani qabul qiling ("✅ Roziman" tugmasini bosing):</b>\n\n${renderedOferta}`
-          : `⚠️ <b>Please accept the Oferta below by tapping "✅ I Agree" to unlock the bot:</b>\n\n${renderedOferta}`;
-
-        const msg = await ctx.reply(reminder, {
-          parse_mode: "HTML",
-          reply_markup: getOfertaKeyboard(user.lang),
-        });
-        db.setLastPromptMsgId(userId, msg.message_id);
-        return;
-      }
-
-      // Unregistered and sent random text -> Redirect to step 1
-      db.setWaitingFor(userId, "registration_name");
-      const msg = await ctx.reply(
-        user.lang === "uz"
-          ? "👋 <b>Assalomu alaykum! Botdan foydalanish uchun avval to'liq ism va familiyangizni kiriting:</b>"
-          : "👋 <b>Welcome! Please enter your Full Name to complete registration:</b>",
-        {
-          parse_mode: "HTML",
-          reply_markup: { remove_keyboard: true },
-        }
-      );
-      db.setLastPromptMsgId(userId, msg.message_id);
-      return;
-    }
-
-    // ================= ADMIN WORKFLOWS =================
-    // 1. Admin Counselor Feedback Note on Application
-    if (user.waitingFor === "admin_feedback_app") {
-      await cleanUpInput(ctx, userId);
-      const appId = user.waitingPayload?.appId;
-      if (appId) {
-        const app = db.updateApplicationStage(appId, "Action Needed", text);
-        db.setWaitingFor(userId, null);
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "APP_FEEDBACK",
-          `Sent counselor feedback on Application #${appId}: "${text}"`,
-          `App #${appId}`
-        );
-
-        if (app) {
-          try {
-            const student = db.getUser(app.userId);
-            const isUz = student.lang === "uz";
-
-            const studentMsg = isUz
-              ? `💬 <b>Qabul Koordinatori Xabari (Ariza #${escapeHtml(app.id)}):</b>\n\n` +
-                `"${escapeHtml(text)}"\n\n` +
-                `🏛️ <b>Universitet:</b> ${escapeHtml(app.university)}\n` +
-                `📘 <b>Yo'nalish:</b> ${escapeHtml(app.programName)}\n\n` +
-                `Iltimos, ko'rsatilgan talablarni ko'rib chiqing va arizalar bo'limida yangilang.`
-              : `💬 <b>Counselor Feedback on Application #${escapeHtml(app.id)}:</b>\n\n` +
-                `"${escapeHtml(text)}"\n\n` +
-                `🏛️ <b>University:</b> ${escapeHtml(app.university)}\n` +
-                `📘 <b>Program:</b> ${escapeHtml(app.programName)}\n\n` +
-                `Please review your documents and update your dossier.`;
-
-            await bot.api.sendMessage(
-              app.userId,
-              studentMsg,
-              {
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: isUz ? "📋 Mening Arizalarim" : "📋 My Applications", callback_data: "menu_status" }],
-                  ],
-                },
-              }
-            );
-          } catch {}
-
-          await ctx.reply(`✅ Feedback note saved and sent to student for Application <b>${escapeHtml(appId)}</b>!`, {
-            parse_mode: "HTML",
-          });
-        }
-        return;
-      }
-    }
-
-    // 1b. Admin Counselor Feedback Note on NAWA Application
-    if (user.waitingFor === "admin_feedback_nawa") {
-      await cleanUpInput(ctx, userId);
-      const nawaId = user.waitingPayload?.nawaId;
-      if (nawaId) {
-        const nawaApp = db.updateNawaStage(nawaId, "Requires Action", text);
-        db.setWaitingFor(userId, null);
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "NAWA_FEEDBACK",
-          `Sent counselor feedback on NAWA Application #${nawaId}: "${text}"`,
-          `NAWA #${nawaId}`
-        );
-
-        if (nawaApp) {
-          try {
-            const student = db.getUser(nawaApp.userId);
-            const isUz = student.lang === "uz";
-
-            const studentMsg = isUz
-              ? `💬 <b>NAWA Nostrifikatsiya Maslahatchisi Xabari (#${escapeHtml(nawaApp.id)}):</b>\n\n` +
-                `"${escapeHtml(text)}"\n\n` +
-                `Iltimos, ko'rsatilgan hujjatlarni to'g'rilab, qayta yuklang.`
-              : `💬 <b>NAWA Legalization Counselor Feedback (#${escapeHtml(nawaApp.id)}):</b>\n\n` +
-                `"${escapeHtml(text)}"\n\n` +
-                `Please review the requested changes and update your document dossier.`;
-
-            await bot.api.sendMessage(
-              nawaApp.userId,
-              studentMsg,
-              {
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  ],
-                },
-              }
-            );
-          } catch {}
-
-          await ctx.reply(
-            `✅ <b>Maslahatchi izohi talabaga muvaffaqiyatli yuborildi!</b>\n\n` +
-              `Talaba #${nawaApp.userId} xabardor qilindi va NAWA arizasi holati 'Requires Action' ga o'tkazildi.`,
-            {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: "◀️ NAWA Arizasiga Qaytish", callback_data: `admin_view_nawa_${nawaId}` }],
-                  [{ text: "◀️ NAWA Arizalari Ro'yxatiga", callback_data: "admin_menu_nawa" }],
-                ],
-              },
-            }
-          );
-        }
-        return;
-      }
-    }
-
-    // 1c. Admin Counselor Feedback Note on Specific NAWA Document
-    if (user.waitingFor === "admin_feedback_nawa_doc") {
-      await cleanUpInput(ctx, userId);
-      const targetUserId = user.waitingPayload?.targetUserId;
-      const docKey = user.waitingPayload?.docKey as NawaDocumentKey;
-      if (targetUserId && docKey) {
-        db.rejectNawaDocument(targetUserId, docKey, text.trim(), userId);
-        db.setWaitingFor(userId, null);
-
-        const def = defaultNawaDefinitions[docKey];
-        const docName = def ? def.name.uz : docKey;
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "NAWA_DOC_REJECT",
-          `Requested correction for NAWA document '${docKey}' for Student #${targetUserId}: "${text}"`,
-          `Student #${targetUserId}`
-        );
-
-        try {
-          const student = db.getUser(targetUserId);
-          const isUz = student.lang === "uz";
-          const studentMsg = isUz
-            ? `⚠️ <b>NAWA Hujjatini Qayta Yuklash Talab Qilinadi!</b>\n\n` +
-              `• 📄 <b>Hujjat:</b> <b>${escapeHtml(def ? def.name.uz : docKey)}</b>\n` +
-              `• 💬 <b>Maslahatchi Izohi:</b> <i>\"${escapeHtml(text)}\"</i>\n\n` +
-              `Iltimos, pastdagi tugma orqali NAWA dosyesiga o'ting va ushbu hujjatni to'g'rilab qayta yuklang:`
-            : `⚠️ <b>NAWA Document Correction Requested!</b>\n\n` +
-              `• 📄 <b>Document:</b> <b>${escapeHtml(def ? def.name.en : docKey)}</b>\n` +
-              `• 💬 <b>Advisor Feedback:</b> <i>\"${escapeHtml(text)}\"</i>\n\n` +
-              `Please open your NAWA dossier below and upload a corrected file/data:`;
-
-          await bot.api.sendMessage(targetUserId, studentMsg, {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📁 NAWA Hujjatlar Dosyesi" : "📁 NAWA Document Dossier", callback_data: "nawa_my_dossier" }],
-              ],
-            },
-          });
-        } catch {}
-
-        await ctx.reply(
-          `✅ <b>Izoh saqlandi va talabaga yuborildi!</b>\n\n` +
-            `Hujjat holati <b>'needs_correction' (Qayta yuklash kerak)</b> ga o'zgartirildi.`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: "◀️ NAWA Arizasiga Qaytish", callback_data: `admin_view_nawa_by_user_${targetUserId}` }],
-                [{ text: "◀️ NAWA Arizalari Ro'yxati", callback_data: "admin_menu_nawa" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-    }
-
-    // 2. Admin Rejection Note on Document
-    if (user.waitingFor === "admin_feedback_doc") {
-      await cleanUpInput(ctx, userId);
-      const { targetUserId, docKey } = user.waitingPayload || {};
-      if (targetUserId && docKey) {
-        db.verifyDocument(targetUserId, docKey, "needs_correction", text);
-        db.setWaitingFor(userId, null);
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "DOC_FEEDBACK",
-          `Sent revision feedback for document '${docKey}' to Student #${targetUserId}: "${text}"`,
-          `User #${targetUserId}`
-        );
-
-        try {
-          const student = db.getUser(targetUserId);
-          const isUz = student.lang === "uz";
-          const docDef = db.getDocumentDefinition(docKey);
-          const docName = docDef ? (docDef.name[student.lang] || docDef.name.en) : docKey;
-
-          const studentMsg = isUz
-            ? `🔴 <b>Hujjatga Tuzatish Talab Qilinadi: ${escapeHtml(docName)}</b>\n\n` +
-              `💬 <b>Qabul maslahatchisi izohi:</b>\n"${escapeHtml(text)}"\n\n` +
-              `Iltimos, <b>Hujjatlar Ro'yxati</b> bo'limida to'g'rilangan faylni yuklang.`
-            : `🔴 <b>Document Correction Required: ${escapeHtml(docName)}</b>\n\n` +
-              `💬 <b>Counselor Note:</b>\n"${escapeHtml(text)}"\n\n` +
-              `Please upload a revised copy in the <b>Document Checklist</b> menu.`;
-
-          await bot.api.sendMessage(
-            targetUserId,
-            studentMsg,
-            {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: isUz ? "🔄 Qayta Yuklash (To'g'rilash)" : "🔄 Re-upload Document", callback_data: `doc_upload_prompt_${docKey}` }],
-                  [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
-                ],
-              },
-            }
-          );
-        } catch {}
-
-        await ctx.reply(`✅ Rejection note saved and sent to student for <b>${escapeHtml(docKey)}</b>!`, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "📁 Talaba Dossieriga Qaytish", callback_data: `admin_review_student_docs_${targetUserId}` }],
-              [{ text: "◀️ Hujjatlar Navbatiga", callback_data: "admin_menu_docs" }],
-            ],
-          },
-        });
-        return;
-      }
-    }
-
-    // 3. Admin Promo Code Creation
-    if (user.waitingFor === "admin_create_promo") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const parts = text.split(" ");
-      const code = parts[0]?.toUpperCase().trim();
-      const rawTier = (parts[1] || "").toUpperCase();
-      const tier: PremiumTier = rawTier === "NAWA" ? "NAWA" : "NAWA_FULL";
-
-      if (code) {
-        const created = db.createPromoCode({
-          code,
-          tier,
-          maxUses: 1,
-          createdBy: userId,
-          createdByName: user.fullName || user.username || `Admin #${userId}`,
-        });
-
-        const pricing = db.getPricingConfig();
-        const tierName = created.tier === "NAWA" ? `NAWA ($${pricing.nawaPrice})` : `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`;
-
-        await ctx.reply(
-          `✅ <b>Promo Code Created!</b>\n\n` +
-            `• 🔑 Code: <code>${escapeHtml(created.code)}</code>\n` +
-            `• 💎 Package: <b>${tierName}</b>\n` +
-            `• 👥 Max Uses: <b>1 (Single Student Exclusive)</b>`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
-
-    // 4. Admin Search User
-    if (user.waitingFor === "admin_search_user") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const results = db.searchUsers(text);
-
-      if (results.length === 0) {
-        await ctx.reply(`🔍 No students found matching "${escapeHtml(text)}".`, { parse_mode: "HTML" });
-      } else {
-        await ctx.reply(`🔍 <b>Search Results for "${escapeHtml(text)}" (${results.length} found):</b>`, {
-          parse_mode: "HTML",
-          reply_markup: getAdminUsersListKeyboard(results, 0),
-        });
-      }
-      return;
-    }
-
-    // 5. Admin Broadcast Announcement
-    if (user.waitingFor === "admin_broadcast_text") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const allUsers = db.getAllUsers();
-      let sentCount = 0;
-
-      await ctx.reply(`🚀 Broadcasting announcement to <b>${allUsers.length}</b> students...`, { parse_mode: "HTML" });
-
-      for (const u of allUsers) {
-        try {
-          await bot.api.sendMessage(
-            u.userId,
-            `📢 <b>PTU Official Announcement:</b>\n\n${escapeHtml(text)}\n\n🇵🇱 <i>Poland Top Universities Team</i>`,
-            { parse_mode: "HTML" }
-          );
-          sentCount++;
-        } catch {}
-      }
-
-      db.logAdminAction(
-        userId,
-        user.fullName || user.username || `Admin #${userId}`,
-        "GLOBAL_BROADCAST",
-        `Sent broadcast announcement to ${sentCount}/${allUsers.length} students. Message: "${text.slice(0, 100)}..."`
-      );
-
-      await ctx.reply(`✅ Broadcast complete! Delivered to <b>${sentCount}</b> / <b>${allUsers.length}</b> students.`, {
-        parse_mode: "HTML",
-      });
-      return;
-    }
-
-    // 6. Admin Add University
-    if (user.waitingFor === "admin_add_university") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const parts = text.split("|").map((p) => p.trim());
-      if (parts.length >= 4) {
-        const id = parts[0].toLowerCase().replace(/\s+/g, "_");
-        const name = parts[1];
-        const abbr = parts[2] || id.toUpperCase();
-        const city = parts[3] || "Warsaw";
-        const type = (parts[4] === "Private" ? "Private" : "Public") as "Public" | "Private";
-        const ranking = parts[5] || "#Top 20";
-        const tuition = parts[6] || "2,500 EUR/yr";
-        const website = parts[7] || "https://studyinpoland.pl";
-
-        const newUni = {
-          id,
-          name,
-          abbr,
-          city,
-          type,
-          founded: 1990,
-          website,
-          programsCount: 15,
-          students: 12000,
-          internationalStudents: 1500,
-          ranking,
-          logo: "",
-          description: {
-            en: `${name} is a leading institution in ${city}, Poland.`,
-            uz: `${name} — Polshaning ${city} shahridagi yetakchi oliygohi.`,
-          },
-          faculties: ["Information Technology", "Business & Management", "Economics"],
-          tuition: {
-            eu: "Free / 0 EUR",
-            nonEu: tuition,
-            english: tuition,
-          },
-          requirements: ["Secondary School Diploma", "English B2 Certificate", "Passport Copy"],
-          deadline: "August 15",
-        };
-
-        db.saveUniversity(newUni);
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "ADD_UNIVERSITY",
-          `Added university '${newUni.name}' (${newUni.abbr}) in ${newUni.city} with tuition ${newUni.tuition.english} and website ${newUni.website}`,
-          newUni.id
-        );
-
-        await ctx.reply(
-          `✅ <b>New University Added Successfully!</b>\n\n` +
-            `• 🏛️ <b>Name:</b> ${escapeHtml(newUni.name)} (${escapeHtml(newUni.abbr)})\n` +
-            `• 📍 <b>City:</b> ${escapeHtml(newUni.city)}\n` +
-            `• 🌐 <b>Website:</b> <a href="${escapeHtml(newUni.website)}">${escapeHtml(newUni.website)}</a>\n` +
-            `• 💰 <b>Tuition:</b> ${escapeHtml(newUni.tuition.english)}\n\n` +
-            `<i>Students can now see and browse this university immediately!</i>`,
-          { parse_mode: "HTML" }
-        );
-      } else {
-        await ctx.reply(
-          `⚠️ <b>Invalid Format.</b> Please provide at least:\n<code>id | Name | Abbr | City</code>`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
-
-    // 7. Admin Edit University Website
-    if (user.waitingFor === "admin_edit_uni_web") {
-      await cleanUpInput(ctx, userId);
-      const uniId = user.waitingPayload?.uniId;
-      db.setWaitingFor(userId, null);
-      if (uniId) {
-        const uni = db.getUniversity(uniId);
-        if (uni) {
-          uni.website = text;
-          db.saveUniversity(uni);
-
-          db.logAdminAction(
-            userId,
-            user.fullName || user.username || `Admin #${userId}`,
-            "EDIT_UNI_WEBSITE",
-            `Changed website URL of ${uni.name} to: ${text}`,
-            uni.id
-          );
-
-          await ctx.reply(
-            `✅ <b>Website Link Updated for ${escapeHtml(uni.name)}!</b>\n\n` +
-              `🌐 <b>New Link:</b> <a href="${escapeHtml(text)}">${escapeHtml(text)}</a>`,
-            { parse_mode: "HTML" }
-          );
-        }
-      }
-      return;
-    }
-
-    // 8. Admin Edit University Tuition
-    if (user.waitingFor === "admin_edit_uni_tui") {
-      await cleanUpInput(ctx, userId);
-      const uniId = user.waitingPayload?.uniId;
-      db.setWaitingFor(userId, null);
-      if (uniId) {
-        const uni = db.getUniversity(uniId);
-        if (uni) {
-          uni.tuition.english = text;
-          uni.tuition.nonEu = text;
-          db.saveUniversity(uni);
-
-          db.logAdminAction(
-            userId,
-            user.fullName || user.username || `Admin #${userId}`,
-            "EDIT_UNI_TUITION",
-            `Changed tuition fee of ${uni.name} to: ${text}`,
-            uni.id
-          );
-
-          await ctx.reply(
-            `✅ <b>Tuition Updated for ${escapeHtml(uni.name)}!</b>\n\n` +
-              `💰 <b>New Fee:</b> <code>${escapeHtml(text)}</code>`,
-            { parse_mode: "HTML" }
-          );
-        }
-      }
-      return;
-    }
-
-    // 9. Admin Add Document Definition
-    if (user.waitingFor === "admin_add_docdef") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const parts = text.split("|").map((p) => p.trim());
-      if (parts.length >= 3) {
-        const id = parts[0].toLowerCase().replace(/\s+/g, "_");
-        const nameEn = parts[1];
-        const nameUz = parts[2] || nameEn;
-        const descEn = parts[3] || `Official ${nameEn} document for admission.`;
-        const descUz = parts[4] || `Qabul uchun ${nameUz} hujjati.`;
-        const required = (parts[5] || "yes").toLowerCase().includes("y");
-
-        const newDef = {
-          id,
-          name: { en: nameEn, uz: nameUz },
-          desc: { en: descEn, uz: descUz },
-          required,
-        };
-
-        db.saveDocumentDefinition(newDef);
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "ADD_DOCDEF",
-          `Added document requirement '${newDef.id}' (${newDef.name.en} / ${newDef.name.uz}, required: ${newDef.required})`,
-          newDef.id
-        );
-
-        await ctx.reply(
-          `✅ <b>New Document Requirement Added!</b>\n\n` +
-            `• 📄 <b>Key:</b> <code>${escapeHtml(newDef.id)}</code>\n` +
-            `• 🇬🇧 <b>Name (EN):</b> ${escapeHtml(newDef.name.en)}\n` +
-            `• 🇺🇿 <b>Name (UZ):</b> ${escapeHtml(newDef.name.uz)}\n` +
-            `• ⭐ <b>Required:</b> ${newDef.required ? "YES" : "NO"}\n\n` +
-            `<i>This document is now automatically visible in all students' Document Checklists!</i>`,
-          { parse_mode: "HTML" }
-        );
-      } else {
-        await ctx.reply(
-          `⚠️ <b>Invalid Format.</b> Please provide: <code>key | Name EN | Name UZ | Desc EN | Desc UZ | yes/no</code>`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
-
-    // 10. Admin Add Review
-    if (user.waitingFor === "admin_add_review") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      const parts = text.split("|").map((p) => p.trim());
-      if (parts.length >= 5) {
-        const name = parts[0];
-        const country = parts[1] || "Uzbekistan";
-        const university = parts[2] || "Warsaw University";
-        const program = parts[3] || "International Studies";
-        const rating = parseInt(parts[4] || "5", 10);
-        const textEn = parts[5] || "";
-        const textUz = parts[6] || textEn;
-
-        const rev = db.addReview({
-          name,
-          country,
-          university,
-          program,
-          rating,
-          text: { en: textEn, uz: textUz },
-          status: "approved",
-        });
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "ADD_REVIEW",
-          `Published student review for '${rev.name}' (${rev.university}, ${rev.rating}⭐)`,
-          `Review #${rev.id}`
-        );
-
-        await ctx.reply(
-          `✅ <b>Review Published Live!</b>\n\n` +
-            `• 👤 <b>Student:</b> ${escapeHtml(rev.name)} (${escapeHtml(rev.country)})\n` +
-            `• 🏛️ <b>University:</b> ${escapeHtml(rev.university)} — ${escapeHtml(rev.program)}\n` +
-            `• ⭐ <b>Rating:</b> ${"⭐".repeat(rev.rating)}\n` +
-            `• 💬 <b>Text:</b> "${escapeHtml(rev.text.en)}"`,
-          { parse_mode: "HTML" }
-        );
-      } else {
-        await ctx.reply(
-          `⚠️ <b>Invalid Format.</b> Please provide: <code>Name | Country | University | Program | Rating(1-5) | Text EN | Text UZ</code>`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
-
-    // 11. Admin Edit Review Text
-    if (user.waitingFor === "admin_edit_review_text") {
-      await cleanUpInput(ctx, userId);
-      const revId = user.waitingPayload?.revId;
-      db.setWaitingFor(userId, null);
-      if (revId) {
-        db.updateReview(revId, { text: { en: text, uz: text } });
-
-        db.logAdminAction(
-          userId,
-          user.fullName || user.username || `Admin #${userId}`,
-          "EDIT_REVIEW_TEXT",
-          `Updated text for Review #${revId}: "${text.slice(0, 100)}..."`,
-          `Review #${revId}`
-        );
-
-        await ctx.reply(`✅ <b>Review #${revId} text updated successfully!</b>`, { parse_mode: "HTML" });
-      }
-      return;
-    }
-
-    // ================= STUDENT WORKFLOWS =================
-    // 7. Student Document Link Submission
-    if (user.waitingFor === "document_upload") {
-      await cleanUpInput(ctx, userId);
-      const docKey = user.waitingPayload?.docKey;
-      if (docKey) {
-        const isUz = user.lang === "uz";
-        const docDef = db.getDocumentDefinition(docKey);
-        const docName = docDef ? (docDef.name[user.lang] || docDef.name.en) : docKey;
-
-        db.submitDocument(userId, docKey, {
-          link: text,
-          fileType: "link",
-        });
-        db.setWaitingFor(userId, null);
-
-        const replyText = isUz
-          ? `✅ <b>Hujjat Havolasi Qabul Qilindi!</b>\n\n` +
-            `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🔗 <b>Havola:</b> <code>${escapeHtml(text)}</code>\n` +
-            `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-            `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-          : `✅ <b>Document Link Submitted!</b>\n\n` +
-            `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-            `🔗 <b>Link:</b> <code>${escapeHtml(text)}</code>\n` +
-            `🟡 <b>Status:</b> Under Review by Admissions Team\n\n` +
-            `<i>You will be notified as soon as an advisor verifies your document!</i>`;
-
-        await ctx.reply(replyText, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "📁 Hujjatlar Ro'yxati" : "📁 Document Checklist", callback_data: "menu_docs" }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-        return;
-      }
-    }
-
-    // 7b. Student NAWA Document / Text Data Submission
-    if (user.waitingFor === "nawa_document_upload") {
-      await cleanUpInput(ctx, userId);
-      const nawaDocKey = user.waitingPayload?.nawaDocKey as NawaDocumentKey;
-      if (nawaDocKey) {
-        const isUz = user.lang === "uz";
-        const def = defaultNawaDefinitions[nawaDocKey];
-        const docName = def ? (isUz ? def.name.uz : def.name.en) : nawaDocKey;
-
-        if (nawaDocKey === "email") {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(text.trim())) {
-            const warnMsg = await ctx.reply(
-              isUz
-                ? `⚠️ <b>Noto'g'ri email formati!</b>\n\nIltimos, to'g'ri email manzilini kiriting (masalan: <code>talaba@gmail.com</code>):`
-                : `⚠️ <b>Invalid email format!</b>\n\nPlease enter a valid email address (e.g. <code>student@gmail.com</code>):`,
-              {
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: isUz ? "◀️ NAWA Dosyesiga Qaytish" : "◀️ Back to NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  ],
-                },
-              }
-            );
-            db.setLastPromptMsgId(userId, warnMsg.message_id);
-            return;
-          }
-
-          db.submitNawaDocument(userId, "email", { value: text.trim() });
-          db.setWaitingFor(userId, null);
-
-          await ctx.reply(
-            isUz
-              ? `✅ <b>Email Manzili Qabul Qilindi!</b>\n\n` +
-                `📧 <b>Email:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-              : `✅ <b>Email Address Received!</b>\n\n` +
-                `📧 <b>Email:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-                `<i>You will be notified as soon as counselors review your submission!</i>`,
-            {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-                ],
-              },
-            }
-          );
-          return;
-        }
-
-        if (nawaDocKey === "home_address") {
-          if (text.trim().length < 5) {
-            const warnMsg = await ctx.reply(
-              isUz
-                ? `⚠️ <b>Yashash manzili juda qisqa!</b>\n\nIltimos, to'liq yashash manzilingizni kiriting (Viloyat, shahar/tuman, ko'cha, uy):`
-                : `⚠️ <b>Address is too short!</b>\n\nPlease enter your full residential address:`,
-              {
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: isUz ? "◀️ NAWA Dosyesiga Qaytish" : "◀️ Back to NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  ],
-                },
-              }
-            );
-            db.setLastPromptMsgId(userId, warnMsg.message_id);
-            return;
-          }
-
-          db.submitNawaDocument(userId, "home_address", { value: text.trim() });
-          db.setWaitingFor(userId, null);
-
-          await ctx.reply(
-            isUz
-              ? `✅ <b>Yashash Manzili Qabul Qilindi!</b>\n\n` +
-                `🏠 <b>Manzil:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-              : `✅ <b>Home Address Received!</b>\n\n` +
-                `🏠 <b>Address:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-                `<i>You will be notified as soon as counselors review your submission!</i>`,
-            {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-                ],
-              },
-            }
-          );
-          return;
-        }
-
-        // For file requirements: accept cloud links (Google Drive, OneDrive, etc.)
-        if (text.startsWith("http://") || text.startsWith("https://")) {
-          db.submitNawaDocument(userId, nawaDocKey, { value: text.trim(), fileType: "link" });
-          db.setWaitingFor(userId, null);
-
-          await ctx.reply(
-            isUz
-              ? `✅ <b>NAWA Hujjat Havolasi Qabul Qilindi!</b>\n\n` +
-                `📄 <b>Hujjat:</b> <b>${escapeHtml(docName)}</b>\n` +
-                `🔗 <b>Havola:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Holati:</b> Qabul Maslahatchilari Tekshiruvida\n\n` +
-                `<i>Hujjatingiz ko'rib chiqilishi bilan bot orqali bildirishnoma yuboriladi!</i>`
-              : `✅ <b>NAWA Document Link Received!</b>\n\n` +
-                `📄 <b>Document:</b> <b>${escapeHtml(docName)}</b>\n` +
-                `🔗 <b>Link:</b> <code>${escapeHtml(text.trim())}</code>\n` +
-                `🟡 <b>Status:</b> Under Review by Admissions Advisors\n\n` +
-                `<i>You will be notified as soon as counselors review your submission!</i>`,
-            {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-                ],
-              },
-            }
-          );
-          return;
-        }
-
-        // If user typed plain text for file requirement
-        await ctx.reply(
-          isUz
-            ? `⚠️ <b>Fayl yoki fotosurat yuklash talab qilinadi!</b>\n\n` +
-              `Iltimos, <b>${escapeHtml(docName)}</b> uchun toza PDF fayl yoki sifatli fotosurat yuboring (yoki Google Drive havolasini yuboring).`
-            : `⚠️ <b>File or photo upload required!</b>\n\n` +
-              `Please send a clean PDF document or photo scan for <b>${escapeHtml(docName)}</b>.`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📁 NAWA Dosyesi" : "📁 NAWA Dossier", callback_data: "nawa_my_dossier" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-    }
-
-    // 8. Student Review - Step 2: Program -> Step 3: Text Prompt
-    if (user.waitingFor === "student_review_program") {
-      await cleanUpInput(ctx, userId);
-      const rating = user.waitingPayload?.rating || 5;
-      db.setWaitingFor(userId, "student_review_text", { rating, program: text });
-
-      const isUz = user.lang === "uz";
-      const promptText = isUz
-        ? `💬 <b>3-Qadam: Sharhingiz Matni</b>\n\n` +
-          `Polshada o'qish, viza olish, yotoqxona yoki bot xizmatlari haqidagi fikr va maslahatlaringizni yozib yuboring:`
-        : `💬 <b>Step 3: Review Description</b>\n\n` +
-          `Please share your thoughts, tips, and feedback about studying in Poland or your application process:`;
-
-      const msg = await ctx.reply(promptText, { parse_mode: "HTML" });
-      db.setLastPromptMsgId(userId, msg.message_id);
-      return;
-    }
-
-    // 9. Student Review - Step 3: Save Review
-    if (user.waitingFor === "student_review_text") {
-      await cleanUpInput(ctx, userId);
-      const rating = user.waitingPayload?.rating || 5;
-      const programRaw = user.waitingPayload?.program || "General Study";
-      db.setWaitingFor(userId, null);
-
-      const fullName = user.fullName || user.firstName || "Student";
-      const parts = programRaw.split("-");
-      const university = parts[0]?.trim() || "Poland University";
-      const program = parts[1]?.trim() || programRaw;
-
-      const rev = db.addReview({
-        userId,
-        name: fullName,
-        country: user.country || "Uzbekistan",
-        university,
-        program,
-        rating,
-        text: { en: text, uz: text },
-        status: "pending",
-      });
-
-      const isUz = user.lang === "uz";
-      const replyMsg = isUz
-        ? `🎉 <b>Sharhingiz Muvaffaqiyatli Yuborildi!</b>\n\n` +
-          `• 👤 Ism: <b>${escapeHtml(rev.name)}</b>\n` +
-          `• ⭐ Baho: <b>${"⭐".repeat(rev.rating)}</b>\n` +
-          `• 🏛️ Universitet: <b>${escapeHtml(rev.university)}</b>\n` +
-          `• 💬 Fikr: <i>"${escapeHtml(text)}"</i>\n\n` +
-          `🟡 <i>Sharhingiz moderatorlar tomonidan ko'rib chiqilib, tez orada talabalar sharhlari ro'yxatida e'lon qilinadi. Katta rahmat!</i>`
-        : `🎉 <b>Review Submitted Successfully!</b>\n\n` +
-          `• 👤 Name: <b>${escapeHtml(rev.name)}</b>\n` +
-          `• ⭐ Rating: <b>${"⭐".repeat(rev.rating)}</b>\n` +
-          `• 🏛️ University: <b>${escapeHtml(rev.university)}</b>\n` +
-          `• 💬 Feedback: <i>"${escapeHtml(text)}"</i>\n\n` +
-          `🟡 <i>Your review is in moderation and will appear in the Student Reviews section shortly. Thank you!</i>`;
-
-      await ctx.reply(replyMsg, {
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
-        },
-      });
-      return;
-    }
-
-    // 10. Real Single-Use Database Promo Code Redemption
-    if (user.waitingFor === "premium_code") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-
-      const codeMatch = text.match(/[A-Za-z0-9]{6,12}/);
-      const codeToRedeem = codeMatch ? codeMatch[0] : text.trim();
-      const res = db.redeemPromoCode(codeToRedeem, userId);
-      const isUz = user.lang === "uz";
-      const pricing = db.getPricingConfig();
-
-      if (res.success && res.tier) {
-        const isNawaFull = res.tier === "NAWA_FULL" || res.tier === "Full Premium";
-        const tierName = isNawaFull
-          ? `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`
-          : `NAWA ($${pricing.nawaPrice})`;
-
-        const successMsg = isUz
-          ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
-            `Siz kiritgan <code>${escapeHtml(codeToRedeem.toUpperCase())}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
-            `🌟 <b>Ochilgan A'zolik Paketi:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
-            (isNawaFull
-              ? `• 📁 Hujjatlar nazorati va qabul hujjatlarini to'liq tekshirish\n` +
-                `• 🏛️ Universitetlarga to'g'ridan-to'g'ri ariza topshirish huquqi\n` +
-                `• 📜 NAWA SYRENA arizasi va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły)\n` +
-                `• ✍️ Kirish imtihonlari va yo'nalish testlariga to'liq kirish\n` +
-                `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 aloqa`
-              : `• 🏛️ Standart NAWA SYRENA arizasi va nostrifikatsiya yo'riqnomasi\n` +
-                `• 📋 Polsha oliygohlari qabul talablari va dasturlar bazasi\n` +
-                `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari\n` +
-                `💡 <i>Hujjatlarni tekshirtirish va to'liq ariza topshirish uchun Full Application + NAWA ga oshirishingiz mumkin.</i>`)
-          : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
-            `Your promo code <code>${escapeHtml(codeToRedeem.toUpperCase())}</code> has been redeemed successfully!\n` +
-            `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
-            (isNawaFull
-              ? `• 📁 Full Document Checklist & Certified Advisor Verification\n` +
-                `• 🏛️ Direct University Application Filing & Dossier Processing\n` +
-                `• 📜 NAWA SYRENA Legalization & Sworn Translations (Tłumacz Przysięgły)\n` +
-                `• ✍️ Complete Entrance & Placement Exam Access\n` +
-                `• 💬 1-on-1 Dedicated Admissions Consultant Support`
-              : `• 🏛️ Standard NAWA SYRENA Application & Recognition Guide\n` +
-                `• 📋 Polish University Admission Requirements Directory\n` +
-                `• ✍️ Standard Exam Preparation Materials\n` +
-                `💡 <i>You can upgrade to Full Application + NAWA anytime for complete document review and application processing.</i>`);
-
-        await ctx.reply(successMsg, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: isNawaFull
-              ? [
-                  [{ text: isUz ? "📁 Hujjatlarni Yuklash" : "📁 Document Checklist", callback_data: "menu_docs" }],
-                  [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-                ]
-              : [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
-          },
-        });
-      } else {
-        const failMsg = isUz
-          ? `❌ <b>Faollashtirish Amalga Oshmadi</b>\n\n` +
-            `Sabab: ${escapeHtml(res.error || "Kod topilmadi")}.\n` +
-            `Iltimos, kiritilgan kodni tekshiring yoki yangi kod olish uchun maslahatchi bilan bog'laning:`
-          : `❌ <b>Activation Failed</b>\n\n` +
-            `Reason: ${escapeHtml(res.error || "Code not recognized")}.\n` +
-            `Please contact your consultant or tap below to obtain a code:`;
-
-        await ctx.reply(failMsg, {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: isUz ? "🔑 Qayta Kiritish" : "🔑 Try Again", callback_data: "premium_enter_code" }],
-              [{
-                text: isUz ? "💬 Maslahatchidan Kod Olish" : "💬 Contact Advisor for Access Code",
-                url: `https://t.me/${config.advisorUsername}`,
-              }],
-              [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-            ],
-          },
-        });
-      }
-      return;
-    }
-
-    // 10b. Direct Promo Code Detection in Plain Chat Text
-    if (!user.waitingFor) {
-      const codeMatch = text.match(/^[A-Za-z0-9]{6,12}$/);
-      if (codeMatch) {
-        const candidateCode = codeMatch[0].toUpperCase();
-        const maybePromo = db.getPromoCode(candidateCode);
-        if (maybePromo && maybePromo.isActive && !maybePromo.isExpired) {
-          await cleanUpInput(ctx, userId);
-          const res = db.redeemPromoCode(candidateCode, userId);
-          if (res.success && res.tier) {
-            const isUz = user.lang === "uz";
-            const pricing = db.getPricingConfig();
-            const isNawaFull = res.tier === "NAWA_FULL" || res.tier === "Full Premium";
-            const tierName = isNawaFull
-              ? `Full Application + NAWA ($${pricing.fullApplicationNawaPrice})`
-              : `NAWA ($${pricing.nawaPrice})`;
-
-            const successMsg = isUz
-              ? `🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
-                `Siz kiritgan <code>${escapeHtml(candidateCode)}</code> promokodi muvaffaqiyatli faollashtirildi!\n` +
-                `🌟 <b>Ochilgan A'zolik Paketi:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
-                (isNawaFull
-                  ? `• 📁 Hujjatlar nazorati va qabul hujjatlarini to'liq tekshirish\n` +
-                    `• 🏛️ Universitetlarga to'g'ridan-to'g'ri ariza topshirish huquqi\n` +
-                    `• 📜 NAWA SYRENA arizasi va Polsha qasamyodli tarjimalari (Tłumacz Przysięgły)\n` +
-                    `• ✍️ Kirish imtihonlari va yo'nalish testlariga to'liq kirish\n` +
-                    `• 💬 Shaxsiy qabul koordinatori bilan 1-ga-1 aloqa`
-                  : `• 🏛️ Standart NAWA SYRENA arizasi va nostrifikatsiya yo'riqnomasi\n` +
-                    `• 📋 Polsha oliygohlari qabul talablari va dasturlar bazasi\n` +
-                    `• ✍️ Boshlang'ich testlar va tayyorgarlik materiallari`)
-              : `🎉 <b>CONGRATULATIONS!</b>\n\n` +
-                `Your promo code <code>${escapeHtml(candidateCode)}</code> has been redeemed successfully!\n` +
-                `🌟 <b>Unlocked Package:</b> <b>${escapeHtml(tierName)}</b>\n\n` +
-                (isNawaFull
-                  ? `• 📁 Full Document Checklist & Certified Advisor Verification\n` +
-                    `• 🏛️ Direct University Application Filing & Dossier Processing\n` +
-                    `• 📜 NAWA SYRENA Legalization & Sworn Translations (Tłumacz Przysięgły)\n` +
-                    `• ✍️ Complete Entrance & Placement Exam Access\n` +
-                    `• 💬 1-on-1 Dedicated Admissions Consultant Support`
-                  : `• 🏛️ Standard NAWA SYRENA Application & Recognition Guide\n` +
-                    `• 📋 Polish University Admission Requirements Directory\n` +
-                    `• ✍️ Standard Exam Preparation Materials`);
-
-            await ctx.reply(successMsg, {
-              parse_mode: "HTML",
-              reply_markup: {
-                inline_keyboard: isNawaFull
-                  ? [
-                      [{ text: isUz ? "📁 Hujjatlarni Yuklash" : "📁 Document Checklist", callback_data: "menu_docs" }],
-                      [{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }],
-                    ]
-                  : [[{ text: isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", callback_data: "go_main_menu" }]],
-              },
-            });
-            return;
-          }
-        }
-      }
-    }
-
-    // 11. Super Admin Appoint User
-    if (user.waitingFor === ("admin_super_appoint_user" as any)) {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      if (!user.isSuperAdmin) return;
-
-      const q = text.replace("@", "").trim();
-      let targetUser: UserSessionData | undefined;
-
-      if (/^\d+$/.test(q)) {
-        targetUser = db.getUser(parseInt(q, 10));
-      } else {
-        const found = db.searchUsers(q);
-        targetUser = found[0];
-      }
-
-      if (targetUser) {
-        grantAdminRole(targetUser.userId, userId, false);
-
-        await ctx.reply(
-          `✅ <b>Admin Successfully Appointed!</b>\n\n` +
-            `• 👤 <b>User:</b> ${escapeHtml(targetUser.fullName || targetUser.username || "User")}\n` +
-            `• 🆔 <b>Telegram ID:</b> <code>${targetUser.userId}</code>\n` +
-            `• 🛡️ <b>Role:</b> Regular Administrator\n\n` +
-            `<i>They can now use <code>/admin</code> to access the admin dashboard.</i>`,
-          { parse_mode: "HTML" }
-        );
-      } else {
-        await ctx.reply(
-          `⚠️ <b>User Not Found.</b> Make sure they have interacted with the bot at least once or enter their exact numeric Telegram ID.`,
-          { parse_mode: "HTML" }
-        );
-      }
-      return;
-    }
-
-    // 11b. Super Admin Change Admin Passcode
-    if (user.waitingFor === "admin_super_change_admin_passcode") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      if (!user.isSuperAdmin && user.adminRole !== "super_admin") return;
-
-      const isUz = user.lang === "uz";
-      const newPasscode = text.trim();
-
-      if (newPasscode.length < 6) {
-        await ctx.reply(
-          isUz
-            ? `⚠️ <b>Parol juda qisqa!</b>\nXavfsizlik talablariga ko'ra yangi parol kamida <b>6 ta belgidan</b> iborat bo'lishi kerak.`
-            : `⚠️ <b>Passcode too short!</b>\nFor security reasons, the new admin passcode must be at least <b>6 characters</b> long.`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "🔄 Qaytadan Urinib Ko'rish" : "🔄 Try Again", callback_data: "admin_super_change_admin_passcode_prompt" }],
-                [{ text: isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", callback_data: "admin_super_hq" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-
-      db.setAdminPasscode(newPasscode, userId, user.fullName || user.username || "Super Admin");
-
-      const successMsg = isUz
-        ? `✅ <b>ADMIN PAROLI MUAFFAQIYATLI O'ZGARTIRILDI!</b>\n` +
-          `━━━━━━━━━━━━━━━━━━━━\n` +
-          `• 🔐 <b>Yangi Parol:</b> <code>${escapeHtml(newPasscode)}</code>\n` +
-          `• 🛡️ <b>Amal Qilish Doirasi:</b> Barcha oddiy administratorlar\n` +
-          `• ⚠️ <b>Xavfsizlik:</b> Barcha amaldagi oddiy admin sessiyalari bekor qilindi.\n\n` +
-          `<i>Oddiy adminlar endi faqat ushbu yangi parol yordamida /admin paneliga kira oladilar.</i>`
-        : `✅ <b>ADMIN PASSCODE SUCCESSFULLY UPDATED!</b>\n` +
-          `━━━━━━━━━━━━━━━━━━━━\n` +
-          `• 🔐 <b>New Passcode:</b> <code>${escapeHtml(newPasscode)}</code>\n` +
-          `• 🛡️ <b>Scope:</b> Standard Administrators\n` +
-          `• ⚠️ <b>Security Action:</b> All active normal admin sessions have been invalidated.\n\n` +
-          `<i>Normal admins can now access /admin only using this new passcode.</i>`;
-
-      await ctx.reply(successMsg, {
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: isUz ? "🛡️ Adminlar Boshqaruvi" : "🛡️ Manage Admins", callback_data: "admin_super_admins_list" }],
-            [{ text: isUz ? "👑 Super Admin HQ" : "👑 Super Admin HQ", callback_data: "admin_super_hq" }],
-          ],
-        },
-      });
-      return;
-    }
-
-    // 12. Super Admin Record External Payment / Transaction
-    if (user.waitingFor === ("admin_super_create_txn_user" as any)) {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-      if (!user.isSuperAdmin) return;
-
-      const parts = text.split(/\s+/);
-      const targetUserIdStr = parts[0]?.replace("@", "").trim();
-      const rawProduct = (parts[1] || "").toUpperCase();
-      const product: "NAWA" | "NAWA_FULL" = rawProduct === "NAWA" ? "NAWA" : "NAWA_FULL";
-      const defaultAmount = product === "NAWA" ? 15 : 50;
-      const amount = parts[2] && !isNaN(parseFloat(parts[2])) ? parseFloat(parts[2]) : defaultAmount;
-      const rawStatus = (parts[3] || "PAID").toUpperCase();
-      const status: "UNVERIFIED" | "PAID" = rawStatus === "UNVERIFIED" ? "UNVERIFIED" : "PAID";
-
-      let targetUser: UserSessionData | undefined;
-      if (/^\d+$/.test(targetUserIdStr)) {
-        targetUser = db.getUser(parseInt(targetUserIdStr, 10));
-      } else {
-        const found = db.searchUsers(targetUserIdStr);
-        targetUser = found[0];
-      }
-
-      if (!targetUser) {
-        await ctx.reply(
-          `⚠️ <b>User Not Found.</b> Please provide a valid numeric User ID or registered @username.`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      const txn = db.createTransaction({
-        userId: targetUser.userId,
-        userName: targetUser.fullName || targetUser.username || `User #${targetUser.userId}`,
-        product,
-        amount,
-        status,
-        source: "EXTERNAL_TRANSFER",
-        notes: `Recorded manually by Super Admin #${userId}`,
-        actorId: userId,
-      });
-
-      if (status === "PAID") {
-        db.verifyPaymentTransaction(txn.id, userId, "Direct verification upon manual entry");
-      }
-
-      await ctx.reply(
-        `💰 <b>Transaction Successfully Recorded!</b>\n\n` +
-          `• 🧾 <b>ID:</b> <code>${txn.id}</code>\n` +
-          `• 👤 <b>Student:</b> ${escapeHtml(targetUser.fullName || targetUser.username || "User")} (<code>${targetUser.userId}</code>)\n` +
-          `• 📦 <b>Product:</b> <b>${txn.product}</b> ($${txn.amount})\n` +
-          `• 📌 <b>Status:</b> <b>${status}</b>\n` +
-          `• 💳 <b>Source:</b> External Bank/Card Transfer\n\n` +
-          (status === "PAID"
-            ? `✨ <i>Premium ${txn.product} has been automatically activated for the student.</i>`
-            : `🟡 <i>Payment is UNVERIFIED. You can verify it anytime in Financial HQ.</i>`),
-        { parse_mode: "HTML" }
-      );
-      return;
-    }
-
-    // 17. Admin Edit NAWA Price (Super Admin Only)
-    if (user.waitingFor === "admin_edit_price_nawa") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-
-      if (!isAuthorizedSuperAdmin(userId)) {
-        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify pricing.`, { parse_mode: "HTML" });
-        return;
-      }
-
-      const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
-      if (isNaN(parsedPrice) || parsedPrice <= 0) {
-        await ctx.reply(
-          `⚠️ <b>Xatolik / Invalid Price:</b> Narx musbat raqam bo'lishi kerak (masalan: <code>15</code> yoki <code>20</code>).`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      db.updatePricingConfig(
-        { nawaPrice: parsedPrice },
-        userId,
-        user.fullName || user.username || `Admin #${userId}`
-      );
-
-      await ctx.reply(
-        `✅ <b>NAWA narxi muvaffaqiyatli yangilandi!</b>\n\n` +
-          `• Yangi narx: <b>$${parsedPrice} USD</b>\n` +
-          `• Ushbu yangi narx barcha bo'limlar va Ofertada avtomatik aks etadi.`,
-        {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // 18. Admin Edit Full Application + NAWA Price (Super Admin Only)
-    if (user.waitingFor === "admin_edit_price_full") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-
-      if (!isAuthorizedSuperAdmin(userId)) {
-        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify pricing.`, { parse_mode: "HTML" });
-        return;
-      }
-
-      const parsedPrice = parseFloat(text.replace(/[^0-9.]/g, ""));
-      if (isNaN(parsedPrice) || parsedPrice <= 0) {
-        await ctx.reply(
-          `⚠️ <b>Xatolik / Invalid Price:</b> Narx musbat raqam bo'lishi kerak (masalan: <code>50</code> yoki <code>60</code>).`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      db.updatePricingConfig(
-        { fullApplicationNawaPrice: parsedPrice },
-        userId,
-        user.fullName || user.username || `Admin #${userId}`
-      );
-
-      await ctx.reply(
-        `✅ <b>Full Application + NAWA narxi muvaffaqiyatli yangilandi!</b>\n\n` +
-          `• Yangi narx: <b>$${parsedPrice} USD</b>\n` +
-          `• Ushbu yangi narx barcha bo'limlar va Ofertada avtomatik aks etadi.`,
-        {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // 19. Admin Edit Application Fee (Super Admin Only)
-    if (user.waitingFor === "admin_edit_fee") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-
-      if (!isAuthorizedSuperAdmin(userId)) {
-        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can modify application fee.`, { parse_mode: "HTML" });
-        return;
-      }
-
-      const parsedFee = parseFloat(text.replace(/[^0-9.]/g, ""));
-      if (isNaN(parsedFee) || parsedFee < 0) {
-        await ctx.reply(
-          `⚠️ <b>Xatolik / Invalid Fee:</b> Ariza to'lovi 0 yoki undan yuqori raqam bo'lishi kerak (masalan: <code>30</code>).`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      db.updatePricingConfig(
-        { applicationFee: parsedFee },
-        userId,
-        user.fullName || user.username || `Admin #${userId}`
-      );
-
-      await ctx.reply(
-        `✅ <b>Ariza to'lovi muvaffaqiyatli yangilandi!</b>\n\n` +
-          `• Yangi to'lov miqdori: <b>€${parsedFee} EUR</b>\n` +
-          `• Ushbu to'lov barcha Ofertada va tariflarda avtomatik aks etadi.`,
-        {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "📄 Oferta & Narxlar Paneliga", callback_data: "admin_menu_oferta_pricing" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // 20. Admin Edit Oferta Text (Draft - Super Admin Only)
-    if (user.waitingFor === "admin_edit_oferta_text") {
-      await cleanUpInput(ctx, userId);
-      db.setWaitingFor(userId, null);
-
-      if (!isAuthorizedSuperAdmin(userId)) {
-        await ctx.reply(`⛔ <b>Access Denied:</b> Only Super Admin can edit Oferta text.`, { parse_mode: "HTML" });
-        return;
-      }
-
-      if (!text || text.trim().length < 20) {
-        await ctx.reply(
-          `⚠️ <b>Xatolik / Too Short:</b> Oferta matni kamida 20 ta belgidan iborat bo'lishi kerak.`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      if (text.length > 4000) {
-        await ctx.reply(
-          `⚠️ <b>Xatolik / Message Too Long:</b> Telegram bitta xabar uchun matn uzunligi 4000 belgidan oshmasligi kerak (Sizda: ${text.length} belgi).`,
-          { parse_mode: "HTML" }
-        );
-        return;
-      }
-
-      const draft = db.updateDraftOferta(
-        text,
-        userId,
-        user.fullName || user.username || `Admin #${userId}`
-      );
-
-      await ctx.reply(
-        `✅ <b>Yangi Oferta Qoralamasi (Draft v${draft.version}) Saqlandi!</b>\n\n` +
-          `Siz ushbu qoralamani avval <b>Ko'rib chiqishingiz (Preview)</b> va barcha narxlar to'g'riligiga ishonch hosil qilgach <b>E'lon qilishingiz (Publish)</b> mumkin.`,
-        {
-          parse_mode: "HTML",
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: "👁️ Ofertani Ko'rish (Preview)", callback_data: "admin_preview_oferta" },
-                { text: "🚀 E'lon Qilish (Publish)", callback_data: "admin_publish_oferta_confirm" },
-              ],
-              [{ text: "◀️ Oferta & Narxlar Paneli", callback_data: "admin_menu_oferta_pricing" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // 21. Admin Add Test Title
-    if (user.waitingFor === "admin_add_test_title") {
-      await cleanUpInput(ctx, userId);
-      const title = text.trim();
-      if (title.length < 3) {
-        await ctx.reply("⚠️ Test sarlavhasi kamida 3 ta belgidan iborat bo'lishi kerak.");
-        return;
-      }
-      db.setWaitingFor(userId, "admin_add_test_subject");
-      db.updateUser(userId, { waitingPayload: { title } });
-
-      const isUz = user.lang === "uz";
-      const msg = await ctx.reply(
-        isUz
-          ? `📚 <b>Yangi Test Materiali Qo'shish (2/3-bosqich)</b>\n\n` +
-            `Sarlavha: <b>${escapeHtml(title)}</b>\n\n` +
-            `Iltimos, test fani yoki yo'nalishini kiriting (masalan: <i>Matematika</i>, <i>Ingliz tili B2</i>, <i>Polyak tili</i>, <i>Biologiya</i>):`
-          : `📚 <b>Add New Test Material (Step 2/3)</b>\n\n` +
-            `Title: <b>${escapeHtml(title)}</b>\n\n` +
-            `Please enter the test subject (e.g. <i>Mathematics</i>, <i>English B2</i>, <i>Polish Language</i>, <i>Biology</i>):`,
-        { parse_mode: "HTML" }
-      );
-      db.setLastPromptMsgId(userId, msg.message_id);
-      return;
-    }
-
-    // 22. Admin Add/Edit Test Subject
-    if (user.waitingFor === "admin_add_test_subject") {
-      await cleanUpInput(ctx, userId);
-      const subject = text.trim();
-      const payload = user.waitingPayload;
-
-      if (payload?.isEdit && payload?.testId) {
-        db.setWaitingFor(userId, null);
-        db.updateTest(
-          payload.testId,
-          { subject },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
-        const isUz = user.lang === "uz";
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Test Fani Yangilandi!</b>\n\nYangi fan: <b>${escapeHtml(subject)}</b>`
-            : `✅ <b>Test Subject Updated!</b>\n\nNew subject: <b>${escapeHtml(subject)}</b>`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${payload.testId}` }],
-                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-
-      db.setWaitingFor(userId, "admin_add_test_file");
-      db.updateUser(userId, { waitingPayload: { ...payload, subject } });
-
-      const isUz = user.lang === "uz";
-      const msg = await ctx.reply(
-        isUz
-          ? `📁 <b>Yangi Test Materiali Qo'shish (3/3-bosqich)</b>\n\n` +
-            `Sarlavha: <b>${escapeHtml(payload?.title || "")}</b>\n` +
-            `Fan: <b>${escapeHtml(subject)}</b>\n\n` +
-            `Iltimos, test materialining <b>PDF faylini Telegram orqali yuboring</b> yoki <b>yuklab olish havolasini (Google Drive / OneDrive / URL)</b> matn sifatida yozing:`
-          : `📁 <b>Add New Test Material (Step 3/3)</b>\n\n` +
-            `Title: <b>${escapeHtml(payload?.title || "")}</b>\n` +
-            `Subject: <b>${escapeHtml(subject)}</b>\n\n` +
-            `Please <b>upload the test PDF document</b> or <b>send the download URL link</b> (Google Drive / Cloud) below:`,
-        { parse_mode: "HTML" }
-      );
-      db.setLastPromptMsgId(userId, msg.message_id);
-      return;
-    }
-
-    // 23. Admin Add Test File via URL
-    if (user.waitingFor === "admin_add_test_file") {
-      await cleanUpInput(ctx, userId);
-      const url = text.trim();
-      const payload = user.waitingPayload;
-
-      if (payload && payload.title && payload.subject) {
-        db.setWaitingFor(userId, null);
-        const isUz = user.lang === "uz";
-        const newTest = db.createTest(
-          {
-            id: `test-${Date.now().toString(36)}`,
-            title: {
-              en: payload.title,
-              uz: payload.title,
-            },
-            subject: payload.subject,
-            description: {
-              en: `Entrance examination test file for ${payload.subject}.`,
-              uz: `${payload.subject} fani bo'yicha namunaviy kirish imtihoni testi.`,
-            },
-            fileType: "link",
-            fileUrl: url,
-            isFree: false,
-          },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
-
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Yangi Test Materiali Muvaffaqiyatli Qo'shildi!</b>\n\n` +
-              `🏷️ <b>Nomi:</b> ${escapeHtml(newTest.title.uz)}\n` +
-              `📚 <b>Fani:</b> ${escapeHtml(newTest.subject)}\n` +
-              `🔗 <b>Havola:</b> ${escapeHtml(newTest.fileUrl || "")}\n` +
-              `💎 <b>Turi:</b> 🔒 VIP Imtihon To'plami`
-            : `✅ <b>New Test Material Created Successfully!</b>\n\n` +
-              `🏷️ <b>Title:</b> ${escapeHtml(newTest.title.en)}\n` +
-              `📚 <b>Subject:</b> ${escapeHtml(newTest.subject)}\n` +
-              `🔗 <b>Link:</b> ${escapeHtml(newTest.fileUrl || "")}\n` +
-              `💎 <b>Tier:</b> 🔒 VIP Entrance Pack`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Testlar Ro'yxati" : "📝 Test Materials", callback_data: "admin_menu_tests" }],
-                [{ text: isUz ? "◀️ Admin Panel" : "◀️ Admin Panel", callback_data: "admin_panel" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-    }
-
-    // 24. Admin Edit Test Title
-    if (user.waitingFor === "admin_edit_test_title") {
-      await cleanUpInput(ctx, userId);
-      const newTitle = text.trim();
-      const testId = user.waitingPayload?.testId;
-
-      if (testId && newTitle.length >= 3) {
-        db.setWaitingFor(userId, null);
-        db.updateTest(
-          testId,
-          {
-            title: {
-              en: newTitle,
-              uz: newTitle,
-            },
-          },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
-        const isUz = user.lang === "uz";
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Test Sarlavhasi Yangilandi!</b>\n\nYangi nom: <b>${escapeHtml(newTitle)}</b>`
-            : `✅ <b>Test Title Updated!</b>\n\nNew title: <b>${escapeHtml(newTitle)}</b>`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
-                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-    }
-
-    // 25. Admin Edit Test File via URL
-    if (user.waitingFor === "admin_edit_test_file") {
-      await cleanUpInput(ctx, userId);
-      const url = text.trim();
-      const testId = user.waitingPayload?.testId;
-
-      if (testId && url.length >= 5) {
-        db.setWaitingFor(userId, null);
-        db.updateTest(
-          testId,
-          {
-            fileUrl: url,
-            fileType: "link",
-          },
-          userId,
-          user.fullName || user.username || "Admin"
-        );
-        const isUz = user.lang === "uz";
-        await ctx.reply(
-          isUz
-            ? `✅ <b>Test Havolasi Yangilandi!</b>\n\nYangi havola: ${escapeHtml(url)}`
-            : `✅ <b>Test Download Link Updated!</b>\n\nNew link: ${escapeHtml(url)}`,
-          {
-            parse_mode: "HTML",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: isUz ? "📝 Test Tafsilotlari" : "📝 Test Details", callback_data: `admin_view_test_${testId}` }],
-                [{ text: isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", callback_data: "admin_menu_tests" }],
-              ],
-            },
-          }
-        );
-        return;
-      }
-    }
-
-    return next();
+    await ctx.reply(prompt, {
+      parse_mode: "HTML",
+      reply_markup: getReviewRatingKeyboard(user.lang),
+    });
   });
 }

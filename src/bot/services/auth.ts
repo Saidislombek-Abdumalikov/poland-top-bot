@@ -1,18 +1,15 @@
 import * as crypto from "crypto";
 import { config } from "../config";
 import { db } from "./db";
-import { AdminRole, UserSessionData } from "../types";
+import { UserSessionData } from "../types";
 
 // SHA-256 password hashing helper
 export function sha256Hash(secret: string): string {
   return crypto.createHash("sha256").update(secret.trim()).digest("hex");
 }
 
-// Default pre-computed SHA-256 hashes for system security:
-// sha256("PTUADMIN2025") = "1de5c0b5b3fe90c0ce256712d7f84f1607e93f15282b7a3509463fa24d26225b"
-// sha256("super*admin")  = "524ebee4ea5727134ed3a89f4b14f5086bcdb822a718e3c1420d891c9efc4bc9"
+// Default pre-computed SHA-256 hash for PTUADMIN2025
 const DEFAULT_ADMIN_HASH = "1de5c0b5b3fe90c0ce256712d7f84f1607e93f15282b7a3509463fa24d26225b";
-const DEFAULT_SUPER_ADMIN_HASH = "524ebee4ea5727134ed3a89f4b14f5086bcdb822a718e3c1420d891c9efc4bc9";
 
 // 12-hour admin session lifetime (in milliseconds)
 export const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
@@ -35,52 +32,30 @@ export function verifySecret(inputSecret: string, targetHash: string): boolean {
 
 /**
  * Authenticates provided passcode against hashed credentials.
- * Returns the matching role or null without exposing any details.
+ * Returns true if valid admin passcode, false otherwise.
  */
-export function authenticatePasscode(passcode: string): AdminRole | null {
-  if (!passcode || typeof passcode !== "string") return null;
+export function authenticatePasscode(passcode: string): boolean {
+  if (!passcode || typeof passcode !== "string") return false;
   const cleanPasscode = passcode.trim();
-  if (!cleanPasscode) return null;
+  if (!cleanPasscode) return false;
 
-  // 1. Check Super Admin Hash
-  const superAdminHash =
-    process.env.SUPER_ADMIN_PASSCODE_HASH ||
-    (process.env.SUPER_ADMIN_PASSCODE
-      ? sha256Hash(process.env.SUPER_ADMIN_PASSCODE)
-      : DEFAULT_SUPER_ADMIN_HASH);
-
-  if (verifySecret(cleanPasscode, superAdminHash)) {
-    return "super_admin";
-  }
-
-  // 2. Check Normal Admin Hash (Dynamic DB Hash takes precedence over ENV/Default)
-  const dynamicAdminHash = db.getAdminPasscodeHash();
   const adminHash =
-    dynamicAdminHash ||
     process.env.ADMIN_PASSCODE_HASH ||
-    (process.env.ADMIN_PASSCODE
-      ? sha256Hash(process.env.ADMIN_PASSCODE)
-      : DEFAULT_ADMIN_HASH);
+    (config.adminPasscode ? sha256Hash(config.adminPasscode) : DEFAULT_ADMIN_HASH);
 
-  if (verifySecret(cleanPasscode, adminHash)) {
-    return "admin";
-  }
-
-  return null;
+  return verifySecret(cleanPasscode, adminHash);
 }
 
 /**
  * Starts an authenticated admin session server-side.
  */
-export function startAdminSession(userId: number, role: "admin" | "super_admin"): UserSessionData {
+export function startAdminSession(userId: number): UserSessionData {
   const expiresAt = Date.now() + SESSION_DURATION_MS;
-  const isSuper = role === "super_admin";
   const user = db.getUser(userId);
 
   return db.updateUser(userId, {
-    adminRole: role,
+    adminRole: "admin",
     isAdmin: true,
-    isSuperAdmin: isSuper,
     adminSessionExpiresAt: expiresAt,
     sessionVersion: (user.sessionVersion || 1) + 1,
   });
@@ -94,7 +69,6 @@ export function endAdminSession(userId: number): UserSessionData {
   return db.updateUser(userId, {
     adminRole: null,
     isAdmin: false,
-    isSuperAdmin: false,
     adminSessionExpiresAt: 0,
     sessionVersion: (user.sessionVersion || 1) + 1,
   });
@@ -103,96 +77,43 @@ export function endAdminSession(userId: number): UserSessionData {
 /**
  * Grants Admin role to a target user server-side.
  */
-export function grantAdminRole(
-  targetUserId: number,
-  actorId: number,
-  isSuper: boolean = false
-): UserSessionData {
+export function grantAdminRole(targetUserId: number): UserSessionData {
   const targetUser = db.getUser(targetUserId);
-  const updatedUser = db.updateUser(targetUserId, {
+  return db.updateUser(targetUserId, {
     isAdmin: true,
-    isSuperAdmin: isSuper,
-    adminRole: isSuper ? "super_admin" : "admin",
+    adminRole: "admin",
     adminSessionExpiresAt: Date.now() + SESSION_DURATION_MS,
     sessionVersion: (targetUser.sessionVersion || 1) + 1,
   });
-
-  const actor = db.getUser(actorId);
-  db.logAdminAction(
-    actorId,
-    actor.fullName || actor.username || `Admin #${actorId}`,
-    "ADMIN_PERMISSION_GRANTED",
-    `Granted ${isSuper ? "Super Admin" : "Normal Admin"} privileges to User #${targetUserId} (${targetUser.fullName || targetUser.username || "User"})`,
-    targetUserId.toString(),
-    "super_admin"
-  );
-
-  return updatedUser;
 }
 
 /**
- * Revokes Admin privileges from a user server-side with immediate session invalidation.
+ * Revokes Admin privileges from a user server-side.
  */
-export function revokeAdminRole(targetUserId: number, actorId: number): boolean {
-  const targetUser = db.getUser(targetUserId);
-
-  // Prevent demoting Super Admins
-  if (targetUser.isSuperAdmin || targetUser.adminRole === "super_admin") {
-    return false;
-  }
-
-  // Atomically strip all admin permissions and invalidate existing sessions
+export function revokeAdminRole(targetUserId: number): boolean {
   db.updateUser(targetUserId, {
     isAdmin: false,
-    isSuperAdmin: false,
     adminRole: null,
     adminSessionExpiresAt: 0,
-    sessionVersion: (targetUser.sessionVersion || 1) + 1,
   });
-
-  const actor = db.getUser(actorId);
-  db.logAdminAction(
-    actorId,
-    actor.fullName || actor.username || `Admin #${actorId}`,
-    "ADMIN_PERMISSION_REVOKED",
-    `Revoked admin privileges from User #${targetUserId} (${targetUser.fullName || targetUser.username || "User"}). All sessions invalidated.`,
-    targetUserId.toString(),
-    "super_admin"
-  );
-
   return true;
 }
 
 /**
- * Resolves the effective actor for any admin action.
- */
-export function getEffectiveActor(userId: number): {
-  actorId: number;
-  actingAsId: number;
-  actorName: string;
-  actorRole: "super_admin" | "admin";
-  isGhost: boolean;
-} {
-  const user = db.getUser(userId);
-  const isSuper = user.isSuperAdmin || user.adminRole === "super_admin";
-  return {
-    actorId: userId,
-    actingAsId: userId,
-    actorName: user.fullName || user.username || `Admin #${userId}`,
-    actorRole: isSuper ? "super_admin" : "admin",
-    isGhost: false,
-  };
-}
-
-/**
- * Checks server-side if user has an active, valid Admin role (normal or super).
+ * Checks server-side if user has an active, valid Admin role.
  */
 export function isAuthorizedAdmin(userId?: number): boolean {
   if (!userId) return false;
+
+  // Direct whitelist check
+  if (config.adminIds && config.adminIds.includes(userId)) {
+    return true;
+  }
+
   const user = db.getUser(userId);
 
   // Must have active admin flag or role
-  if (!user.isAdmin && user.adminRole !== "admin" && user.adminRole !== "super_admin") {
+  if (!user.isAdmin && user.adminRole !== "admin") {
     return false;
   }
 
@@ -203,51 +124,4 @@ export function isAuthorizedAdmin(userId?: number): boolean {
   }
 
   return true;
-}
-
-/**
- * Checks server-side if user has active, valid Super Admin role.
- */
-export function isAuthorizedSuperAdmin(userId?: number): boolean {
-  if (!userId) return false;
-  const user = db.getUser(userId);
-
-  if (!user.isSuperAdmin && user.adminRole !== "super_admin") {
-    return false;
-  }
-
-  // Check session expiration if set
-  if (user.adminSessionExpiresAt && Date.now() > user.adminSessionExpiresAt) {
-    endAdminSession(userId);
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Sanitizes any text before writing to audit logs or responses
- * to ensure credentials, tokens, or hashes are never leaked.
- */
-export function sanitizeAuditText(text: string): string {
-  if (!text) return "";
-  let clean = text;
-  // Replace potential password patterns
-  const knownSecrets = [
-    process.env.SUPER_ADMIN_PASSCODE,
-    process.env.ADMIN_PASSCODE,
-    "super*admin",
-    "PTUADMIN2025",
-    "superadminsaidislom*",
-  ].filter(Boolean) as string[];
-
-  for (const s of knownSecrets) {
-    if (s.length >= 4) {
-      clean = clean.split(s).join("[PROTECTED_CREDENTIAL]");
-    }
-  }
-
-  // Sanitize Telegram bot tokens
-  clean = clean.replace(/\d{8,10}:[A-Za-z0-9_-]{35}/g, "[PROTECTED_BOT_TOKEN]");
-  return clean;
 }

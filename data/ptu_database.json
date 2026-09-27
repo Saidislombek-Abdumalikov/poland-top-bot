@@ -1,9 +1,6 @@
 {
   "users": {},
-  "promoCodes": {},
-  "transactions": {},
   "applications": {},
-  "nawaApplications": {},
   "universities": {
     "pg": {
       "id": "pg",
@@ -520,16 +517,6 @@
       }
     }
   },
-  "pricingConfig": {
-    "nawaPrice": 15,
-    "nawaCurrency": "USD",
-    "lastUpdatedAt": "2026-08-23",
-    "applicationFee": 30,
-    "lastUpdatedByName": "System",
-    "applicationFeeCurrency": "EUR",
-    "fullApplicationNawaPrice": 60,
-    "fullApplicationNawaCurrency": "USD"
-  },
   "oferta": {
     "text": "📄 <b>POLAND TOP UNIVERSITIES — OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>\nOxirgi yangilanish: {{LAST_UPDATED_DATE}}\n\nHurmatli talaba va foydalanuvchi!\nUshbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:\n\n<b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>\n<blockquote>• 📦 <b>NAWA:</b> ${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).\n• 💎 <b>Full Application + NAWA:</b> ${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (Biz to'laymiz)</b>.\n• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA paketi ichida to'liq qoplangan; NAWA rejasida alohida to'lanadi.</blockquote>\n\n<b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>\n<blockquote>Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.</blockquote>\n\n<b>3. QABUL QARORI VA JAVOBGARLIK</b>\n<blockquote>Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.</blockquote>\n\n<b>4. TO'LOV VA PROMO-KODLAR</b>\n<blockquote>Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.</blockquote>\n\n<b>5. MAXFIYLIK VA ROZILIK</b>\n<blockquote>Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.</blockquote>\n\n<b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>\n<blockquote>«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.</blockquote>",
     "status": "published",
@@ -547,7 +534,5 @@
     },
     "publishedByName": "System"
   },
-  "ofertaHistory": [],
-  "reviews": [],
-  "auditLogs": []
+  "reviews": []
 }

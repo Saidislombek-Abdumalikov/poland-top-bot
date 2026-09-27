@@ -13,8 +13,6 @@ export type StudyField =
   | "Economics"
   | "Architecture";
 
-export type PremiumTier = "Free" | "NAWA" | "NAWA_FULL" | "Full Premium" | "VIP Admissions" | "Student Grant";
-
 export type DocStatus = "approved" | "reviewing" | "needs_correction" | "missing";
 
 export type AppStage = "Submitted" | "Processing" | "University Review" | "Accepted" | "Action Needed";
@@ -83,13 +81,12 @@ export interface TestMaterial {
   fileName?: string; // e.g. "Warsaw_University_Math_Test_2025.pdf"
   fileType?: "document" | "photo" | "link";
   fileUrl?: string; // Google Drive / download link
-  isFree?: boolean; // true for free samples, false for VIP
+  isFree?: boolean;
   createdAt: string;
   updatedAt?: string;
   addedByName?: string;
 }
 
-// Backward compatibility aliases if needed
 export interface ExamSubject {
   id: string;
   name: {
@@ -161,112 +158,7 @@ export interface ApplicationRecord {
   updatedAt: string;
 }
 
-export type NawaDocumentKey =
-  | "attestat"
-  | "shahodatnoma"
-  | "email"
-  | "home_address"
-  | "passport_red";
-
-export interface NawaDocumentRecord {
-  id: NawaDocumentKey;
-  status: DocStatus; // "approved" | "reviewing" | "needs_correction" | "missing"
-  type: "file" | "text";
-  value?: string; // Text value (for email, home_address) or link
-  fileId?: string; // Telegram fileId for photo/document
-  fileName?: string;
-  fileType?: "photo" | "document" | "link";
-  counselorFeedback?: string;
-  uploadedAt?: string;
-  reviewedAt?: string;
-  reviewedBy?: number;
-}
-
-export interface NawaApplicationRecord {
-  id: string;
-  userId: number;
-  studentName: string;
-  studentUsername?: string;
-  studentPhone?: string;
-  country: string;
-  passportNumber?: string;
-  diplomaLink?: string;
-  apostilleLink?: string;
-  translationStatus?: "Needed" | "In Progress" | "Completed";
-  feePaid?: boolean;
-  stage: "Submitted" | "Under Evaluation" | "Decision Issued" | "Requires Action";
-  counselorNote?: string;
-  submittedAt: string;
-  updatedAt?: string;
-  documents?: Partial<Record<NawaDocumentKey, NawaDocumentRecord>>;
-}
-
-export interface PromoCodeRecord {
-  code: string;
-  tier: PremiumTier;
-  maxUses: number;
-  usedCount: number;
-  createdBy?: number;
-  createdByName?: string;
-  assignedUserId?: number;
-  assignedUserName?: string;
-  createdAt: string;
-  expiresAt?: string;
-  isExpired: boolean;
-  usedAt?: string;
-  usedByUserId?: number;
-  usedByUserName?: string;
-  isActive: boolean;
-}
-
-export type AdminRole = "super_admin" | "admin" | null;
-
-export interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  actorId: number;
-  actorName: string;
-  actorRole: "super_admin" | "admin" | "system";
-  action: string;
-  target?: string;
-  details: string;
-  status: "success" | "failure";
-  // Backward compatibility alias properties
-  adminId?: number;
-  adminName?: string;
-}
-
-export type PaymentStatus = "UNVERIFIED" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED";
-export type PaymentSource = "EXTERNAL_TRANSFER" | "PROMO_CODE" | "MANUAL_ADVISOR" | "PAYMENT_GATEWAY";
-
-export interface TransactionRecord {
-  id: string; // e.g. "TXN-A1B2C3"
-  userId: number;
-  userName?: string;
-  product: "NAWA" | "NAWA_FULL";
-  amount: number; // 15 or 50
-  currency: string; // "USD"
-  status: PaymentStatus;
-  source: PaymentSource;
-  promoCode?: string;
-  createdAt: string;
-  verifiedAt?: string;
-  verifiedBy?: number;
-  verifiedByName?: string;
-  notes?: string;
-}
-
-export interface PricingConfig {
-  nawaPrice: number;
-  nawaCurrency: string;
-  fullApplicationNawaPrice: number;
-  fullApplicationNawaCurrency: string;
-  applicationFee: number;
-  applicationFeeCurrency: string;
-  lastUpdatedAt: string;
-  lastUpdatedBy?: number;
-  lastUpdatedByName?: string;
-}
+export type AdminRole = "admin" | null;
 
 export interface OfertaRecord {
   version: number;
@@ -275,7 +167,6 @@ export interface OfertaRecord {
   publishedBy?: number;
   publishedByName?: string;
   status: "published" | "draft";
-  pricingSnapshot?: PricingConfig;
 }
 
 export interface UserSessionData {
@@ -292,28 +183,13 @@ export interface UserSessionData {
   preferredCity?: string;
   isRegistered: boolean;
   isAdmin: boolean;
-  isSuperAdmin?: boolean;
   adminRole?: AdminRole;
   adminSessionExpiresAt?: number;
   sessionVersion?: number;
-  isPremium: boolean;
-  premiumTier: PremiumTier;
-  premiumCode?: string;
-  premiumGrantReason?: "VERIFIED_PAYMENT" | "PROMO_CODE" | "ADMIN_GRANT";
-  premiumTransactionId?: string;
-  premiumVerifiedAt?: string;
-  premiumVerifiedBy?: number;
   acceptedOfertaVersion?: number;
   acceptedOfertaAt?: string;
   savedPrograms: string[];
   documents: Record<string, DocumentRecord>;
-  nawaDocuments?: Partial<Record<NawaDocumentKey, NawaDocumentRecord>>;
-  activeQuiz?: {
-    examId: string;
-    currentQ: number;
-    answers: Record<number, string>;
-    score: number;
-  };
   waitingFor?:
     | "registration_name"
     | "registration_phone"
@@ -321,16 +197,10 @@ export interface UserSessionData {
     | "registration_level"
     | "waiting_oferta_acceptance"
     | "document_upload"
-    | "nawa_document_upload"
-    | "premium_code"
     | "review_text"
-    | "assistant_question"
     | "admin_auth"
     | "admin_feedback_app"
-    | "admin_feedback_nawa"
-    | "admin_feedback_nawa_doc"
     | "admin_feedback_doc"
-    | "admin_create_promo"
     | "admin_broadcast_text"
     | "admin_search_user"
     | "admin_add_university"
@@ -341,12 +211,6 @@ export interface UserSessionData {
     | "student_review_program"
     | "admin_add_review"
     | "admin_edit_review_text"
-    | "admin_super_appoint_user"
-    | "admin_super_change_admin_passcode"
-    | "admin_super_create_txn_user"
-    | "admin_edit_price_nawa"
-    | "admin_edit_price_full"
-    | "admin_edit_fee"
     | "admin_edit_oferta_text"
     | "admin_add_test_title"
     | "admin_add_test_subject"

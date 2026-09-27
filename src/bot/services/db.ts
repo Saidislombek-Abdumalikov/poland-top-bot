@@ -1,28 +1,17 @@
 import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { config } from "../config";
 import {
   UserSessionData,
-  PromoCodeRecord,
   ApplicationRecord,
-  NawaApplicationRecord,
-  NawaDocumentKey,
-  NawaDocumentRecord,
   StudentReview,
   DocumentRecord,
   DocumentDefinition,
   University,
   Language,
-  PremiumTier,
   AppStage,
   DocStatus,
-  AuditLogEntry,
-  TransactionRecord,
-  PaymentStatus,
-  PaymentSource,
-  PricingConfig,
   OfertaRecord,
   TestMaterial,
 } from "../types";
@@ -34,54 +23,28 @@ const DB_FILE = process.env.DB_FILE_PATH
   ? path.resolve(process.cwd(), process.env.DB_FILE_PATH)
   : path.join(DATA_DIR, "ptu_database.json");
 
-export const defaultPricingConfig: PricingConfig = {
-  nawaPrice: 15,
-  nawaCurrency: "USD",
-  fullApplicationNawaPrice: 60,
-  fullApplicationNawaCurrency: "USD",
-  applicationFee: 30,
-  applicationFeeCurrency: "EUR",
-  lastUpdatedAt: "2026-08-23",
-  lastUpdatedByName: "System",
-};
-
 export const defaultOfertaTemplate = `📄 <b>POLAND TOP UNIVERSITIES — OMMAVIY OFERTA VA FOYDALANISH SHARTLARI</b>
-Oxirgi yangilanish: {{LAST_UPDATED_DATE}}
+Oxirgi yangilanish: 2026-yil
 
 Hurmatli talaba va foydalanuvchi!
-Ushbu bot orqali xizmatlardan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:
+Ushbu bot orqali ta'lim xizmatlari va maslahatlaridan foydalanish orqali Siz quyidagi shartlarni to'liq qabul qilasiz:
 
-<b>1. XIZMATLAR VA AMALDAGI NARXLAR</b>
-<blockquote>• 📦 <b>NAWA:</b> \${{NAWA_PRICE}} USD — Standart NAWA SYRENA arizasi, nostrifikatsiya yo'riqnomasi va oliygohlar talablari bazasi. (Universitet/konsullik rasmiy ariza to'lovi €{{APPLICATION_FEE}} EUR mustaqil ariza berilganda alohida to'lanadi).
-• 💎 <b>Full Application + NAWA:</b> \${{FULL_APPLICATION_NAWA_PRICE}} USD — Hujjatlarni to'liq tekshirish, universitet arizalarini topshirish, NAWA SYRENA, qasamyodli tarjima, 1-ga-1 shaxsiy koordinator hamda <b>€{{APPLICATION_FEE}} EUR Rasmiy Universitet Ariza To'lovi (Application Fee) shu paket ichiga kiritilgan (Biz to'laymiz)</b>.
-• 💶 <b>Rasmiy Ariza To'lovi (Application Fee):</b> €{{APPLICATION_FEE}} EUR — Full Application + NAWA paketi ichida to'liq qoplangan; NAWA rejasida alohida to'lanadi.</blockquote>
+<b>1. XIZMATLAR KO'LAMI</b>
+<blockquote>• Polsha nufuzli oliygohlari hamda ta'lim dasturlari bo'yicha to'liq ma'lumot olish.
+• Hujjatlarning qabul talablariga mosligini dastlabki tekshirish va yo'naltirish.
+• Universitetlarga qabul arizalarini rasmiylashtirish va monitoring qilish.</blockquote>
 
 <b>2. MA'LUMOT VA HUJJATLAR HAQQONIYLIGI</b>
-<blockquote>Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart. Qalbakilashtirilgan hujjatlar uchun talaba shaxsan javobgardir.</blockquote>
+<blockquote>Foydalanuvchi taqdim etgan barcha ma'lumotlar (ism-familiya, telefon, pasport, attestat/diplom, til sertifikati) to'g'ri va haqqoniy bo'lishi shart.</blockquote>
 
 <b>3. QABUL QARORI VA JAVOBGARLIK</b>
-<blockquote>Poland TOP Universities barcha hujjatlarni sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi va konsullik tomonidan qabul qilinadi.</blockquote>
+<blockquote>Poland TOP Universities barcha hujjatlarning sifatli va belgilangan muddatda topshirilishini ta'minlaydi. O'qishga qabul qilish yoki rad etish bo'yicha yakuniy qaror faqat Polsha oliygohi tomonidan qabul qilinadi.</blockquote>
 
-<b>4. TO'LOV VA PROMO-KODLAR</b>
-<blockquote>Promo-kodlar bir martalik bo'lib, faqat biriktirilgan paketni faollashtiradi. Xizmat ko'rsatish boshlangach, to'lovlar bot qoidalariga binoan hisoblanadi.</blockquote>
+<b>4. MAXFIYLIK VA ROZILIK</b>
+<blockquote>Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy konsultatsiya jarayonlari doirasida xavfsiz qayta ishlanadi.</blockquote>
 
-<b>5. MAXFIYLIK VA ROZILIK</b>
-<blockquote>Shaxsiy ma'lumotlar faqat o'qishga ariza topshirish va rasmiy jarayonlar doirasida xavfsiz qayta ishlanadi.</blockquote>
-
-<b>6. SHARTLARNI ELEKTRON QABUL QILISH</b>
+<b>5. SHARTLARNI ELEKTRON QABUL QILISH</b>
 <blockquote>«✅ Roziman» tugmasini bosish orqali Siz ushbu shartlarni to'liq tushunganingizni va elektron shaklda tasdiqlaganingizni bildirasiz.</blockquote>`;
-
-export function renderOfertaText(
-  template: string,
-  pricing: PricingConfig,
-  lastUpdatedDate: string = "23.08.2026"
-): string {
-  return template
-    .replace(/\{\{NAWA_PRICE\}\}/g, String(pricing.nawaPrice))
-    .replace(/\{\{FULL_APPLICATION_NAWA_PRICE\}\}/g, String(pricing.fullApplicationNawaPrice))
-    .replace(/\{\{APPLICATION_FEE\}\}/g, String(pricing.applicationFee))
-    .replace(/\{\{LAST_UPDATED_DATE\}\}/g, lastUpdatedDate);
-}
 
 export const defaultDocumentDefinitions: Record<string, DocumentDefinition> = {
   passport: {
@@ -99,44 +62,20 @@ export const defaultDocumentDefinitions: Record<string, DocumentDefinition> = {
   diploma: {
     id: "diploma",
     name: {
-      en: "High School Diploma / Bachelor Degree",
-      uz: "Attestat yoki Bakalavr Diplomi",
+      en: "Attestat / High School Diploma & Transcript",
+      uz: "Attestat / Diplom va Baholar Ilovasi",
     },
     desc: {
-      en: "Original diploma certificate along with full academic transcript and grade sheet.",
-      uz: "Original attestat yoki diplom hamda barcha baholar ilovasi (transkript).",
+      en: "Official high school diploma / university degree with grade transcript and apostille/legalization stamp.",
+      uz: "Maktab attestati yoki kollej/litsey diplomi, baholar varaqasi va apostil muhri.",
     },
     required: true,
   },
-  apostille: {
-    id: "apostille",
+  language_cert: {
+    id: "language_cert",
     name: {
-      en: "Apostille Certificate / Legalization",
-      uz: "Apostil Muhri / Legalizatsiya",
-    },
-    desc: {
-      en: "Official Apostille stamp on the original diploma issued by the Ministry of Justice / Education in home country.",
-      uz: "Adliya vazirligi yoki Ta'lim inspeksiyasi tomonidan original diplomga qo'yilgan rasmiy Apostil muhri.",
-    },
-    required: true,
-  },
-  translation: {
-    id: "translation",
-    name: {
-      en: "Sworn Polish Translation (Tłumacz)",
-      uz: "Polsha Qasamyodli Tarjimasi",
-    },
-    desc: {
-      en: "Translation made by a Sworn Polish Translator registered with Polish Ministry of Justice or Embassy.",
-      uz: "Polsha Adliya vazirligi ro'yxatidagi qasamyodli tarjimon (Tłumacz Przysięgły) yoki Elchixona tarjimasi.",
-    },
-    required: true,
-  },
-  language: {
-    id: "language",
-    name: {
-      en: "English Language Certificate (IELTS/Duolingo)",
-      uz: "Ingliz Tili Sertifikati (IELTS / CEFR)",
+      en: "English / Polish Language Certificate",
+      uz: "Ingliz / Polyak Tili Sertifikati",
     },
     desc: {
       en: "Official IELTS (min 6.0), TOEFL (min 75), PTE, Duolingo, or University Internal English Exam pass slip.",
@@ -203,173 +142,55 @@ export const defaultTestMaterials: Record<string, TestMaterial> = {
     fileName: "Warsaw_Math_Entrance_Exam_Pack_2025.pdf",
     fileType: "link",
     fileUrl: "https://www.mimuw.edu.pl/en/admissions",
-    isFree: false,
+    isFree: true,
     createdAt: "2026-08-23",
     addedByName: "Admissions Team",
   },
   "test-eng-b2": {
     id: "test-eng-b2",
     title: {
-      en: "Academic English B2 / CEFR — Entrance Exam Practice Pack (PDF)",
-      uz: "Ingliz Tili B2 / CEFR — Oliygoh Ichki Kirish Testi (PDF)",
+      en: "Academic English (B2/C1) — University Placement Exam Practice Pack",
+      uz: "Akademik Ingliz Tili (B2/C1) — Universitet Kirish Sinovi Namunasi",
     },
-    subject: "Ingliz tili (B2)",
+    subject: "Ingliz tili (B2/C1)",
     description: {
-      en: "Academic English entrance exam preparation pack with reading, writing, and grammar tests.",
-      uz: "Polsha universitetlari ichki ingliz tili imtihoni uchun B2 CEFR test variantlari va grammatika mashqlari.",
+      en: "Comprehensive English diagnostic test covering reading comprehension, academic writing structure, and grammar.",
+      uz: "Ingliz tili kirish imtihoniga tayyorgarlik uchun namunaviy reading, writing va grammatika savollari.",
     },
-    fileName: "English_B2_University_Entrance_Test_Pack.pdf",
+    fileName: "Academic_English_Placement_Pack.pdf",
     fileType: "link",
-    fileUrl: "https://studyinpoland.pl/en/",
-    isFree: false,
+    fileUrl: "https://www.cambridgeenglish.org/exams-and-tests/advanced/preparation/",
+    isFree: true,
     createdAt: "2026-08-23",
     addedByName: "Admissions Team",
-  },
-  "test-med-bio": {
-    id: "test-med-bio",
-    title: {
-      en: "Medical University Entrance Exam — Biology & Chemistry (PDF)",
-      uz: "Polsha Tibbiyot Universitetlari — Biologiya & Kimyo Testlari (PDF)",
-    },
-    subject: "Tibbiyot / Biologiya",
-    description: {
-      en: "Entrance examination questions and answer keys for Medicine (MD) and Dentistry in Poland.",
-      uz: "Davolash ishi (MD) va Stomatologiya yo'nalishlari uchun biologiya va kimyo fanlaridan namunaviy testlar.",
-    },
-    fileName: "Medical_Poland_Biology_Chemistry_Entrance_2025.pdf",
-    fileType: "link",
-    fileUrl: "https://muw.edu.pl/en",
-    isFree: false,
-    createdAt: "2026-08-23",
-    addedByName: "Admissions Team",
-  },
-};
-
-export const defaultNawaDefinitions: Record<
-  NawaDocumentKey,
-  {
-    id: NawaDocumentKey;
-    name: { en: string; uz: string };
-    type: "file" | "text";
-    icon: string;
-    description: { en: string; uz: string };
-    required: boolean;
-  }
-> = {
-  attestat: {
-    id: "attestat",
-    name: {
-      uz: "Attestat (11-sinf maktab attestati)",
-      en: "High School Attestat",
-    },
-    type: "file",
-    icon: "📜",
-    description: {
-      uz: "11-sinf maktab attestatining toza sifatli PDF yoki rasm nusxasi",
-      en: "High school completion certificate (Attestat) PDF scan or photo",
-    },
-    required: true,
-  },
-  shahodatnoma: {
-    id: "shahodatnoma",
-    name: {
-      uz: "Shahodatnoma (9-sinf)",
-      en: "9th Grade Certificate",
-    },
-    type: "file",
-    icon: "📜",
-    description: {
-      uz: "9-sinf tayanch o'rta ta'lim shahodatnomasining PDF yoki rasm nusxasi",
-      en: "9th grade basic secondary education certificate scan or photo",
-    },
-    required: true,
-  },
-  email: {
-    id: "email",
-    name: {
-      uz: "Email pochta manzili",
-      en: "Email Address",
-    },
-    type: "text",
-    icon: "📧",
-    description: {
-      uz: "Talabaning rasmiy va doimiy faol elektron pochta manzili",
-      en: "Student's active and valid email address",
-    },
-    required: true,
-  },
-  home_address: {
-    id: "home_address",
-    name: {
-      uz: "Yashash manzili (Home address)",
-      en: "Home Address",
-    },
-    type: "text",
-    icon: "🏠",
-    description: {
-      uz: "To'liq yashash manzili (Viloyat, shahar/tuman, ko'cha, uy, kvartira)",
-      en: "Full residential address (Region, city/district, street, house number)",
-    },
-    required: true,
-  },
-  passport_red: {
-    id: "passport_red",
-    name: {
-      uz: "Pasport (qizil xorijiy pasport)",
-      en: "Red International Passport",
-    },
-    type: "file",
-    icon: "📕",
-    description: {
-      uz: "Xorijga chiqish qizil pasportining asosiy sahifasi PDF yoki rasmi",
-      en: "Red foreign passport bio-page scan or photo",
-    },
-    required: true,
   },
 };
 
 interface DatabaseSchema {
   users: Record<number, UserSessionData>;
-  promoCodes: Record<string, PromoCodeRecord>;
-  transactions: Record<string, TransactionRecord>;
   applications: Record<string, ApplicationRecord>;
-  nawaApplications: Record<string, NawaApplicationRecord>;
   universities: Record<string, University>;
   documentDefinitions: Record<string, DocumentDefinition>;
   tests: Record<string, TestMaterial>;
-  pricingConfig: PricingConfig;
   oferta: OfertaRecord;
-  ofertaDraft?: OfertaRecord;
-  ofertaHistory: OfertaRecord[];
   reviews: StudentReview[];
-  auditLogs: AuditLogEntry[];
-  adminPasscodeHash?: string;
-  adminPasscodeUpdatedAt?: string;
-  adminPasscodeUpdatedBy?: number;
 }
 
 export class DatabaseService {
   private data: DatabaseSchema = {
     users: {},
-    promoCodes: {},
-    transactions: {},
     applications: {},
-    nawaApplications: {},
     universities: {},
     documentDefinitions: {},
     tests: { ...defaultTestMaterials },
-    pricingConfig: { ...defaultPricingConfig },
     oferta: {
       version: 1,
       text: defaultOfertaTemplate,
       publishedAt: "2026-08-23",
       publishedByName: "System",
       status: "published",
-      pricingSnapshot: { ...defaultPricingConfig },
     },
-    ofertaHistory: [],
     reviews: [],
-    auditLogs: [],
   };
 
   private supabase: SupabaseClient | null = null;
@@ -381,127 +202,47 @@ export class DatabaseService {
     this.initSupabase();
   }
 
+  private ensureDataDir() {
+    if (!fs.existsSync(DATA_DIR)) {
+      try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      } catch (e) {
+        // Fallback or ignore
+      }
+    }
+  }
+
   private initSupabase() {
     if (config.supabaseUrl && config.supabaseKey) {
       try {
         this.supabase = createClient(config.supabaseUrl, config.supabaseKey, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          },
+          auth: { persistSession: false },
         });
-        this.syncFromCloud().catch(() => {});
       } catch (e) {
-        console.error("Supabase init error:", e);
+        this.supabase = null;
       }
-    }
-  }
-
-  public async syncFromCloud(): Promise<void> {
-    if (!this.supabase) return;
-    try {
-      const { data, error } = await this.supabase
-        .from("ptu_database")
-        .select("data")
-        .eq("id", "main")
-        .single();
-
-      if (data && data.data && !error) {
-        this.data = {
-          users: data.data.users || this.data.users || {},
-          promoCodes: data.data.promoCodes || this.data.promoCodes || {},
-          transactions: data.data.transactions || this.data.transactions || {},
-          applications: data.data.applications || this.data.applications || {},
-          nawaApplications: data.data.nawaApplications || this.data.nawaApplications || {},
-          universities: data.data.universities || this.data.universities || {},
-          documentDefinitions: data.data.documentDefinitions || this.data.documentDefinitions || {},
-          tests: data.data.tests || this.data.tests || { ...defaultTestMaterials },
-          pricingConfig: data.data.pricingConfig || this.data.pricingConfig || { ...defaultPricingConfig },
-          oferta: data.data.oferta || this.data.oferta || {
-            version: 1,
-            text: defaultOfertaTemplate,
-            publishedAt: "2026-08-23",
-            publishedByName: "System",
-            status: "published",
-            pricingSnapshot: { ...defaultPricingConfig },
-          },
-          ofertaDraft: data.data.ofertaDraft || this.data.ofertaDraft,
-          ofertaHistory: data.data.ofertaHistory || this.data.ofertaHistory || [],
-          reviews: data.data.reviews || this.data.reviews || [],
-          auditLogs: data.data.auditLogs || this.data.auditLogs || [],
-        };
-        this.saveToDisk();
-      } else if (error && (error.code === "PGRST116" || error.message?.includes("0 rows"))) {
-        // Table exists but no row with id='main' yet -> seed it to Supabase
-        await this.syncToCloud();
-      }
-    } catch (e) {
-      // Graceful fallback to local cache
-    }
-  }
-
-  public async syncToCloud(): Promise<void> {
-    if (!this.supabase || this.isCloudSyncing) return;
-    this.isCloudSyncing = true;
-    try {
-      await this.supabase
-        .from("ptu_database")
-        .upsert({ id: "main", data: this.data, updated_at: new Date().toISOString() });
-    } catch (e) {
-      // Non-blocking
-    } finally {
-      this.isCloudSyncing = false;
-    }
-  }
-
-  private saveToDisk() {
-    try {
-      if (process.env.VERCEL) return;
-      this.ensureDataDir();
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
-    } catch (e) {
-      // Ignore if read-only filesystem (e.g. Vercel)
-    }
-  }
-
-  private ensureDataDir() {
-    if (process.env.VERCEL) return;
-    try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-    } catch (e) {
-      // Ignore if read-only filesystem
     }
   }
 
   private loadDatabase() {
     try {
-      if (!process.env.VERCEL && fs.existsSync(DB_FILE)) {
+      if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         this.data = {
           users: parsed.users || {},
-          promoCodes: parsed.promoCodes || {},
-          transactions: parsed.transactions || {},
           applications: parsed.applications || {},
-          nawaApplications: parsed.nawaApplications || {},
           universities: parsed.universities || {},
           documentDefinitions: parsed.documentDefinitions || {},
           tests: parsed.tests || { ...defaultTestMaterials },
-          pricingConfig: parsed.pricingConfig || { ...defaultPricingConfig },
           oferta: parsed.oferta || {
             version: 1,
             text: defaultOfertaTemplate,
             publishedAt: "2026-08-23",
             publishedByName: "System",
             status: "published",
-            pricingSnapshot: { ...defaultPricingConfig },
           },
-          ofertaDraft: parsed.ofertaDraft,
-          ofertaHistory: parsed.ofertaHistory || [],
           reviews: parsed.reviews || [],
-          auditLogs: parsed.auditLogs || [],
         };
       }
     } catch (e) {
@@ -526,30 +267,15 @@ export class DatabaseService {
       this.data.documentDefinitions = { ...defaultDocumentDefinitions };
     }
 
-    // Seed default pricing config if empty
-    if (!this.data.pricingConfig) {
-      this.data.pricingConfig = { ...defaultPricingConfig };
-    }
-
-    // Seed default published oferta if empty or oversized
-    if (!this.data.oferta || !this.data.oferta.text || this.data.oferta.text.length > 3500) {
+    // Seed default oferta
+    if (!this.data.oferta || !this.data.oferta.text) {
       this.data.oferta = {
-        version: this.data.oferta?.version || 1,
+        version: 1,
         text: defaultOfertaTemplate,
         publishedAt: "2026-08-23",
         publishedByName: "System",
         status: "published",
-        pricingSnapshot: { ...(this.data.pricingConfig || defaultPricingConfig) },
       };
-    }
-
-    if (!this.data.ofertaHistory) {
-      this.data.ofertaHistory = [];
-    }
-
-    // Initialize empty reviews array if not present
-    if (!this.data.reviews) {
-      this.data.reviews = [];
     }
 
     this.saveToDisk();
@@ -558,6 +284,41 @@ export class DatabaseService {
   public saveDatabase() {
     this.saveToDisk();
     this.syncToCloud().catch(() => {});
+  }
+
+  private saveToDisk() {
+    try {
+      this.ensureDataDir();
+      const tmp = `${DB_FILE}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2), "utf-8");
+      fs.renameSync(tmp, DB_FILE);
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  private async syncToCloud() {
+    if (!this.supabase || this.isCloudSyncing) return;
+    this.isCloudSyncing = true;
+    try {
+      // Optional Supabase sync for users
+      const usersList = Object.values(this.data.users || {}).map((u) => ({
+        user_id: u.userId,
+        username: u.username || null,
+        full_name: u.fullName || null,
+        phone: u.phone || null,
+        preferred_level: u.preferredLevel || null,
+        registered_at: u.registeredAt || new Date().toISOString(),
+      }));
+
+      if (usersList.length > 0) {
+        await this.supabase.from("bot_users").upsert(usersList, { onConflict: "user_id" });
+      }
+    } catch (e) {
+      // Soft error
+    } finally {
+      this.isCloudSyncing = false;
+    }
   }
 
   // ================= UNIVERSITIES CRUD =================
@@ -610,1733 +371,126 @@ export class DatabaseService {
     return true;
   }
 
-  // ================= USERS CRUD =================
-  public getUser(userId: number, defaults?: Partial<UserSessionData>): UserSessionData {
-    const isSuper = Boolean(defaults?.isSuperAdmin) || userId === config.superAdminTelegramId;
-    const isAdmin = Boolean(defaults?.isAdmin) || isSuper || (config.adminIds && config.adminIds.includes(userId));
+  // ================= TEST MATERIALS CRUD =================
+  public getAllTests(subjectFilter?: string): TestMaterial[] {
+    let list = Object.values(this.data.tests || {});
+    if (subjectFilter && subjectFilter !== "all") {
+      list = list.filter((t) => t.subject.toLowerCase().includes(subjectFilter.toLowerCase()));
+    }
+    return list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  }
 
+  public getTest(id: string): TestMaterial | undefined {
+    return this.data.tests?.[id];
+  }
+
+  public saveTest(test: TestMaterial): TestMaterial {
+    if (!this.data.tests) this.data.tests = {};
+    this.data.tests[test.id] = test;
+    this.saveDatabase();
+    return test;
+  }
+
+  public deleteTest(id: string): boolean {
+    if (!this.data.tests || !this.data.tests[id]) return false;
+    delete this.data.tests[id];
+    this.saveDatabase();
+    return true;
+  }
+
+  // ================= USER SESSION & PROFILES =================
+  public getUser(userId: number, initialMeta?: Partial<UserSessionData>): UserSessionData {
     if (!this.data.users[userId]) {
-      const now = new Date().toISOString().split("T")[0];
-      const initialDocs: Record<string, DocumentRecord> = {};
-      const docDefs = this.getDocumentDefinitions();
-
-      Object.entries(docDefs).forEach(([k, def]) => {
-        initialDocs[k] = {
-          id: k,
-          name: def.name,
-          status: "missing",
-          updatedAt: now,
-        };
-      });
-
-      const newUser: UserSessionData = {
+      const now = new Date().toISOString();
+      this.data.users[userId] = {
         userId,
-        username: defaults?.username,
-        firstName: defaults?.firstName,
-        lastName: defaults?.lastName,
-        fullName: defaults?.fullName || (isSuper ? "Super Admin" : (isAdmin ? "Admin" : undefined)),
-        lang: defaults?.lang || "en",
-        country: defaults?.country || "Uzbekistan",
-        phone: defaults?.phone,
-        email: defaults?.email,
-        preferredLevel: defaults?.preferredLevel,
-        preferredCity: defaults?.preferredCity || "Warsaw",
-        isRegistered: isSuper || isAdmin || Boolean(defaults?.isRegistered),
-        isAdmin: isAdmin,
-        isSuperAdmin: isSuper,
-        adminRole: isSuper ? "super_admin" : (isAdmin ? "admin" : undefined),
-        isPremium: isSuper || Boolean(defaults?.isPremium),
-        premiumTier: isSuper ? "NAWA_FULL" : (defaults?.premiumTier || "Free"),
+        username: initialMeta?.username,
+        firstName: initialMeta?.firstName,
+        lastName: initialMeta?.lastName,
+        fullName:
+          [initialMeta?.firstName, initialMeta?.lastName].filter(Boolean).join(" ") ||
+          initialMeta?.username ||
+          `Student_${userId}`,
+        lang: initialMeta?.lang || "uz",
+        country: "Uzbekistan",
+        isRegistered: false,
+        isAdmin: false,
         savedPrograms: [],
-        documents: initialDocs,
+        documents: {},
         registeredAt: now,
         lastActiveAt: now,
       };
-
-      this.data.users[userId] = newUser;
       this.saveDatabase();
     } else {
       let changed = false;
-      const current = this.data.users[userId];
-
-      if (defaults) {
-        if (defaults.username && current.username !== defaults.username) {
-          current.username = defaults.username;
-          changed = true;
-        }
-        if (defaults.firstName && current.firstName !== defaults.firstName) {
-          current.firstName = defaults.firstName;
-          changed = true;
-        }
-        if (defaults.lastName && current.lastName !== defaults.lastName) {
-          current.lastName = defaults.lastName;
-          changed = true;
-        }
-        if (defaults.fullName && current.fullName !== defaults.fullName) {
-          current.fullName = defaults.fullName;
-          changed = true;
-        }
-        if (defaults.phone && current.phone !== defaults.phone) {
-          current.phone = defaults.phone;
-          changed = true;
-        }
-        if (defaults.preferredLevel && current.preferredLevel !== defaults.preferredLevel) {
-          current.preferredLevel = defaults.preferredLevel;
-          changed = true;
-        }
-        if (defaults.isRegistered !== undefined && current.isRegistered !== defaults.isRegistered) {
-          current.isRegistered = defaults.isRegistered;
-          changed = true;
-        }
-        if (defaults.isPremium !== undefined && current.isPremium !== defaults.isPremium) {
-          current.isPremium = defaults.isPremium;
-          changed = true;
-        }
-        if ("premiumTier" in defaults && defaults.premiumTier && current.premiumTier !== defaults.premiumTier) {
-          current.premiumTier = defaults.premiumTier;
-          changed = true;
-        }
-        if ("isAdmin" in defaults && current.isAdmin !== Boolean(defaults.isAdmin)) {
-          current.isAdmin = Boolean(defaults.isAdmin);
-          changed = true;
-        }
-        if ("isSuperAdmin" in defaults && current.isSuperAdmin !== Boolean(defaults.isSuperAdmin)) {
-          current.isSuperAdmin = Boolean(defaults.isSuperAdmin);
-          changed = true;
-        }
-        if ("adminRole" in defaults && current.adminRole !== defaults.adminRole) {
-          current.adminRole = defaults.adminRole;
-          changed = true;
-        }
+      const u = this.data.users[userId];
+      if (initialMeta?.username && u.username !== initialMeta.username) {
+        u.username = initialMeta.username;
+        changed = true;
       }
-
-      if (changed) this.saveDatabase();
+      u.lastActiveAt = new Date().toISOString();
+      if (changed) {
+        this.saveDatabase();
+      }
     }
-
     return this.data.users[userId];
   }
 
   public updateUser(userId: number, updates: Partial<UserSessionData>): UserSessionData {
     const user = this.getUser(userId);
     Object.assign(user, updates);
-    user.lastActiveAt = new Date().toISOString().split("T")[0];
+    user.lastActiveAt = new Date().toISOString();
     this.saveDatabase();
     return user;
   }
 
-  public isSuperAdminUser(u?: UserSessionData): boolean {
-    if (!u) return false;
-    return Boolean(
-      u.isSuperAdmin ||
-      u.adminRole === "super_admin" ||
-      u.userId === 5059829001 ||
-      (config.superAdminTelegramId && u.userId === config.superAdminTelegramId)
-    );
+  public getAllUsers(): UserSessionData[] {
+    return Object.values(this.data.users || {});
   }
 
-  public getAllUsers(includeSuperAdmin: boolean = false): UserSessionData[] {
-    const all = Object.values(this.data.users || {});
-    if (includeSuperAdmin) return all;
-    return all.filter((u) => !this.isSuperAdminUser(u));
+  public getUserCount(): number {
+    return Object.keys(this.data.users || {}).length;
   }
 
-  /**
-   * Retrieves administrators list.
-   * If includeSuperAdmin is false (default), Super Admins are completely filtered out
-   * to preserve absolute invisibility to normal admins.
-   */
-  public getAllAdmins(includeSuperAdmin: boolean = false): UserSessionData[] {
-    const all = Object.values(this.data.users || {});
-    if (includeSuperAdmin) {
-      return all.filter((u) => u.isAdmin || u.isSuperAdmin || u.adminRole === "admin" || u.adminRole === "super_admin");
-    }
-    // Normal admin view: Super Admins are 100% excluded
-    return all.filter(
-      (u) => (u.isAdmin || u.adminRole === "admin") && !this.isSuperAdminUser(u)
-    );
+  public setWaitingFor(userId: number, state: UserSessionData["waitingFor"], payload?: any) {
+    this.updateUser(userId, { waitingFor: state, waitingPayload: payload });
   }
 
-  public searchUsers(query: string, includeSuperAdmin: boolean = false): UserSessionData[] {
-    const q = query.toLowerCase();
-    return this.getAllUsers(includeSuperAdmin).filter(
-      (u) =>
-        u.userId.toString().includes(q) ||
-        (u.username && u.username.toLowerCase().includes(q)) ||
-        (u.fullName && u.fullName.toLowerCase().includes(q)) ||
-        (u.phone && u.phone.includes(q))
-    );
+  public setLastPromptMsgId(userId: number, msgId: number) {
+    this.updateUser(userId, { lastPromptMsgId: msgId });
   }
 
-  public getUserByPhone(phone: string): UserSessionData | undefined {
-    if (!phone) return undefined;
-    const digits = phone.replace(/[^0-9]/g, "");
-    if (!digits) return undefined;
-    return Object.values(this.data.users || {}).find(
-      (u) => u.phone && u.phone.replace(/[^0-9]/g, "") === digits
-    );
-  }
-
-  public isPhoneRegistered(phone: string, excludeUserId?: number): boolean {
-    if (!phone) return false;
-    const digits = phone.replace(/[^0-9]/g, "");
-    if (!digits) return false;
-    return Object.values(this.data.users || {}).some(
-      (u) => u.userId !== excludeUserId && u.phone && u.phone.replace(/[^0-9]/g, "") === digits
-    );
-  }
-
-  public deleteUser(userId: number, actorId?: number): boolean {
-    if (!this.data.users[userId]) return false;
-    const targetUser = this.data.users[userId];
-    const targetName = targetUser.fullName || targetUser.username || `User #${userId}`;
-
-    // Delete user profile
-    delete this.data.users[userId];
-
-    // Delete user applications
-    for (const [appId, app] of Object.entries(this.data.applications)) {
-      if (app.userId === userId) {
-        delete this.data.applications[appId];
-      }
-    }
-
-    // Delete user NAWA applications
-    for (const [nawaId, nawa] of Object.entries(this.data.nawaApplications)) {
-      if (nawa.userId === userId) {
-        delete this.data.nawaApplications[nawaId];
-      }
-    }
-
-    // Delete user transactions
-    for (const [txnId, txn] of Object.entries(this.data.transactions)) {
-      if (txn.userId === userId) {
-        delete this.data.transactions[txnId];
-      }
-    }
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        "Super Admin",
-        "USER_DELETED",
-        `Super Admin completely deleted user ${targetName} (${userId}) and associated records.`,
-        String(userId),
-        "super_admin"
-      );
-    }
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public deleteAdmin(adminUserId: number, actorId: number): { success: boolean; error?: string } {
-    if (adminUserId === config.superAdminTelegramId) {
-      return { success: false, error: "Root Super Admin cannot be deleted." };
-    }
-    const adminUser = this.data.users[adminUserId];
-    if (!adminUser) {
-      return { success: false, error: "Admin record not found." };
-    }
-
-    // Completely delete the user record from database
-    this.deleteUser(adminUserId, actorId);
-
-    this.logAdminAction(
-      actorId,
-      "Super Admin",
-      "ADMIN_DELETED",
-      `Super Admin permanently deleted administrator #${adminUserId} from system.`,
-      String(adminUserId),
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return { success: true };
-  }
-
-  public resetDatabaseToZero(superAdminId: number): boolean {
-    // Wipe all sample, test, and operational records
-    this.data.users = {};
-    this.data.applications = {};
-    this.data.nawaApplications = {};
-    this.data.promoCodes = {};
-    this.data.transactions = {};
-    this.data.reviews = [];
-    this.data.auditLogs = [];
-    this.data.adminPasscodeHash = undefined;
-    this.data.adminPasscodeUpdatedAt = undefined;
-    this.data.adminPasscodeUpdatedBy = undefined;
-
-    // Re-seed essential catalog definitions
-    this.data.universities = {};
-    defaultUniversities.forEach((u) => {
-      this.data.universities[u.id] = u;
-    });
-    this.data.documentDefinitions = { ...defaultDocumentDefinitions };
-    this.data.tests = { ...defaultTestMaterials };
-    this.data.pricingConfig = { ...defaultPricingConfig };
-    this.data.oferta = {
-      version: 1,
-      text: defaultOfertaTemplate,
-      publishedAt: "2026-08-23",
-      publishedByName: "System",
-      status: "published",
-      pricingSnapshot: { ...defaultPricingConfig },
-    };
-    this.data.ofertaDraft = undefined;
-    this.data.ofertaHistory = [];
-
-    this.saveDatabase();
-    return true;
-  }
-
-  // ================= AUDIT LOGS =================
-  public logAdminAction(
-    actorId: number,
-    actorName: string,
-    action: string,
-    details: string,
-    target?: string,
-    actorRole?: "super_admin" | "admin" | "system",
-    status: "success" | "failure" = "success"
-  ): AuditLogEntry {
-    if (!this.data.auditLogs) this.data.auditLogs = [];
-
-    // Sanitize any sensitive credentials from details & target
-    const knownSecrets = [
-      process.env.SUPER_ADMIN_PASSCODE,
-      process.env.ADMIN_PASSCODE,
-      "super*admin",
-      "PTUADMIN2025",
-      "superadminsaidislom*",
-    ].filter(Boolean) as string[];
-
-    let cleanDetails = details || "";
-    let cleanTarget = target || "";
-
-    for (const s of knownSecrets) {
-      if (s.length >= 4) {
-        cleanDetails = cleanDetails.split(s).join("[PROTECTED_CREDENTIAL]");
-        cleanTarget = cleanTarget.split(s).join("[PROTECTED_CREDENTIAL]");
-      }
-    }
-
-    const user = this.data.users[actorId];
-    const finalActorId = actorId;
-    const finalActorName = actorName || `User #${actorId}`;
-    const finalRole: "super_admin" | "admin" | "system" =
-      actorRole || (user?.isSuperAdmin || user?.adminRole === "super_admin" ? "super_admin" : "admin");
-    const finalDetails = cleanDetails;
-
-    const entry: AuditLogEntry = {
-      id: crypto.randomBytes(3).toString("hex").toUpperCase(),
-      timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
-      actorId: finalActorId,
-      actorName: finalActorName,
-      actorRole: finalRole,
-      action,
-      target: cleanTarget || undefined,
-      details: finalDetails,
-      status,
-      // Backward compatibility aliases
-      adminId: finalActorId,
-      adminName: finalActorName,
-    };
-
-    this.data.auditLogs.unshift(entry);
-    // Keep max 500 audit logs
-    if (this.data.auditLogs.length > 500) {
-      this.data.auditLogs = this.data.auditLogs.slice(0, 500);
-    }
-    this.saveDatabase();
-    return entry;
-  }
-
-  public getAuditLogs(limit: number = 50): AuditLogEntry[] {
-    return (this.data.auditLogs || []).slice(0, limit);
-  }
-
-  public clearAuditLogs(): void {
-    this.data.auditLogs = [];
-    this.saveDatabase();
-  }
-
-  // ================= PROMO CODES CRUD =================
-  public generateRandomCodeString(): string {
-    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Unambiguous Base32 charset
-    let result = "";
-    const bytes = crypto.randomBytes(8);
-    for (let i = 0; i < 8; i++) {
-      result += chars[bytes[i] % chars.length];
-    }
-    return result;
-  }
-
-  public getPromoCode(code: string): PromoCodeRecord | undefined {
-    if (!code) return undefined;
-    return this.data.promoCodes[code.toUpperCase().trim()];
-  }
-
-  public createPromoCode(promo: {
-    code?: string;
-    tier: PremiumTier;
-    maxUses?: number;
-    createdBy?: number;
-    createdByName?: string;
-    assignedUserId?: number;
-    assignedUserName?: string;
-    expiresAt?: string;
-  }): PromoCodeRecord {
-    const finalCode = (promo.code || this.generateRandomCodeString()).toUpperCase().trim();
-    const newCode: PromoCodeRecord = {
-      code: finalCode,
-      tier: promo.tier,
-      maxUses: promo.maxUses || 1, // Strictly 1 single student
-      usedCount: 0,
-      createdBy: promo.createdBy,
-      createdByName: promo.createdByName,
-      assignedUserId: promo.assignedUserId,
-      assignedUserName: promo.assignedUserName,
-      createdAt: new Date().toISOString().split("T")[0],
-      expiresAt: promo.expiresAt,
-      isExpired: false,
-      isActive: true,
-    };
-    this.data.promoCodes[newCode.code] = newCode;
-
-    if (promo.createdBy) {
-      this.logAdminAction(
-        promo.createdBy,
-        promo.createdByName || `Admin #${promo.createdBy}`,
-        "PROMO_CODE_CREATED",
-        `Created promo code '${newCode.code}' for package [${newCode.tier}] (Single-use)`,
-        newCode.code
-      );
-    }
-
-    this.saveDatabase();
-    return newCode;
-  }
-
-  public generatePersonalPromo(
-    userId: number,
-    userName: string,
-    tier: PremiumTier = "NAWA_FULL",
-    createdBy?: number
-  ): PromoCodeRecord {
-    const code = this.generateRandomCodeString();
-    return this.createPromoCode({
-      code,
-      tier,
-      maxUses: 1,
-      createdBy,
-      assignedUserId: userId,
-      assignedUserName: userName,
-    });
-  }
-
-  public expirePromoCode(code: string, actorId?: number): boolean {
-    const promo = this.getPromoCode(code);
-    if (!promo) return false;
-    promo.isExpired = true;
-    promo.isActive = false;
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        "Administrator",
-        "PROMO_CODE_DISABLED",
-        `Disabled promo code '${promo.code}' (${promo.tier})`,
-        promo.code
-      );
-    }
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public reactivatePromoCode(code: string, actorId?: number): boolean {
-    const promo = this.getPromoCode(code);
-    if (!promo) return false;
-    promo.isExpired = false;
-    promo.isActive = true;
-    promo.usedCount = 0;
-    promo.usedAt = undefined;
-    promo.usedByUserId = undefined;
-    promo.usedByUserName = undefined;
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        "Administrator",
-        "PROMO_CODE_REACTIVATED",
-        `Reactivated promo code '${promo.code}' (${promo.tier})`,
-        promo.code
-      );
-    }
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public deletePromoCode(code: string, actorId?: number): boolean {
-    const clean = code.toUpperCase().trim();
-    if (!this.data.promoCodes[clean]) return false;
-    const tier = this.data.promoCodes[clean].tier;
-    delete this.data.promoCodes[clean];
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        "Administrator",
-        "PROMO_CODE_DELETED",
-        `Deleted promo code '${clean}' (${tier})`,
-        clean
-      );
-    }
-
-    this.saveDatabase();
-    return true;
-  }
-
-  // REDEEM: Strictly atomic, single-use per code -> becomes unavailable immediately
-  public redeemPromoCode(
-    code: string,
-    userId: number
-  ): { success: boolean; tier?: PremiumTier; error?: string; promo?: PromoCodeRecord } {
-    if (!code || typeof code !== "string") {
-      return { success: false, error: "Please provide a valid promo code." };
-    }
-    const cleanCode = code.toUpperCase().trim();
-    const promo = this.getPromoCode(cleanCode);
-
-    if (!promo) {
-      this.logAdminAction(
-        userId,
-        `User #${userId}`,
-        "PROMO_CODE_REDEMPTION_FAILED",
-        `Failed redemption attempt with unrecognized code: [PROTECTED_CREDENTIAL]`,
-        undefined,
-        "system",
-        "failure"
-      );
-      return { success: false, error: "Invalid activation code. Please check spelling." };
-    }
-    if (promo.isExpired) {
-      return { success: false, error: "This promo code is no longer available." };
-    }
-    if (promo.usedCount >= promo.maxUses || !promo.isActive) {
-      return {
-        success: false,
-        error: "This promo code is no longer available.",
-      };
-    }
-    if (promo.assignedUserId && promo.assignedUserId !== userId) {
-      return { success: false, error: "This private code was created specifically for a different student account." };
-    }
-
-    // Check date expiry
-    if (promo.expiresAt) {
-      const today = new Date().toISOString().split("T")[0];
-      if (today > promo.expiresAt) {
-        promo.isExpired = true;
-        promo.isActive = false;
-        this.saveDatabase();
-        return { success: false, error: "This promo code is no longer available." };
-      }
-    }
-
-    const user = this.getUser(userId);
-
-    // Atomically consume code (make permanently unavailable)
-    promo.usedCount += 1;
-    promo.isActive = false; // Mark unavailable immediately
-    promo.usedAt = new Date().toISOString().split("T")[0];
-    promo.usedByUserId = userId;
-    promo.usedByUserName = user.fullName || user.firstName || `User #${userId}`;
-
-    // Map tier cleanly
-    const grantedTier: PremiumTier =
-      promo.tier === "NAWA" || promo.tier === "NAWA_FULL" ? promo.tier : "NAWA_FULL";
-
-    // Create and link private transaction record
-    const txnId = this.generateTransactionId();
-    const pricing = this.getPricingConfig();
-    const txnAmount = grantedTier === "NAWA" ? pricing.nawaPrice : pricing.fullApplicationNawaPrice;
-    const nowTimestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-
-    const txnRecord: TransactionRecord = {
-      id: txnId,
-      userId,
-      userName: user.fullName || user.username || `User #${userId}`,
-      product: grantedTier === "NAWA" ? "NAWA" : "NAWA_FULL",
-      amount: txnAmount,
-      currency: "USD",
-      status: "PAID",
-      source: "PROMO_CODE",
-      promoCode: promo.code,
-      createdAt: nowTimestamp,
-      verifiedAt: nowTimestamp,
-      notes: `Access unlocked via promo code [${promo.code}]`,
-    };
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions[txnId] = txnRecord;
-
-    this.updateUser(userId, {
-      isPremium: true,
-      premiumTier: grantedTier,
-      premiumCode: promo.code,
-      premiumGrantReason: "PROMO_CODE",
-      premiumTransactionId: txnId,
-      premiumVerifiedAt: nowTimestamp,
-      isRegistered: true,
-      acceptedOfertaAt: nowTimestamp,
-      acceptedOfertaVersion: this.getPublishedOferta().version,
-      waitingFor: null,
-      waitingPayload: undefined,
-    });
-
-    this.logAdminAction(
-      userId,
-      user.fullName || user.username || `User #${userId}`,
-      "PROMO_CODE_REDEEMED",
-      `Student successfully redeemed promo code '${promo.code}' granting [${grantedTier}] package. Transaction ${txnId} recorded.`,
-      promo.code,
-      "system",
-      "success"
-    );
-
-    this.saveDatabase();
-    return { success: true, tier: grantedTier, promo };
-  }
-
-  public getAllPromoCodes(): PromoCodeRecord[] {
-    return Object.values(this.data.promoCodes);
-  }
-
-  // ================= PRIVATE FINANCIAL & TRANSACTION LEDGER =================
-  public generateTransactionId(): string {
-    const hex = crypto.randomBytes(3).toString("hex").toUpperCase();
-    return `TXN-${hex}`;
-  }
-
-  public createTransaction(params: {
-    userId: number;
-    userName?: string;
-    product: "NAWA" | "NAWA_FULL";
-    amount?: number;
-    currency?: string;
-    status?: PaymentStatus;
-    source?: PaymentSource;
-    promoCode?: string;
-    notes?: string;
-    actorId?: number;
-  }): TransactionRecord {
-    const id = this.generateTransactionId();
-    const pricing = this.getPricingConfig();
-    const defaultAmount = params.product === "NAWA" ? pricing.nawaPrice : pricing.fullApplicationNawaPrice;
-    const defaultCurrency = params.product === "NAWA" ? pricing.nawaCurrency : pricing.fullApplicationNawaCurrency;
-    const user = this.getUser(params.userId);
-
-    const record: TransactionRecord = {
-      id,
-      userId: params.userId,
-      userName: params.userName || user.fullName || user.username || `User #${params.userId}`,
-      product: params.product,
-      amount: params.amount !== undefined ? params.amount : defaultAmount,
-      currency: params.currency || defaultCurrency,
-      status: params.status || "UNVERIFIED",
-      source: params.source || "EXTERNAL_TRANSFER",
-      promoCode: params.promoCode,
-      createdAt: new Date().toISOString().replace("T", " ").substring(0, 19),
-      notes: params.notes,
-    };
-
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions[id] = record;
-
-    if (record.status === "PAID") {
-      this.updateUser(params.userId, {
-        isPremium: true,
-        premiumTier: record.product,
-        premiumGrantReason: "VERIFIED_PAYMENT",
-        premiumTransactionId: id,
-        premiumVerifiedAt: record.createdAt,
-        premiumVerifiedBy: params.actorId,
-      });
-    }
-
-    if (params.actorId) {
-      this.logAdminAction(
-        params.actorId,
-        "Super Admin",
-        "TRANSACTION_CREATED",
-        `Created private transaction record ${id} (${record.product}, $${record.amount}, status: ${record.status}) for User #${record.userId}`,
-        id,
-        "super_admin"
-      );
-    }
-
-    this.saveDatabase();
-    return record;
-  }
-
-  public getTransaction(id: string): TransactionRecord | undefined {
-    if (!id || !this.data.transactions) return undefined;
-    return this.data.transactions[id.toUpperCase().trim()];
-  }
-
-  public getAllTransactions(): TransactionRecord[] {
-    if (!this.data.transactions) return [];
-    return Object.values(this.data.transactions).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
-  public getFinancialSummary() {
-    const txns = this.getAllTransactions();
-    let totalVerifiedRevenue = 0;
-    let verifiedPaymentsCount = 0;
-    let nawaCount = 0;
-    let nawaRevenue = 0;
-    let nawaFullCount = 0;
-    let nawaFullRevenue = 0;
-    let unverifiedCount = 0;
-    let refundedCount = 0;
-    let cancelledCount = 0;
-
-    for (const t of txns) {
-      if (t.status === "PAID") {
-        totalVerifiedRevenue += t.amount || 0;
-        verifiedPaymentsCount += 1;
-        if (t.product === "NAWA") {
-          nawaCount += 1;
-          nawaRevenue += t.amount || 15;
-        } else if (t.product === "NAWA_FULL") {
-          nawaFullCount += 1;
-          nawaFullRevenue += t.amount || 50;
-        }
-      } else if (t.status === "UNVERIFIED") {
-        unverifiedCount += 1;
-      } else if (t.status === "REFUNDED") {
-        refundedCount += 1;
-      } else if (t.status === "CANCELLED" || t.status === "FAILED") {
-        cancelledCount += 1;
-      }
-    }
-
-    return {
-      totalVerifiedRevenue,
-      verifiedPaymentsCount,
-      nawaCount,
-      nawaRevenue,
-      nawaFullCount,
-      nawaFullRevenue,
-      unverifiedCount,
-      refundedCount,
-      cancelledCount,
-      totalTxnCount: txns.length,
-    };
-  }
-
-  public verifyPaymentTransaction(
-    transactionId: string,
-    superAdminId: number,
-    notes?: string
-  ): { success: boolean; error?: string; transaction?: TransactionRecord } {
-    const txn = this.getTransaction(transactionId);
-    if (!txn) {
-      return { success: false, error: "Transaction not found." };
-    }
-    if (txn.status === "PAID") {
-      return { success: false, error: "Transaction is already marked as verified and paid." };
-    }
-
-    const superUser = this.getUser(superAdminId);
-    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
-
-    txn.status = "PAID";
-    txn.verifiedAt = now;
-    txn.verifiedBy = superAdminId;
-    txn.verifiedByName = superUser.fullName || superUser.username || `Super Admin #${superAdminId}`;
-    if (notes) txn.notes = notes;
-
-    // Activate user entitlement
-    this.updateUser(txn.userId, {
-      isPremium: true,
-      premiumTier: txn.product,
-      premiumGrantReason: "VERIFIED_PAYMENT",
-      premiumTransactionId: txn.id,
-      premiumVerifiedAt: now,
-      premiumVerifiedBy: superAdminId,
-    });
-
-    this.logAdminAction(
-      superAdminId,
-      superUser.fullName || "Super Admin",
-      "PAYMENT_VERIFIED",
-      `Super Admin manually verified payment for Transaction ${txn.id} ($${txn.amount} ${txn.product}). Premium activated for User #${txn.userId}.`,
-      txn.id,
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return { success: true, transaction: txn };
-  }
-
-  public refundPaymentTransaction(
-    transactionId: string,
-    superAdminId: number,
-    reason?: string
-  ): boolean {
-    const txn = this.getTransaction(transactionId);
-    if (!txn || txn.status !== "PAID") return false;
-
-    txn.status = "REFUNDED";
-    if (reason) txn.notes = `Refunded: ${reason}`;
-
-    // Revoke premium if it was tied to this transaction
-    const user = this.getUser(txn.userId);
-    if (user.premiumTransactionId === txn.id) {
-      this.updateUser(txn.userId, {
-        isPremium: false,
-        premiumTier: "Free",
-      });
-    }
-
-    const superUser = this.getUser(superAdminId);
-    this.logAdminAction(
-      superAdminId,
-      superUser.fullName || "Super Admin",
-      "PAYMENT_REFUNDED",
-      `Super Admin refunded Transaction ${txn.id} ($${txn.amount}). Premium revoked for User #${txn.userId}.`,
-      txn.id,
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public cancelTransaction(transactionId: string, superAdminId: number): boolean {
-    const txn = this.getTransaction(transactionId);
-    if (!txn) return false;
-    txn.status = "CANCELLED";
-
-    const superUser = this.getUser(superAdminId);
-    this.logAdminAction(
-      superAdminId,
-      superUser.fullName || "Super Admin",
-      "TRANSACTION_CANCELLED",
-      `Super Admin cancelled Transaction ${txn.id}.`,
-      txn.id,
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public deleteTransaction(transactionId: string, superAdminId: number): boolean {
-    if (!this.data.transactions || !this.data.transactions[transactionId]) return false;
-    const txn = this.data.transactions[transactionId];
-
-    // If user's premium was active and directly tied to this transaction, reset to Free
-    if (this.data.users[txn.userId]?.premiumTransactionId === transactionId) {
-      this.updateUser(txn.userId, {
-        isPremium: false,
-        premiumTier: "Free",
-        premiumTransactionId: undefined,
-        premiumGrantReason: undefined,
-      });
-    }
-
-    delete this.data.transactions[transactionId];
-
-    const superUser = this.getUser(superAdminId);
-    this.logAdminAction(
-      superAdminId,
-      superUser.fullName || "Super Admin",
-      "TRANSACTION_DELETED",
-      `Super Admin permanently deleted Transaction ${transactionId} ($${txn.amount} ${txn.product}).`,
-      transactionId,
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return true;
-  }
-
-  public clearAllTransactions(superAdminId: number): number {
-    if (!this.data.transactions) this.data.transactions = {};
-    const count = Object.keys(this.data.transactions).length;
-    this.data.transactions = {};
-
-    const superUser = this.getUser(superAdminId);
-    this.logAdminAction(
-      superAdminId,
-      superUser.fullName || "Super Admin",
-      "ALL_TRANSACTIONS_PURGED",
-      `Super Admin permanently purged all ${count} transaction records.`,
-      undefined,
-      "super_admin"
-    );
-
-    this.saveDatabase();
-    return count;
-  }
-
-  // ================= DYNAMIC PRICING & OFERTA MANAGEMENT =================
-  public getPricingConfig(): PricingConfig {
-    if (!this.data.pricingConfig) {
-      this.data.pricingConfig = { ...defaultPricingConfig };
-    }
-    return this.data.pricingConfig;
-  }
-
-  public updatePricingConfig(
-    updates: Partial<PricingConfig>,
-    actorId?: number,
-    actorName?: string
-  ): PricingConfig {
-    const current = this.getPricingConfig();
-    const prevNawa = current.nawaPrice;
-    const prevFull = current.fullApplicationNawaPrice;
-    const prevFee = current.applicationFee;
-
-    if (updates.nawaPrice !== undefined && (!Number.isFinite(updates.nawaPrice) || updates.nawaPrice <= 0)) {
-      throw new Error("Invalid NAWA price: must be a positive number.");
-    }
-    if (updates.fullApplicationNawaPrice !== undefined && (!Number.isFinite(updates.fullApplicationNawaPrice) || updates.fullApplicationNawaPrice <= 0)) {
-      throw new Error("Invalid Full Application + NAWA price: must be a positive number.");
-    }
-    if (updates.applicationFee !== undefined && (!Number.isFinite(updates.applicationFee) || updates.applicationFee < 0)) {
-      throw new Error("Invalid Application Fee: must be non-negative.");
-    }
-
-    Object.assign(current, updates);
-    current.lastUpdatedAt = new Date().toISOString().split("T")[0];
-    current.lastUpdatedBy = actorId;
-    current.lastUpdatedByName = actorName || (actorId ? `Admin #${actorId}` : "System");
-
-    if (actorId) {
-      if (updates.nawaPrice !== undefined && updates.nawaPrice !== prevNawa) {
-        this.logAdminAction(
-          actorId,
-          actorName || `Admin #${actorId}`,
-          "PRICE_UPDATED",
-          `NAWA price updated from $${prevNawa} to $${updates.nawaPrice} ${current.nawaCurrency}.`,
-          "pricing:NAWA"
-        );
-      }
-      if (updates.fullApplicationNawaPrice !== undefined && updates.fullApplicationNawaPrice !== prevFull) {
-        this.logAdminAction(
-          actorId,
-          actorName || `Admin #${actorId}`,
-          "PRICE_UPDATED",
-          `Full Application + NAWA price updated from $${prevFull} to $${updates.fullApplicationNawaPrice} ${current.fullApplicationNawaCurrency}.`,
-          "pricing:NAWA_FULL"
-        );
-      }
-      if (updates.applicationFee !== undefined && updates.applicationFee !== prevFee) {
-        this.logAdminAction(
-          actorId,
-          actorName || `Admin #${actorId}`,
-          "APPLICATION_FEE_UPDATED",
-          `Application Fee updated from €${prevFee} to €${updates.applicationFee} ${current.applicationFeeCurrency}.`,
-          "pricing:fee"
-        );
-      }
-    }
-
-    this.saveDatabase();
-    return current;
-  }
-
-  public getPublishedOferta(): OfertaRecord {
-    if (!this.data.oferta) {
-      this.data.oferta = {
-        version: 1,
-        text: defaultOfertaTemplate,
-        publishedAt: "2026-08-23",
-        publishedByName: "System",
-        status: "published",
-        pricingSnapshot: { ...this.getPricingConfig() },
-      };
-    }
-    return this.data.oferta;
-  }
-
-  public getRenderedOferta(customText?: string): string {
-    const text = customText || this.getPublishedOferta().text;
-    const pricing = this.getPricingConfig();
-    const publishedAt = this.data.oferta?.publishedAt || new Date().toISOString().split("T")[0];
-    return renderOfertaText(text, pricing, publishedAt);
-  }
-
-  public getDraftOferta(): OfertaRecord {
-    if (!this.data.ofertaDraft) {
-      const published = this.getPublishedOferta();
-      this.data.ofertaDraft = {
-        version: published.version + 1,
-        text: published.text,
-        publishedAt: new Date().toISOString().split("T")[0],
-        status: "draft",
-      };
-    }
-    return this.data.ofertaDraft;
-  }
-
-  public updateDraftOferta(
-    text: string,
-    actorId?: number,
-    actorName?: string
-  ): OfertaRecord {
-    if (!text || text.trim().length === 0) {
-      throw new Error("Oferta text cannot be empty.");
-    }
-    const published = this.getPublishedOferta();
-    this.data.ofertaDraft = {
-      version: published.version + 1,
-      text: text.trim(),
-      publishedAt: new Date().toISOString().split("T")[0],
-      publishedBy: actorId,
-      publishedByName: actorName || (actorId ? `Admin #${actorId}` : "Admin"),
-      status: "draft",
-    };
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        actorName || `Admin #${actorId}`,
-        "OFFERA_UPDATED",
-        `Draft Oferta updated (Version ${this.data.ofertaDraft.version} prepared).`,
-        `oferta:v${this.data.ofertaDraft.version}`
-      );
-    }
-
-    this.saveDatabase();
-    return this.data.ofertaDraft;
-  }
-
-  public publishOferta(actorId?: number, actorName?: string): OfertaRecord {
-    const draft = this.data.ofertaDraft;
-    const textToPublish = draft ? draft.text : this.getPublishedOferta().text;
-    const currentPublished = this.getPublishedOferta();
-
-    // Archive current published to history
-    if (!this.data.ofertaHistory) this.data.ofertaHistory = [];
-    this.data.ofertaHistory.push({ ...currentPublished });
-
-    const newVersion = currentPublished.version + 1;
-    const pricing = this.getPricingConfig();
-    const publishedRecord: OfertaRecord = {
-      version: newVersion,
-      text: textToPublish,
-      publishedAt: new Date().toISOString().split("T")[0],
-      publishedBy: actorId,
-      publishedByName: actorName || (actorId ? `Admin #${actorId}` : "Admin"),
-      status: "published",
-      pricingSnapshot: { ...pricing },
-    };
-
-    this.data.oferta = publishedRecord;
-    this.data.ofertaDraft = undefined;
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        actorName || `Admin #${actorId}`,
-        "OFFERA_PUBLISHED",
-        `Oferta Version ${newVersion} published with snapshot prices (NAWA: $${pricing.nawaPrice}, Full: $${pricing.fullApplicationNawaPrice}, Fee: €${pricing.applicationFee}).`,
-        `oferta:v${newVersion}`
-      );
-    }
-
-    this.saveDatabase();
-    return publishedRecord;
-  }
-
-  public getOfertaHistory(): OfertaRecord[] {
-    return this.data.ofertaHistory || [];
+  public setLanguage(userId: number, lang: Language): UserSessionData {
+    return this.updateUser(userId, { lang });
   }
 
   public acceptOferta(userId: number): UserSessionData {
-    const user = this.getUser(userId);
-    const published = this.getPublishedOferta();
-    user.acceptedOfertaVersion = published.version;
-    user.acceptedOfertaAt = new Date().toISOString();
-    user.isRegistered = true;
-    user.waitingFor = null;
-    this.saveDatabase();
-    return user;
-  }
-
-  // ================= WORKFLOW ACCESS CONTROL =================
-  public validateWorkflowAccess(
-    userId: number,
-    workflow: "NAWA" | "UNIVERSITY_APPLICATION"
-  ): { allowed: boolean; reason?: string } {
-    const user = this.getUser(userId);
-    if (user.isAdmin || user.isSuperAdmin || user.adminRole === "admin" || user.adminRole === "super_admin") {
-      return { allowed: true };
-    }
-
-    if (workflow === "NAWA") {
-      // Allowed for NAWA ($15), NAWA_FULL ($60), Full Premium, VIP Admissions
-      if (
-        user.isPremium &&
-        (user.premiumTier === "NAWA" ||
-          user.premiumTier === "NAWA_FULL" ||
-          user.premiumTier === "Full Premium" ||
-          user.premiumTier === "VIP Admissions")
-      ) {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        reason: "NAWA access required. Please activate NAWA or Full Package.",
-      };
-    }
-
-    if (workflow === "UNIVERSITY_APPLICATION") {
-      // Allowed ONLY for Full Package (NAWA_FULL, Full Premium, VIP Admissions). NAWA-only is strictly blocked!
-      if (
-        user.isPremium &&
-        (user.premiumTier === "NAWA_FULL" ||
-          user.premiumTier === "Full Premium" ||
-          user.premiumTier === "VIP Admissions")
-      ) {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        reason:
-          user.premiumTier === "NAWA"
-            ? "Your current package is NAWA-only. Please upgrade to Full Application + NAWA package to submit university documents."
-            : "Full Application package required. Please activate Full Application + NAWA package.",
-      };
-    }
-
-    return { allowed: false, reason: "Invalid workflow" };
-  }
-
-  // ================= DOCUMENTS SUBMISSION CRUD =================
-  public submitDocument(
-    userId: number,
-    docKey: string,
-    submission: {
-      link?: string;
-      fileId?: string;
-      fileName?: string;
-      fileType: "document" | "photo" | "link";
-    }
-  ): DocumentRecord {
-    const access = this.validateWorkflowAccess(userId, "UNIVERSITY_APPLICATION");
-    if (!access.allowed) {
-      throw new Error(access.reason || "Unauthorized workflow access");
-    }
-
-    const user = this.getUser(userId);
-    if (!user.documents) user.documents = {};
-
-    const docDefs = this.getDocumentDefinitions();
-    const def = docDefs[docKey];
-    const docName = def ? def.name : { en: docKey, uz: docKey };
-
-    // Run temporary AI validation (with auto-cleanup of temp buffers/payloads)
-    try {
-      aiValidator.validateDocument(docKey, submission);
-    } catch {}
-
-    const doc: DocumentRecord = {
-      id: docKey,
-      name: docName,
-      status: "reviewing",
-      link: submission.link,
-      fileId: submission.fileId,
-      fileName: submission.fileName,
-      fileType: submission.fileType,
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-
-    user.documents[docKey] = doc;
-    this.saveDatabase();
-    return doc;
-  }
-
-  public verifyDocument(
-    userId: number,
-    docKey: string,
-    status: DocStatus,
-    feedbackNote?: string
-  ): DocumentRecord | undefined {
-    const user = this.getUser(userId);
-    if (!user.documents || !user.documents[docKey]) return undefined;
-
-    user.documents[docKey].status = status;
-    if (status === "approved") {
-      delete user.documents[docKey].feedbackNote;
-    } else if (feedbackNote) {
-      user.documents[docKey].feedbackNote = feedbackNote;
-    }
-    user.documents[docKey].updatedAt = new Date().toISOString().split("T")[0];
-    this.saveDatabase();
-    return user.documents[docKey];
-  }
-
-  public getPendingDocuments(): { userId: number; user: UserSessionData; doc: DocumentRecord }[] {
-    const results: { userId: number; user: UserSessionData; doc: DocumentRecord }[] = [];
-    Object.values(this.data.users || {}).forEach((u) => {
-      if (this.isSuperAdminUser(u)) return;
-      if (u.documents) {
-        Object.values(u.documents).forEach((d) => {
-          if (d.status === "reviewing") {
-            results.push({ userId: u.userId, user: u, doc: d });
-          }
-        });
-      }
-    });
-    return results;
-  }
-
-  public getStudentsWithDocumentsInQueue(): {
-    user: UserSessionData;
-    pendingCount: number;
-    approvedCount: number;
-    correctionCount: number;
-    totalUploadedCount: number;
-    totalRequiredCount: number;
-  }[] {
-    const totalRequired = Object.keys(this.data.documentDefinitions || {}).length || 7;
-    const studentMap = new Map<
-      number,
-      {
-        user: UserSessionData;
-        pendingCount: number;
-        approvedCount: number;
-        correctionCount: number;
-        totalUploadedCount: number;
-        totalRequiredCount: number;
-      }
-    >();
-
-    Object.values(this.data.users || {}).forEach((u) => {
-      if (this.isSuperAdminUser(u)) return;
-      const docs = Object.values(u.documents || {});
-      const pendingCount = docs.filter((d) => d.status === "reviewing").length;
-      const approvedCount = docs.filter((d) => d.status === "approved").length;
-      const correctionCount = docs.filter((d) => d.status === "needs_correction").length;
-      const totalUploadedCount = docs.filter(
-        (d) => d.status === "reviewing" || d.status === "approved" || d.status === "needs_correction" || !!d.fileId || !!d.link
-      ).length;
-
-      // Include if student has any uploaded/reviewed documents
-      if (totalUploadedCount > 0) {
-        studentMap.set(u.userId, {
-          user: u,
-          pendingCount,
-          approvedCount,
-          correctionCount,
-          totalUploadedCount,
-          totalRequiredCount: totalRequired,
-        });
-      }
-    });
-
-    // Sort: students with pending documents first (highest pending count first), then recently active
-    return Array.from(studentMap.values()).sort((a, b) => {
-      if (b.pendingCount !== a.pendingCount) return b.pendingCount - a.pendingCount;
-      return (b.user.lastActiveAt || "").localeCompare(a.user.lastActiveAt || "");
+    const oferta = this.getPublishedOferta();
+    return this.updateUser(userId, {
+      isRegistered: true,
+      acceptedOfertaVersion: oferta.version,
+      acceptedOfertaAt: new Date().toISOString(),
+      waitingFor: null,
     });
   }
 
-  public approveAllStudentDocuments(
-    userId: number,
-    actorId?: number,
-    actorName?: string
-  ): { approvedCount: number } {
-    const user = this.data.users[userId];
-    if (!user || !user.documents) return { approvedCount: 0 };
-
-    let count = 0;
-    const now = new Date().toISOString().split("T")[0];
-
-    Object.keys(user.documents).forEach((docKey) => {
-      const doc = user.documents[docKey];
-      if (doc.status === "reviewing" || doc.status === "needs_correction") {
-        doc.status = "approved";
-        doc.feedbackNote = undefined;
-        doc.updatedAt = now;
-        count++;
-      }
-    });
-
-    if (count > 0) {
-      if (actorId) {
-        this.logAdminAction(
-          actorId,
-          actorName || "Admin",
-          "APPROVE_ALL_DOCUMENTS",
-          `Approved all ${count} documents for student: ${user.fullName || user.username || userId}`,
-          `User #${userId}`
-        );
-      }
-      this.saveDatabase();
-    }
-
-    return { approvedCount: count };
-  }
-
-  // ================= APPLICATIONS CRUD =================
-  public createApplication(
-    userId: number,
-    programId: string,
-    programName: string,
-    university: string,
-    city: string
-  ): ApplicationRecord {
-    const user = this.getUser(userId);
-    const id = `APP-${Date.now().toString().slice(-6)}`;
-    const now = new Date().toISOString().split("T")[0];
-
-    const app: ApplicationRecord = {
-      id,
-      userId,
-      studentName: user.fullName || user.firstName || "Student",
-      studentUsername: user.username,
-      programId,
-      programName,
-      university,
-      city,
-      stage: "Submitted",
-      submittedAt: now,
-      updatedAt: now,
-    };
-
-    this.data.applications[id] = app;
-    this.saveDatabase();
-    return app;
-  }
-
-  public updateApplicationStage(
-    appId: string,
-    stage: AppStage,
-    counselorNote?: string
-  ): ApplicationRecord | undefined {
-    const app = this.data.applications[appId];
-    if (!app) return undefined;
-
-    app.stage = stage;
-    if (counselorNote) app.counselorNote = counselorNote;
-    app.updatedAt = new Date().toISOString().split("T")[0];
-    this.saveDatabase();
-    return app;
-  }
-
-  public getAllApplications(): ApplicationRecord[] {
-    return Object.values(this.data.applications);
-  }
-
-  public getApplication(id: string): ApplicationRecord | undefined {
-    return this.data.applications[id];
-  }
-
-  public getUserApplications(userId: number): ApplicationRecord[] {
-    return Object.values(this.data.applications).filter((a) => a.userId === userId);
-  }
-
-  // ================= NAWA APPLICATIONS CRUD =================
-  // ================= NAWA NOSTRIFIKATSIYA & DEDICATED DOCUMENTS =================
-  public getNawaDefinitions(): Record<NawaDocumentKey, (typeof defaultNawaDefinitions)[NawaDocumentKey]> {
-    return defaultNawaDefinitions;
-  }
-
-  public getNawaDefinition(key: NawaDocumentKey) {
-    return defaultNawaDefinitions[key];
-  }
-
-  public getUserNawaDocuments(userId: number): Record<NawaDocumentKey, NawaDocumentRecord> {
-    const user = this.getUser(userId);
-    if (!user.nawaDocuments) {
-      user.nawaDocuments = {};
-    }
-
-    const result: Record<NawaDocumentKey, NawaDocumentRecord> = {} as any;
-    (Object.keys(defaultNawaDefinitions) as NawaDocumentKey[]).forEach((k) => {
-      const existing = user.nawaDocuments?.[k];
-      if (existing) {
-        result[k] = existing;
-      } else {
-        result[k] = {
-          id: k,
-          status: "missing",
-          type: defaultNawaDefinitions[k].type,
-        };
-      }
-    });
-
-    return result;
-  }
-
-  public getPendingNawaDocuments(): {
-    userId: number;
-    user: UserSessionData;
-    docKey: NawaDocumentKey;
-    doc: NawaDocumentRecord;
-  }[] {
-    const results: {
-      userId: number;
-      user: UserSessionData;
-      docKey: NawaDocumentKey;
-      doc: NawaDocumentRecord;
-    }[] = [];
-    Object.values(this.data.users || {}).forEach((u) => {
-      if (this.isSuperAdminUser(u)) return;
-      if (u.nawaDocuments) {
-        (Object.keys(u.nawaDocuments) as NawaDocumentKey[]).forEach((k) => {
-          const d = u.nawaDocuments![k];
-          if (d && d.status === "reviewing") {
-            results.push({ userId: u.userId, user: u, docKey: k, doc: d });
-          }
-        });
-      }
-    });
-    return results;
-  }
-
-  public submitNawaDocument(
-    userId: number,
-    docKey: NawaDocumentKey,
-    data: {
-      fileId?: string;
-      fileName?: string;
-      fileType?: "photo" | "document" | "link";
-      value?: string;
-    }
-  ): NawaDocumentRecord {
-    const access = this.validateWorkflowAccess(userId, "NAWA");
-    if (!access.allowed) {
-      throw new Error(access.reason || "Unauthorized NAWA access");
-    }
-
-    const user = this.getUser(userId);
-    if (!user.nawaDocuments) user.nawaDocuments = {};
-
-    // Run temporary AI validation (with auto-cleanup of temp buffers/payloads)
-    try {
-      aiValidator.validateDocument(docKey, {
-        fileId: data.fileId,
-        fileName: data.fileName,
-        fileType: data.fileType || "document",
-        value: data.value,
-      });
-    } catch {}
-
-    const now = new Date().toISOString();
-    const docRecord: NawaDocumentRecord = {
-      id: docKey,
-      status: "reviewing",
-      type: defaultNawaDefinitions[docKey]?.type || "file",
-      fileId: data.fileId,
-      fileName: data.fileName,
-      fileType: data.fileType,
-      value: data.value,
-      uploadedAt: now,
-    };
-
-    user.nawaDocuments[docKey] = docRecord;
-
-    // Ensure NAWA application exists or is synchronized
-    let nawaApp = this.getUserNawaApplications(userId)[0];
-    if (!nawaApp) {
-      nawaApp = this.createNawaApplication(userId);
-    } else {
-      if (!nawaApp.documents) nawaApp.documents = {};
-      nawaApp.documents[docKey] = docRecord;
-      nawaApp.updatedAt = now;
-    }
-
-    this.saveDatabase();
-    return docRecord;
-  }
-
-  public approveNawaDocument(
-    userId: number,
-    docKey: NawaDocumentKey,
-    reviewerId?: number
-  ): NawaDocumentRecord | undefined {
-    const user = this.getUser(userId);
-    if (!user.nawaDocuments || !user.nawaDocuments[docKey]) return undefined;
-
-    const doc = user.nawaDocuments[docKey]!;
-    doc.status = "approved";
-    doc.reviewedAt = new Date().toISOString();
-    doc.reviewedBy = reviewerId;
-    doc.counselorFeedback = undefined;
-
-    const nawaApp = this.getUserNawaApplications(userId)[0];
-    if (nawaApp) {
-      if (!nawaApp.documents) nawaApp.documents = {};
-      nawaApp.documents[docKey] = { ...doc };
-      nawaApp.updatedAt = new Date().toISOString();
-    }
-
-    this.saveDatabase();
-    return doc;
-  }
-
-  public rejectNawaDocument(
-    userId: number,
-    docKey: NawaDocumentKey,
-    feedback: string,
-    reviewerId?: number
-  ): NawaDocumentRecord | undefined {
-    const user = this.getUser(userId);
-    if (!user.nawaDocuments || !user.nawaDocuments[docKey]) return undefined;
-
-    const doc = user.nawaDocuments[docKey]!;
-    doc.status = "needs_correction";
-    doc.reviewedAt = new Date().toISOString();
-    doc.reviewedBy = reviewerId;
-    doc.counselorFeedback = feedback;
-
-    const nawaApp = this.getUserNawaApplications(userId)[0];
-    if (nawaApp) {
-      if (!nawaApp.documents) nawaApp.documents = {};
-      nawaApp.documents[docKey] = { ...doc };
-      nawaApp.updatedAt = new Date().toISOString();
-    }
-
-    this.saveDatabase();
-    return doc;
-  }
-
-  public approveAllNawaDocuments(nawaId: string, reviewerId?: number): boolean {
-    const app = this.getNawaApplication(nawaId);
-    if (!app) return false;
-
-    const user = this.getUser(app.userId);
-    if (!user.nawaDocuments) user.nawaDocuments = {};
-    if (!app.documents) app.documents = {};
-
-    const now = new Date().toISOString();
-    (Object.keys(defaultNawaDefinitions) as NawaDocumentKey[]).forEach((k) => {
-      const userDoc = user.nawaDocuments?.[k];
-      if (userDoc && (userDoc.status === "reviewing" || userDoc.status === "needs_correction" || !!userDoc.fileId || !!userDoc.value)) {
-        userDoc.status = "approved";
-        userDoc.reviewedAt = now;
-        userDoc.reviewedBy = reviewerId;
-        userDoc.counselorFeedback = undefined;
-        app.documents![k] = { ...userDoc };
-      }
-    });
-
-    app.updatedAt = now;
-    this.saveDatabase();
-    return true;
-  }
-
-  public createNawaApplication(
-    userId: number,
-    data: Partial<NawaApplicationRecord> = {}
-  ): NawaApplicationRecord {
-    if (!this.data.nawaApplications) {
-      this.data.nawaApplications = {};
-    }
-
-    const user = this.getUser(userId);
-    const existing = this.getUserNawaApplications(userId)[0];
-    if (existing) {
-      if (data.country) existing.country = data.country;
-      existing.updatedAt = new Date().toISOString();
-      if (user.nawaDocuments) {
-        existing.documents = { ...user.nawaDocuments };
-      }
-      this.saveDatabase();
-      return existing;
-    }
-
-    const id = `NAWA-${Date.now().toString().slice(-5)}`;
-    const now = new Date().toISOString().split("T")[0];
-
-    const item: NawaApplicationRecord = {
-      id,
-      userId,
-      studentName: user.fullName || user.firstName || "Student",
-      studentUsername: user.username,
-      studentPhone: user.phone,
-      country: data.country || user.country || "Uzbekistan",
-      stage: "Submitted",
-      submittedAt: now,
-      updatedAt: now,
-      documents: user.nawaDocuments ? { ...user.nawaDocuments } : {},
-    };
-
-    this.data.nawaApplications[id] = item;
-    this.saveDatabase();
-    return item;
-  }
-
-  public updateNawaStage(
-    id: string,
-    stage: NawaApplicationRecord["stage"],
-    note?: string
-  ): NawaApplicationRecord | undefined {
-    const item = this.data.nawaApplications[id];
-    if (!item) return undefined;
-    item.stage = stage;
-    if (note) item.counselorNote = note;
-    item.updatedAt = new Date().toISOString();
-    this.saveDatabase();
-    return item;
-  }
-
-  public getAllNawaApplications(): NawaApplicationRecord[] {
-    return Object.values(this.data.nawaApplications || {}).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }
-
-  public getNawaApplication(id: string): NawaApplicationRecord | undefined {
-    return this.data.nawaApplications?.[id];
-  }
-
-  public getUserNawaApplications(userId: number): NawaApplicationRecord[] {
-    return Object.values(this.data.nawaApplications || {}).filter((n) => n.userId === userId);
-  }
-
-  // ================= ADMIN PASSCODE MANAGEMENT =================
-  public getAdminPasscodeHash(): string | undefined {
-    return this.data.adminPasscodeHash;
-  }
-
-  public setAdminPasscode(
-    newPasscode: string,
-    actorId: number,
-    actorName: string
-  ): { success: boolean; updatedAt: string } {
-    const hash = crypto.createHash("sha256").update(newPasscode.trim()).digest("hex");
-    const now = new Date().toISOString();
-    this.data.adminPasscodeHash = hash;
-    this.data.adminPasscodeUpdatedAt = now;
-    this.data.adminPasscodeUpdatedBy = actorId;
-
-    // Invalidate all active sessions for normal admins so they must log in with new password
-    Object.values(this.data.users || {}).forEach((u) => {
-      if (!this.isSuperAdminUser(u) && (u.isAdmin || u.adminRole === "admin")) {
-        u.adminSessionExpiresAt = 0;
-        u.adminRole = null;
-        u.isAdmin = false;
-        u.sessionVersion = (u.sessionVersion || 1) + 1;
-      }
-    });
-
-    this.logAdminAction(
-      actorId,
-      actorName,
-      "CHANGE_ADMIN_PASSWORD",
-      "Super Admin updated the normal admin access password. All active normal admin sessions have been invalidated.",
-      "Security: Admin Passcode"
+  public isPhoneRegistered(phone: string, excludeUserId?: number): boolean {
+    const clean = phone.replace(/[^\d+]/g, "");
+    return Object.values(this.data.users || {}).some(
+      (u) => u.userId !== excludeUserId && u.phone && u.phone.replace(/[^\d+]/g, "") === clean
     );
-
-    this.saveDatabase();
-    return { success: true, updatedAt: now };
   }
 
-  // ================= TEST MATERIALS CRUD =================
-  public getAllTests(): TestMaterial[] {
-    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
-    return Object.values(this.data.tests).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
-  public getTest(id: string): TestMaterial | undefined {
-    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
-    return this.data.tests[id];
-  }
-
-  public createTest(
-    material: Omit<TestMaterial, "createdAt">,
-    actorId?: number,
-    actorName?: string
-  ): TestMaterial {
-    if (!this.data.tests) this.data.tests = { ...defaultTestMaterials };
-    const id = material.id || `test-${Date.now().toString(36)}`;
-    const now = new Date().toISOString().split("T")[0];
-
-    const testItem: TestMaterial = {
-      ...material,
-      id,
-      createdAt: now,
-      updatedAt: now,
-      addedByName: actorName || "Admissions Team",
-    };
-
-    this.data.tests[id] = testItem;
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        actorName || "Admin",
-        "CREATE_TEST_MATERIAL",
-        `Created test material: "${testItem.title.uz || testItem.title.en}" (${testItem.subject})`,
-        id
-      );
+  public deleteUser(userId: number): boolean {
+    if (this.data.users && this.data.users[userId]) {
+      delete this.data.users[userId];
+      this.saveDatabase();
+      return true;
     }
-
-    this.saveDatabase();
-    return testItem;
+    return false;
   }
 
-  public updateTest(
-    id: string,
-    updates: Partial<TestMaterial>,
-    actorId?: number,
-    actorName?: string
-  ): TestMaterial | undefined {
-    if (!this.data.tests || !this.data.tests[id]) return undefined;
-
-    const existing = this.data.tests[id];
-    const updated: TestMaterial = {
-      ...existing,
-      ...updates,
-      id,
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-
-    this.data.tests[id] = updated;
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        actorName || "Admin",
-        "UPDATE_TEST_MATERIAL",
-        `Updated test material: "${updated.title.uz || updated.title.en}" (${updated.subject})`,
-        id
-      );
-    }
-
-    this.saveDatabase();
-    return updated;
-  }
-
-  public deleteTest(id: string, actorId?: number, actorName?: string): boolean {
-    if (!this.data.tests || !this.data.tests[id]) return false;
-
-    const testItem = this.data.tests[id];
-    delete this.data.tests[id];
-
-    if (actorId) {
-      this.logAdminAction(
-        actorId,
-        actorName || "Admin",
-        "DELETE_TEST_MATERIAL",
-        `Deleted test material: "${testItem.title.uz || testItem.title.en}" (${testItem.subject})`,
-        id
-      );
-    }
-
-    this.saveDatabase();
-    return true;
-  }
-
-  // ================= REVIEWS CRUD =================
+  // ================= STUDENT REVIEWS =================
   public getAllReviews(): StudentReview[] {
     return this.data.reviews || [];
   }
@@ -2349,44 +503,30 @@ export class DatabaseService {
     return (this.data.reviews || []).filter((r) => r.status === "pending");
   }
 
-  public getReview(id: number): StudentReview | undefined {
-    return (this.data.reviews || []).find((r) => r.id === id);
-  }
-
-  public addReview(review: {
-    userId?: number;
-    name: string;
-    country: string;
-    university: string;
-    program: string;
-    rating: number;
-    year?: string;
-    text: { en: string; uz: string };
-    status?: "pending" | "approved";
-  }): StudentReview {
+  public addReview(review: Omit<StudentReview, "id" | "submittedAt">): StudentReview {
     if (!this.data.reviews) this.data.reviews = [];
-    const id = Date.now();
-    const newRev: StudentReview = {
-      id,
-      userId: review.userId,
-      name: review.name,
-      country: review.country,
-      university: review.university,
-      program: review.program,
-      rating: review.rating,
-      year: review.year || new Date().getFullYear().toString(),
-      text: review.text,
-      status: review.status || "pending",
-      submittedAt: new Date().toISOString().split("T")[0],
+    const newId = this.data.reviews.length > 0 ? Math.max(...this.data.reviews.map((r) => r.id)) + 1 : 1;
+    const newReview: StudentReview = {
+      ...review,
+      id: newId,
+      submittedAt: new Date().toISOString(),
     };
-    this.data.reviews.unshift(newRev);
+    this.data.reviews.push(newReview);
     this.saveDatabase();
-    return newRev;
+    return newReview;
   }
 
-  public updateReview(id: number, updates: Partial<StudentReview>): StudentReview | undefined {
-    const rev = this.getReview(id);
-    if (!rev) return undefined;
+  public updateReviewStatus(id: number, status: "approved" | "pending"): StudentReview | null {
+    const rev = (this.data.reviews || []).find((r) => r.id === id);
+    if (!rev) return null;
+    rev.status = status;
+    this.saveDatabase();
+    return rev;
+  }
+
+  public updateReview(id: number, updates: Partial<StudentReview>): StudentReview | null {
+    const rev = (this.data.reviews || []).find((r) => r.id === id);
+    if (!rev) return null;
     Object.assign(rev, updates);
     this.saveDatabase();
     return rev;
@@ -2394,53 +534,201 @@ export class DatabaseService {
 
   public deleteReview(id: number): boolean {
     if (!this.data.reviews) return false;
-    const initialLen = this.data.reviews.length;
-    this.data.reviews = this.data.reviews.filter((r) => r.id !== id);
-    if (this.data.reviews.length !== initialLen) {
-      this.saveDatabase();
-      return true;
-    }
-    return false;
-  }
-
-  public moderateReview(id: number, approved: boolean): boolean {
-    const rev = this.getReview(id);
-    if (!rev) return false;
-    rev.status = approved ? "approved" : "pending";
-    if (!approved) {
-      this.deleteReview(id);
-    } else {
-      this.saveDatabase();
-    }
+    const idx = this.data.reviews.findIndex((r) => r.id === id);
+    if (idx === -1) return false;
+    this.data.reviews.splice(idx, 1);
+    this.saveDatabase();
     return true;
   }
 
-  // Bookmarking helper
-  public toggleSaveProgram(userId: number, programId: string): boolean {
+  public toggleSaveProgram(userId: number, progId: string): boolean {
     const user = this.getUser(userId);
-    const set = new Set(user.savedPrograms || []);
-    let isSaved = false;
-    if (set.has(programId)) {
-      set.delete(programId);
-      isSaved = false;
+    if (!user.savedPrograms) user.savedPrograms = [];
+    const idx = user.savedPrograms.indexOf(progId);
+    let saved = false;
+    if (idx === -1) {
+      user.savedPrograms.push(progId);
+      saved = true;
     } else {
-      set.add(programId);
-      isSaved = true;
+      user.savedPrograms.splice(idx, 1);
+      saved = false;
     }
-    this.updateUser(userId, { savedPrograms: Array.from(set) });
-    return isSaved;
+    this.saveDatabase();
+    return saved;
   }
 
-  public setLanguage(userId: number, lang: Language) {
-    return this.updateUser(userId, { lang });
+  // ================= APPLICATIONS =================
+  public createApplication(
+    userIdOrApp: number | Omit<ApplicationRecord, "id" | "submittedAt" | "updatedAt">,
+    programId?: string,
+    programName?: string,
+    university?: string,
+    city?: string
+  ): ApplicationRecord {
+    if (!this.data.applications) this.data.applications = {};
+    const id = `APP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const now = new Date().toISOString();
+
+    let newApp: ApplicationRecord;
+    if (typeof userIdOrApp === "number") {
+      const user = this.getUser(userIdOrApp);
+      newApp = {
+        id,
+        userId: userIdOrApp,
+        studentName: user.fullName || user.firstName || `Student #${userIdOrApp}`,
+        studentUsername: user.username,
+        programId: programId || "unknown",
+        programName: programName || "Unknown Program",
+        university: university || "Unknown University",
+        city: city || "Poland",
+        stage: "Submitted",
+        submittedAt: now,
+        updatedAt: now,
+      };
+    } else {
+      newApp = {
+        ...userIdOrApp,
+        id,
+        submittedAt: now,
+        updatedAt: now,
+      };
+    }
+
+    this.data.applications[id] = newApp;
+    this.saveDatabase();
+    return newApp;
   }
 
-  public setWaitingFor(userId: number, waitingFor: UserSessionData["waitingFor"], payload?: any) {
-    this.updateUser(userId, { waitingFor, waitingPayload: payload });
+  public getApplication(id: string): ApplicationRecord | undefined {
+    return this.data.applications?.[id];
   }
 
-  public setLastPromptMsgId(userId: number, lastPromptMsgId?: number) {
-    this.updateUser(userId, { lastPromptMsgId });
+  public getApplicationsByUser(userId: number): ApplicationRecord[] {
+    return Object.values(this.data.applications || {}).filter((a) => a.userId === userId);
+  }
+
+  public getUserApplications(userId: number): ApplicationRecord[] {
+    return this.getApplicationsByUser(userId);
+  }
+
+  public getAllApplications(): ApplicationRecord[] {
+    return Object.values(this.data.applications || {}).sort((a, b) =>
+      b.submittedAt.localeCompare(a.submittedAt)
+    );
+  }
+
+  public updateApplicationStage(id: string, stage: AppStage, note?: string): ApplicationRecord | null {
+    const app = this.data.applications?.[id];
+    if (!app) return null;
+    app.stage = stage;
+    if (note !== undefined) app.counselorNote = note;
+    app.updatedAt = new Date().toISOString();
+    this.saveDatabase();
+    return app;
+  }
+
+  // ================= DOCUMENTS =================
+  public getUserDocuments(userId: number): Record<string, DocumentRecord> {
+    const user = this.getUser(userId);
+    return user.documents || {};
+  }
+
+  public async saveUserDocument(
+    userId: number,
+    docKey: string,
+    fileData: {
+      fileId?: string;
+      fileName?: string;
+      fileType?: "document" | "photo" | "link";
+      link?: string;
+    }
+  ): Promise<DocumentRecord> {
+    const user = this.getUser(userId);
+    const def = this.getDocumentDefinition(docKey);
+    const name = def ? def.name : { en: docKey, uz: docKey };
+
+    if (!user.documents) user.documents = {};
+
+    const docRecord: DocumentRecord = {
+      id: docKey,
+      name,
+      status: "reviewing",
+      fileId: fileData.fileId,
+      fileName: fileData.fileName,
+      fileType: fileData.fileType,
+      link: fileData.link,
+      updatedAt: new Date().toISOString(),
+    };
+
+    user.documents[docKey] = docRecord;
+    this.saveDatabase();
+    return docRecord;
+  }
+
+  public updateDocumentStatus(
+    userId: number,
+    docKey: string,
+    status: DocStatus,
+    feedbackNote?: string
+  ): DocumentRecord | null {
+    const user = this.getUser(userId);
+    if (!user.documents || !user.documents[docKey]) return null;
+
+    user.documents[docKey].status = status;
+    if (feedbackNote !== undefined) {
+      user.documents[docKey].feedbackNote = feedbackNote;
+    }
+    user.documents[docKey].updatedAt = new Date().toISOString();
+    this.saveDatabase();
+    return user.documents[docKey];
+  }
+
+  public getPendingDocuments(): { userId: number; user: UserSessionData; doc: DocumentRecord }[] {
+    const result: { userId: number; user: UserSessionData; doc: DocumentRecord }[] = [];
+    Object.values(this.data.users || {}).forEach((user) => {
+      if (user.documents) {
+        Object.values(user.documents).forEach((doc) => {
+          if (doc.status === "reviewing") {
+            result.push({ userId: user.userId, user, doc });
+          }
+        });
+      }
+    });
+    return result;
+  }
+
+  // ================= OFERTA =================
+  public getPublishedOferta(): OfertaRecord {
+    if (!this.data.oferta) {
+      this.data.oferta = {
+        version: 1,
+        text: defaultOfertaTemplate,
+        publishedAt: "2026-08-23",
+        publishedByName: "System",
+        status: "published",
+      };
+    }
+    return this.data.oferta;
+  }
+
+  public getRenderedOferta(): string {
+    return this.getPublishedOferta().text;
+  }
+
+  public updateOferta(text: string, publisherName?: string): OfertaRecord {
+    if (!text || text.trim().length === 0) {
+      throw new Error("Oferta text cannot be empty.");
+    }
+    const current = this.getPublishedOferta();
+    this.data.oferta = {
+      version: current.version + 1,
+      text: text.trim(),
+      publishedAt: new Date().toISOString().split("T")[0],
+      publishedByName: publisherName || "Admin",
+      status: "published",
+    };
+    this.saveDatabase();
+    return this.data.oferta;
   }
 }
 

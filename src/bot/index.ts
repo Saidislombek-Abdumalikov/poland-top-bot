@@ -1,12 +1,11 @@
 import { Bot, GrammyError, HttpError } from "grammy";
+import * as http from "http";
 import { config, validateConfig } from "./config";
 import { setupStartHandler } from "./handlers/startHandler";
 import { setupUniversityHandler } from "./handlers/universityHandler";
 import { setupProgramHandler } from "./handlers/programHandler";
-import { setupNawaHandler } from "./handlers/nawaHandler";
 import { setupDocumentHandler } from "./handlers/documentHandler";
 import { setupExamHandler } from "./handlers/examHandler";
-import { setupPremiumHandler } from "./handlers/premiumHandler";
 import { setupProfileHandler } from "./handlers/profileHandler";
 import { setupTextInputHandler } from "./handlers/textInputHandler";
 import { setupAdminHandler } from "./handlers/adminHandler";
@@ -40,10 +39,8 @@ export function createBot(token?: string) {
   setupStartHandler(bot);
   setupUniversityHandler(bot);
   setupProgramHandler(bot);
-  setupNawaHandler(bot);
   setupDocumentHandler(bot);
   setupExamHandler(bot);
-  setupPremiumHandler(bot);
   setupReviewHandler(bot);
   setupProfileHandler(bot);
   setupTextInputHandler(bot);
@@ -52,7 +49,7 @@ export function createBot(token?: string) {
   bot.command(["version", "ping"], async (ctx) => {
     await ctx.reply(
       `🤖 <b>PTU Bot System Status: ONLINE</b>\n` +
-        `• 🏷️ <b>Version:</b> 2.2.0\n` +
+        `• 🏷️ <b>Version:</b> 2.0.0 (Clean Architecture)\n` +
         `• ⚡ <b>Response:</b> Operational\n` +
         `• 🗄️ <b>Database:</b> Cloud Sync Active`,
       { parse_mode: "HTML" }
@@ -61,8 +58,6 @@ export function createBot(token?: string) {
 
   return bot;
 }
-
-import * as http from "http";
 
 export async function startBot(token?: string) {
   validateConfig();
@@ -106,7 +101,7 @@ export async function startBot(token?: string) {
   await bot.start({
     onStart: (botInfo) => {
       console.log(`✅ PTU Bot is running as @${botInfo.username} (ID: ${botInfo.id})`);
-      console.log("🇵🇱 Universities, Programs, NAWA, Exams & Document Tracker ready!");
+      console.log("🇵🇱 Universities, Programs, Exams & Document Tracker ready!");
     },
   });
 }
@@ -124,4 +119,3 @@ const isDirectRun =
 if (isDirectRun) {
   startBot();
 }
-

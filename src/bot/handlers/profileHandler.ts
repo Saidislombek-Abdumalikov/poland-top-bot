@@ -86,9 +86,6 @@ export function setupProfileHandler(bot: Bot) {
     const usernameDisplay = user.username ? `@${escapeHtml(user.username)}` : "<i>(mavjud emas)</i>";
     const notSetText = isUz ? "<i>(kiritilmagan)</i>" : "<i>(not set)</i>";
     const phoneDisplay = user.phone ? escapeHtml(user.phone) : notSetText;
-    const tierDisplay = escapeHtml(user.premiumTier || "Free");
-    const codeDisplay = user.premiumCode ? ` (Kod: <code>${escapeHtml(user.premiumCode)}</code>)` : "";
-
     const text = isUz
       ? `👤 <b>${escapeHtml(fullName)} — Talaba Profili</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -98,7 +95,6 @@ export function setupProfileHandler(bot: Bot) {
         `• 🎓 Maqsad Qilingan Bosqich: <b>${escapeHtml(user.preferredLevel || "Bakalavr")}</b>\n` +
         `• 🇺🇿 Fuqarolik: ${escapeHtml(user.country || "O'zbekiston")}\n` +
         `• 🌐 Tanlangan Til: O'zbekcha 🇺🇿\n` +
-        `• 💎 A'zolik Darajasi: <b>${tierDisplay}</b>${codeDisplay}\n` +
         `• ⭐ Saqlangan Dasturlar: <b>${savedCount} ta</b>\n\n` +
         `📁 <b>Hujjatlar Tayyorgarligi:</b>\n` +
         `${progressBar} <b>${verifiedDocs}/${totalDocs} Tasdiqlangan</b>\n\n` +
@@ -113,7 +109,6 @@ export function setupProfileHandler(bot: Bot) {
         `• 🎓 Target Degree: <b>${escapeHtml(user.preferredLevel || "Bachelor")}</b>\n` +
         `• 🇺🇿 Citizenship: ${escapeHtml(user.country || "Uzbekistan")}\n` +
         `• 🌐 Language: English 🇬🇧\n` +
-        `• 💎 Membership: <b>${tierDisplay}</b>${codeDisplay}\n` +
         `• ⭐ Saved Degrees: <b>${savedCount}</b>\n\n` +
         `📁 <b>Document Verification Progress:</b>\n` +
         `${progressBar} <b>${verifiedDocs}/${totalDocs} Verified</b>\n\n` +

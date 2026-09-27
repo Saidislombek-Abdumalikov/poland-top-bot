@@ -1,4 +1,4 @@
-import { DocumentRecord, NawaDocumentRecord } from "../types";
+import { DocumentRecord } from "../types";
 
 export interface AIValidationResult {
   isValid: boolean;

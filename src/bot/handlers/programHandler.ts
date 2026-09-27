@@ -8,7 +8,6 @@ import {
   getProgramDetailKeyboard,
 } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
-import { checkPremiumAccess } from "../utils/paywall";
 
 export function setupProgramHandler(bot: Bot) {
   // Session filters memory per user
@@ -281,17 +280,6 @@ export function setupProgramHandler(bot: Bot) {
     if (!userId) return;
     const user = db.getUser(userId);
     const isUz = user.lang === "uz";
-
-    const hasAccess = await checkPremiumAccess(
-      ctx,
-      user,
-      {
-        en: "Direct University Application Submission",
-        uz: "Universitetga To'g'ridan-to'g'ri Ariza Topshirish",
-      },
-      "NAWA_FULL"
-    );
-    if (!hasAccess) return;
 
     const prog = programs.find((p) => p.id === progId);
     if (!prog) return;

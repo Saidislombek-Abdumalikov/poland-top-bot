@@ -1,9 +1,7 @@
 import { Bot, Context } from "grammy";
 import { db } from "../services/db";
-import { t } from "../locales";
 import { getTestsListKeyboard, getTestDetailKeyboard } from "../keyboards/menuKeyboards";
 import { escapeHtml } from "../utils/format";
-import { checkPremiumAccess } from "../utils/paywall";
 
 export function setupExamHandler(bot: Bot) {
   const handleTestsMenu = async (ctx: Context) => {
@@ -55,9 +53,6 @@ export function setupExamHandler(bot: Bot) {
     await ctx.answerCallbackQuery();
     await handleTestsMenu(ctx);
   });
-  bot.hears([/.*Practice Exams.*/i, /.*Mashq Imtihonlari.*/i, /.*Testlar.*/i, /.*Tests.*/i], async (ctx) =>
-    handleTestsMenu(ctx)
-  );
 
   // View specific test material
   bot.callbackQuery(/^view_test_(.+)$/, async (ctx) => {
@@ -75,17 +70,6 @@ export function setupExamHandler(bot: Bot) {
       return;
     }
 
-    // VIP Gating check if not free
-    if (!test.isFree) {
-      const hasAccess = await checkPremiumAccess(
-        ctx,
-        user,
-        isUz ? "Kirish Imtihonlari va Test Materiallari (PDF)" : "Entrance Exams & Test Materials (PDF)",
-        "NAWA_FULL"
-      );
-      if (!hasAccess) return;
-    }
-
     await ctx.answerCallbackQuery();
 
     const title = test.title[user.lang] || test.title.en;
@@ -99,7 +83,6 @@ export function setupExamHandler(bot: Bot) {
       ? `📝 <b>${escapeHtml(title)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📚 <b>Fan / Yo'nalish:</b> ${escapeHtml(test.subject)}\n` +
-        `💎 <b>Holati:</b> ${test.isFree ? "🟢 Bepul Namunaviy Variant" : "🔒 VIP Imtihon To'plami"}\n` +
         (test.fileName ? `📁 <b>Fayl:</b> <code>${escapeHtml(test.fileName)}</code>\n` : "") +
         `📅 <b>Sana:</b> ${test.createdAt}\n\n` +
         `📖 <b>Tavsif:</b>\n${escapeHtml(desc)}\n\n` +
@@ -107,7 +90,6 @@ export function setupExamHandler(bot: Bot) {
       : `📝 <b>${escapeHtml(title)}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📚 <b>Subject / Field:</b> ${escapeHtml(test.subject)}\n` +
-        `💎 <b>Access Tier:</b> ${test.isFree ? "🟢 Free Sample" : "🔒 VIP Entrance Pack"}\n` +
         (test.fileName ? `📁 <b>File:</b> <code>${escapeHtml(test.fileName)}</code>\n` : "") +
         `📅 <b>Date:</b> ${test.createdAt}\n\n` +
         `📖 <b>Description:</b>\n${escapeHtml(desc)}\n\n` +
@@ -147,23 +129,11 @@ export function setupExamHandler(bot: Bot) {
       return;
     }
 
-    if (!test.isFree) {
-      const hasAccess = await checkPremiumAccess(
-        ctx,
-        user,
-        isUz ? "Kirish Imtihonlari va Test Materiallari (PDF)" : "Entrance Exams & Test Materials (PDF)",
-        "NAWA_FULL"
-      );
-      if (!hasAccess) return;
-    }
-
     await ctx.answerCallbackQuery({ text: isUz ? "Fayl yuborilmoqda..." : "Sending file..." });
 
     try {
       await ctx.replyWithDocument(test.fileId, {
-        caption: isUz
-          ? `📄 <b>${escapeHtml(test.title[user.lang] || test.title.en)}</b>\n\n🇵🇱 @poland_top_universitiesbot`
-          : `📄 <b>${escapeHtml(test.title[user.lang] || test.title.en)}</b>\n\n🇵🇱 @poland_top_universitiesbot`,
+        caption: `📄 <b>${escapeHtml(test.title[user.lang] || test.title.en)}</b>\n\n🇵🇱 Poland Top Universities`,
         parse_mode: "HTML",
       });
     } catch (e) {

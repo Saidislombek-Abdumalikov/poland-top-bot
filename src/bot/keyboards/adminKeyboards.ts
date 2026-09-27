@@ -2,68 +2,55 @@ import { InlineKeyboard } from "grammy";
 import {
   UserSessionData,
   ApplicationRecord,
-  PromoCodeRecord,
   DocumentRecord,
   University,
   DocumentDefinition,
   StudentReview,
-  AuditLogEntry,
   Language,
-  TransactionRecord,
-  PricingConfig,
-  OfertaRecord,
   TestMaterial,
-  NawaApplicationRecord,
-  NawaDocumentKey,
-  NawaDocumentRecord,
 } from "../types";
-import { defaultNawaDefinitions } from "../services/db";
 
 export function getAdminDashboardKeyboard(
   stats: {
     usersCount: number;
     appsCount: number;
     pendingDocsCount: number;
-    pendingNawaDocsCount?: number;
-    nawaCount: number;
     reviewsCount?: number;
-    adminsCount?: number;
-    auditLogsCount?: number;
+    testsCount?: number;
   },
-  lang: Language = "en",
-  isSuperAdminUser: boolean = false
+  lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (isSuperAdminUser) {
-    kb.text(
-      isUz ? `🛡️ Tizim Boshqaruvi & Loglar` : `🛡️ System Operations & Logs`,
-      "admin_super_hq"
-    ).row();
-  }
-
-  kb.text(isUz ? `📋 Universitet Arizalari (${stats.appsCount})` : `📋 Uni Applications (${stats.appsCount})`, "admin_menu_apps")
-    .text(isUz ? `📁 Hujjatlar Navbati (${stats.pendingDocsCount})` : `📁 Doc Queue (${stats.pendingDocsCount})`, "admin_menu_docs")
+  return new InlineKeyboard()
+    .text(
+      isUz ? `📋 Arizalar (${stats.appsCount})` : `📋 Applications (${stats.appsCount})`,
+      "admin_menu_apps"
+    )
+    .text(
+      isUz ? `📁 Hujjatlar Navbati (${stats.pendingDocsCount})` : `📁 Doc Queue (${stats.pendingDocsCount})`,
+      "admin_menu_docs"
+    )
     .row()
-    .text(isUz ? `🏛️ NAWA Boshqaruvi (${stats.nawaCount} ariza)` : `🏛️ NAWA Hub (${stats.nawaCount} apps)`, "admin_menu_nawa")
-    .text(isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Users CRM (${stats.usersCount})`, "admin_menu_users")
-    .row()
+    .text(
+      isUz ? `👥 Talabalar CRM (${stats.usersCount})` : `👥 Students CRM (${stats.usersCount})`,
+      "admin_menu_users"
+    )
     .text(isUz ? `🏛️ Universitetlar` : `🏛️ Universities`, "admin_menu_manage_unis")
-    .text(isUz ? `📑 Hujjat Turlari` : `📑 Document Types`, "admin_menu_manage_docdefs")
     .row()
-    .text(isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`, "admin_menu_reviews")
-    .text(isUz ? `⚡ Promokodlar` : `⚡ Promo Codes`, "admin_menu_promos")
+    .text(isUz ? `📑 Hujjat Turlari` : `📑 Doc Types`, "admin_menu_manage_docdefs")
+    .text(
+      isUz ? `⭐ Sharhlar (${stats.reviewsCount || 0})` : `⭐ Reviews (${stats.reviewsCount || 0})`,
+      "admin_menu_reviews"
+    )
     .row()
-    .text(isUz ? `📝 Testlar` : `📝 Test Materials`, "admin_menu_tests")
+    .text(
+      isUz ? `📝 Testlar (${stats.testsCount || 0})` : `📝 Tests (${stats.testsCount || 0})`,
+      "admin_menu_tests"
+    )
+    .text(isUz ? `📄 Ommaviy Oferta` : `📄 Terms / Oferta`, "admin_preview_oferta")
+    .row()
     .text(isUz ? `📢 Global Xabar` : `📢 Broadcast`, "admin_broadcast_start")
-    .row()
-    .text(isUz ? `🌐 Til: O'zbekcha 🇺🇿` : `🌐 Lang: English 🇬🇧`, "admin_switch_lang")
-    .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Stats`, "admin_refresh")
-    .row()
-    .text(isUz ? `🏠 Talaba Menyusi` : `🏠 Student Menu`, "go_main_menu");
-
-  return kb;
+    .text(isUz ? `🚪 Chiqish` : `🚪 Logout`, "admin_logout");
 }
 
 export function getAdminUsersListKeyboard(
@@ -74,63 +61,44 @@ export function getAdminUsersListKeyboard(
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
+
+  kb.text(isUz ? "🔍 Talabani Qidirish" : "🔍 Search Student", "admin_search_user_prompt").row();
+
   const start = page * pageSize;
   const pageUsers = users.slice(start, start + pageSize);
 
   pageUsers.forEach((u) => {
     const name = u.fullName || u.firstName || `User #${u.userId}`;
-    const verifiedCount = Object.values(u.documents || {}).filter((d) => d.status === "approved").length;
-    const totalDocs = Object.keys(u.documents || {}).length || 7;
-    const tierBadge = u.isPremium ? "💎" : "⚪";
-
-    kb.text(
-      `${tierBadge} ${name.slice(0, 18)} (${verifiedCount}/${totalDocs} Docs)`,
-      `admin_view_user_${u.userId}`
-    ).row();
+    const username = u.username ? ` (@${u.username})` : "";
+    kb.text(`👤 ${name}${username}`, `admin_view_user_${u.userId}`).row();
   });
 
   const totalPages = Math.ceil(users.length / pageSize) || 1;
-  const navRow: { text: string; data: string }[] = [];
+  if (page > 0) kb.text("⬅️ Prev", `admin_users_page_${page - 1}`);
+  if (page < totalPages - 1) kb.text("Next ➡️", `admin_users_page_${page + 1}`);
+  if (page > 0 || page < totalPages - 1) kb.row();
 
-  if (page > 0) {
-    navRow.push({ text: "⬅️ Prev", data: `admin_users_page_${page - 1}` });
-  }
-  if (page < totalPages - 1) {
-    navRow.push({ text: "Next ➡️", data: `admin_users_page_${page + 1}` });
-  }
-
-  if (navRow.length > 0) {
-    navRow.forEach((btn) => kb.text(btn.text, btn.data));
-    kb.row();
-  }
-
-  kb.text(isUz ? "🔍 Talabani Qidirish" : "🔍 Search Student", "admin_search_user_prompt")
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
+  kb.text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Admin Dashboard", "admin_main");
   return kb;
 }
 
-export function getAdminUserDetailKeyboard(
-  user: UserSessionData,
-  lang: Language = "en",
-  isSuperAdminUser: boolean = false
-): InlineKeyboard {
+export function getAdminUserDetailKeyboard(targetUser: UserSessionData, lang: Language = "en"): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  kb.text(isUz ? "🎁 Bir Martalik VIP Promokod Berish" : "🎁 Assign VIP Single-Use Promo", `admin_assign_promo_${user.userId}`).row();
+  kb.text(
+    isUz ? "📁 Talaba Hujjatlarini Ko'rish" : "📁 View Student Dossier",
+    `admin_review_student_docs_${targetUser.userId}`
+  ).row();
 
-  // ONLY Super Admin can promote/demote administrators or completely delete user records
-  if (isSuperAdminUser && !user.isSuperAdmin) {
-    if (user.isAdmin) {
-      kb.text(isUz ? "🔴 Admin Huquqini Olish" : "🔴 Demote from Admin", `admin_toggle_admin_${user.userId}`).row();
-    } else {
-      kb.text(isUz ? "🛡️ Admin Huquqini Berish" : "🛡️ Promote to Admin", `admin_toggle_admin_${user.userId}`).row();
-    }
-    kb.text(isUz ? "🗑️ Foydalanuvchini Butunlay O'chirish" : "🗑️ Delete User Record", `admin_delete_user_${user.userId}`).row();
-  }
+  kb.text(
+    isUz ? "🗑️ Talabani O'chirish" : "🗑️ Delete Student",
+    `admin_delete_user_${targetUser.userId}`
+  ).row();
 
-  kb.text(isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Users", "admin_menu_users");
+  kb.text(isUz ? "◀️ Talabalar Ro'yxatiga" : "◀️ Back to Students", "admin_menu_users")
+    .text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
+
   return kb;
 }
 
@@ -142,11 +110,12 @@ export function getAdminApplicationsListKeyboard(
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
+
   const start = page * pageSize;
   const pageApps = apps.slice(start, start + pageSize);
 
   pageApps.forEach((a) => {
-    const stageIcon =
+    const icon =
       a.stage === "Accepted"
         ? "✅"
         : a.stage === "University Review"
@@ -156,11 +125,7 @@ export function getAdminApplicationsListKeyboard(
         : a.stage === "Action Needed"
         ? "🔴"
         : "⚪";
-
-    kb.text(
-      `${stageIcon} ${a.studentName.slice(0, 14)} - ${a.programName.slice(0, 16)}`,
-      `admin_view_app_${a.id}`
-    ).row();
+    kb.text(`${icon} ${a.studentName} — ${a.university}`, `admin_view_app_${a.id}`).row();
   });
 
   const totalPages = Math.ceil(apps.length / pageSize) || 1;
@@ -168,61 +133,34 @@ export function getAdminApplicationsListKeyboard(
   if (page < totalPages - 1) kb.text("Next ➡️", `admin_apps_page_${page + 1}`);
   if (page > 0 || page < totalPages - 1) kb.row();
 
-  kb.text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
+  kb.text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
   return kb;
 }
 
-export function getAdminApplicationDetailKeyboard(
-  app: ApplicationRecord,
-  userDocs: Record<string, DocumentRecord> = {},
-  docDefs: Record<string, DocumentDefinition> = {},
-  lang: Language = "en"
-): InlineKeyboard {
+export function getAdminApplicationDetailKeyboard(app: ApplicationRecord, lang: Language = "en"): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  // Document buttons for the student's full dossier
-  const docKeys = Object.keys(docDefs);
-  let hasPending = false;
+  kb.text(
+    isUz ? "📁 Talabaning Barcha Hujjatlari" : "📁 View Student Dossier",
+    `admin_review_student_docs_${app.userId}`
+  ).row();
 
-  docKeys.forEach((key) => {
-    const def = docDefs[key];
-    const doc = userDocs[key];
-    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 18);
-
-    if (doc && doc.status !== "missing") {
-      if (doc.status === "approved") {
-        kb.text(`✅ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-      } else if (doc.status === "reviewing") {
-        hasPending = true;
-        kb.text(`🟡 ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-      } else if (doc.status === "needs_correction") {
-        kb.text(`🔴 ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-      } else {
-        kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-      }
-    } else {
-      kb.text(`⚪ ${docName}`, `admin_review_doc_${app.userId}_${key}`).row();
-    }
-  });
-
-  if (hasPending) {
-    kb.text(
-      isUz ? "⚡ Barcha Hujjatlarni Tasdiqlash" : "⚡ Approve All Student Documents",
-      `admin_approve_all_student_docs_${app.userId}`
-    ).row();
-  }
-
-  // Application stage controls
-  kb.text(isUz ? "🟡 Holat: Jarayonda" : "🟡 Set: Processing", `admin_set_stage_${app.id}_Processing`)
-    .text(isUz ? "🏛️ Univ Tekshiruvida" : "🏛️ Set: Univ Review", `admin_set_stage_${app.id}_University Review`)
+  // Stage changes
+  kb.text(app.stage === "Processing" ? "🔘 Processing" : "🟡 Set Processing", `admin_set_stage_Processing_${app.id}`)
+    .text(
+      app.stage === "University Review" ? "🔘 Uni Review" : "🏛️ Set Uni Review",
+      `admin_set_stage_UniversityReview_${app.id}`
+    )
     .row()
-    .text(isUz ? "✅ Qabul Qilindi" : "✅ Set: Accepted", `admin_set_stage_${app.id}_Accepted`)
-    .text(isUz ? "🔴 Tuzatish Kerak" : "🔴 Set: Action Needed", `admin_set_stage_${app.id}_Action Needed`)
-    .row()
-    .text(isUz ? "💬 Talabaga Maslahatchi Izohi Yuborish" : "💬 Send Feedback Note to Student", `admin_feedback_prompt_${app.id}`)
-    .row()
-    .text(isUz ? "◀️ Arizalar Ro'yxatiga" : "◀️ Back to Applications", "admin_menu_apps");
+    .text(app.stage === "Accepted" ? "🔘 Accepted" : "✅ Set Accepted", `admin_set_stage_Accepted_${app.id}`)
+    .text(app.stage === "Action Needed" ? "🔘 Action Needed" : "🔴 Set Action Needed", `admin_set_stage_ActionNeeded_${app.id}`)
+    .row();
+
+  kb.text(isUz ? "💬 Izoh / Xabar Yozish" : "💬 Add Counselor Note", `admin_feedback_prompt_${app.id}`).row();
+
+  kb.text(isUz ? "◀️ Arizalarga Qaytish" : "◀️ Back to Apps", "admin_menu_apps")
+    .text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
 
   return kb;
 }
@@ -231,397 +169,109 @@ export function getAdminPendingDocsKeyboard(
   pendingDocs: { userId: number; user: UserSessionData; doc: DocumentRecord }[],
   page: number = 0,
   pageSize: number = 6,
-  lang: Language = "en",
-  docDefs: Record<string, DocumentDefinition> = {}
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (pendingDocs.length === 0) {
-    kb.text(
-      isUz
-        ? "🎉 Kutilayotgan hujjatlar yo'q (Barchasi tekshirilgan)"
-        : "🎉 No pending documents in queue (All reviewed)",
-      "admin_menu_apps"
-    ).row();
-  } else {
-    const start = page * pageSize;
-    const pageItems = pendingDocs.slice(start, start + pageSize);
-
-    pageItems.forEach((item) => {
-      const u = item.user;
-      const name = u.fullName || u.firstName || `User #${item.userId}`;
-      const def = docDefs[item.doc.id];
-      const docName = (def?.name[lang] || def?.name.en || item.doc.id).slice(0, 16);
-
-      kb.text(
-        `🟡 ${name.slice(0, 14)} — ${docName}`,
-        `admin_review_doc_${item.userId}_${item.doc.id}`
-      ).row();
-    });
-
-    const totalPages = Math.ceil(pendingDocs.length / pageSize) || 1;
-    if (page > 0) kb.text("⬅️ Prev", `admin_queue_page_${page - 1}`);
-    if (page < totalPages - 1) kb.text("Next ➡️", `admin_queue_page_${page + 1}`);
-    if (page > 0 || page < totalPages - 1) kb.row();
-  }
-
-  kb.text(
-    isUz ? "📋 Barcha Arizalar" : "📋 All Applications",
-    "admin_menu_apps"
-  )
-    .text(
-      isUz ? "👥 Talabalar CRM" : "👥 Users CRM",
-      "admin_menu_users"
-    )
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
-  return kb;
-}
-
-export function getAdminNawaHubKeyboard(
-  appsCount: number,
-  pendingCount: number,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(
-      isUz ? `📁 NAWA Hujjatlar Navbati (${pendingCount} ta kutilmoqda)` : `📁 NAWA Review Queue (${pendingCount} pending)`,
-      "admin_nawa_queue"
-    )
-    .row()
-    .text(
-      isUz ? `📋 NAWA Arizalari (${appsCount} ta ariza)` : `📋 NAWA Applications (${appsCount} total)`,
-      "admin_nawa_apps"
-    )
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-}
-
-export function getAdminPendingNawaDocsKeyboard(
-  pendingDocs: {
-    userId: number;
-    user: UserSessionData;
-    docKey: NawaDocumentKey;
-    doc: NawaDocumentRecord;
-  }[],
-  page: number = 0,
-  pageSize: number = 6,
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  if (pendingDocs.length === 0) {
-    kb.text(
-      isUz
-        ? "🎉 NAWA navbatida hujjatlar yo'q (Barchasi tekshirilgan)"
-        : "🎉 No pending NAWA documents (All reviewed)",
-      "admin_nawa_apps"
-    ).row();
-  } else {
-    const start = page * pageSize;
-    const pageItems = pendingDocs.slice(start, start + pageSize);
-
-    pageItems.forEach((item) => {
-      const u = item.user;
-      const name = u.fullName || u.firstName || `User #${item.userId}`;
-      const docDef = defaultNawaDefinitions[item.docKey];
-      const docName = (docDef ? (isUz ? docDef.name.uz : docDef.name.en) : item.docKey).slice(0, 16);
-
-      kb.text(
-        `🟡 ${name.slice(0, 14)} — ${docName}`,
-        `admin_view_nawa_doc_${item.userId}_${item.docKey}`
-      ).row();
-    });
-
-    const totalPages = Math.ceil(pendingDocs.length / pageSize) || 1;
-    if (page > 0) kb.text("⬅️ Prev", `admin_nawa_queue_page_${page - 1}`);
-    if (page < totalPages - 1) kb.text("Next ➡️", `admin_nawa_queue_page_${page + 1}`);
-    if (page > 0 || page < totalPages - 1) kb.row();
-  }
-
-  kb.text(isUz ? "📋 NAWA Arizalari" : "📋 NAWA Applications", "admin_nawa_apps")
-    .text(isUz ? "🏛️ NAWA Boshqaruv" : "🏛️ NAWA Hub", "admin_menu_nawa")
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
-  return kb;
-}
-
-export function getAdminNawaDocReviewKeyboard(
-  userId: number,
-  docKey: NawaDocumentKey,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "✅ Tasdiqlash (Qabul)" : "✅ Approve (Verified)", `admin_approve_nawa_doc_${userId}_${docKey}`)
-    .text(isUz ? "🔴 Rad Etish (To'g'ridan)" : "🔴 Reject (Direct)", `admin_reject_nawa_doc_direct_${userId}_${docKey}`)
-    .row()
-    .text(isUz ? "💬 Sabab Izohi Bilan Rad Etish" : "💬 Reject with Feedback Note", `admin_reject_nawa_doc_feedback_prompt_${userId}_${docKey}`)
-    .row()
-    .text(isUz ? "🏛️ NAWA Arizasini Ko'rish" : "🏛️ View NAWA Application", `admin_view_nawa_by_user_${userId}`)
-    .text(isUz ? "◀️ NAWA Navbatiga" : "◀️ Back to NAWA Queue", "admin_nawa_queue");
-}
-
-export function getAdminNawaListKeyboard(
-  nawaApps: NawaApplicationRecord[],
-  page: number = 0,
-  pageSize: number = 6,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (nawaApps.length === 0) {
-    kb.text(
-      isUz ? "🏛️ Hozircha NAWA arizalari yo'q" : "🏛️ No NAWA applications submitted yet",
-      "admin_main"
-    ).row();
-  } else {
-    const start = page * pageSize;
-    const pageItems = nawaApps.slice(start, start + pageSize);
-
-    pageItems.forEach((a) => {
-      const stageIcon =
-        a.stage === "Decision Issued"
-          ? "✅"
-          : a.stage === "Under Evaluation"
-          ? "🏛️"
-          : a.stage === "Requires Action"
-          ? "🔴"
-          : "🟡";
-
-      kb.text(
-        `${stageIcon} ${a.studentName.slice(0, 16)} (${a.stage})`,
-        `admin_view_nawa_${a.id}`
-      ).row();
-    });
-
-    const totalPages = Math.ceil(nawaApps.length / pageSize) || 1;
-    if (page > 0) kb.text("⬅️ Prev", `admin_nawa_page_${page - 1}`);
-    if (page < totalPages - 1) kb.text("Next ➡️", `admin_nawa_page_${page + 1}`);
-    if (page > 0 || page < totalPages - 1) kb.row();
-  }
-
-  kb.text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-  return kb;
-}
-
-export function getAdminNawaDetailKeyboard(
-  app: NawaApplicationRecord,
-  nawaDocs: Partial<Record<NawaDocumentKey, NawaDocumentRecord>> = {},
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  const items: { key: NawaDocumentKey; icon: string; nameUz: string; nameEn: string }[] = [
-    { key: "attestat", icon: "📜", nameUz: "Attestat (11-sinf)", nameEn: "Attestat (High School)" },
-    { key: "shahodatnoma", icon: "📜", nameUz: "Shahodatnoma (9-sinf)", nameEn: "Shahodatnoma (9th Grade)" },
-    { key: "email", icon: "📧", nameUz: "Email", nameEn: "Email" },
-    { key: "home_address", icon: "🏠", nameUz: "Yashash Manzili", nameEn: "Home Address" },
-    { key: "passport_red", icon: "📕", nameUz: "Pasport (qizil)", nameEn: "Passport (Red)" },
-  ];
-
-  items.forEach((item) => {
-    const doc = nawaDocs[item.key] || app.documents?.[item.key];
-    const status = doc?.status || "missing";
-    const statusIcon =
-      status === "approved"
-        ? "✅"
-        : status === "reviewing"
-        ? "🟡"
-        : status === "needs_correction"
-        ? "🔴"
-        : "⚪";
-
-    const name = isUz ? item.nameUz : item.nameEn;
-    kb.text(`${statusIcon} ${item.icon} ${name}`, `admin_view_nawa_doc_${app.userId}_${item.key}`).row();
+  // Group by student
+  const studentMap: Map<number, { user: UserSessionData; count: number }> = new Map();
+  pendingDocs.forEach((item) => {
+    const current = studentMap.get(item.userId);
+    if (!current) {
+      studentMap.set(item.userId, { user: item.user, count: 1 });
+    } else {
+      current.count += 1;
+    }
   });
 
-  // Bulk approve all NAWA docs
-  kb.text(
-    isUz ? "✅ Barcha NAWA Hujjatlarini Tasdiqlash" : "✅ Approve All NAWA Documents",
-    `admin_approve_all_nawa_docs_${app.id}`
-  ).row();
+  const studentList = Array.from(studentMap.entries());
+  const start = page * pageSize;
+  const pageItems = studentList.slice(start, start + pageSize);
 
-  // Stage change buttons
-  kb.text(isUz ? "🟡 Topshirilgan" : "🟡 Submitted", `admin_set_nawa_stage_${app.id}_Submitted`)
-    .text(isUz ? "🏛️ Baholanmoqda" : "🏛️ In Review", `admin_set_nawa_stage_${app.id}_Under Evaluation`)
-    .row()
-    .text(isUz ? "✅ Qaror Chiqdi" : "✅ Decision Issued", `admin_set_nawa_stage_${app.id}_Decision Issued`)
-    .text(isUz ? "🔴 Tuzatish Kerak" : "🔴 Requires Action", `admin_set_nawa_stage_${app.id}_Requires Action`)
-    .row()
-    .text(isUz ? "💬 Maslahatchi Izohi Yuborish" : "💬 Send Feedback Note to Student", `admin_feedback_nawa_prompt_${app.id}`)
-    .row()
-    .text(isUz ? "◀️ NAWA Arizalari Ro'yxatiga" : "◀️ Back to NAWA List", "admin_menu_nawa");
+  pageItems.forEach(([studentId, info]) => {
+    const studentName = info.user.fullName || info.user.firstName || `Student #${studentId}`;
+    const label = `📁 ${studentName} (${info.count} ta kutilmoqda)`;
+    kb.text(label, `admin_review_student_docs_${studentId}`).row();
+  });
+
+  const totalPages = Math.ceil(studentList.length / pageSize) || 1;
+  if (page > 0) kb.text("⬅️ Prev", `admin_queue_page_${page - 1}`);
+  if (page < totalPages - 1) kb.text("Next ➡️", `admin_queue_page_${page + 1}`);
+  if (page > 0 || page < totalPages - 1) kb.row();
+
+  kb.text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "admin_menu_docs")
+    .text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
 
   return kb;
 }
 
 export function getAdminStudentDossierKeyboard(
-  userId: number,
-  userDocs: Record<string, DocumentRecord>,
+  student: UserSessionData,
   docDefs: Record<string, DocumentDefinition>,
-  applications: ApplicationRecord[],
+  hasPending: boolean,
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
 
-  const docKeys = Object.keys(docDefs);
-  let hasPending = false;
-
-  docKeys.forEach((key) => {
-    const def = docDefs[key];
-    const doc = userDocs[key];
-    const docName = (def?.name[lang] || def?.name.en || key).slice(0, 20);
-
-    if (doc && doc.status !== "missing") {
-      if (doc.status === "reviewing") {
-        hasPending = true;
-        kb.text(`🟡 [Tekshirish] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
-      } else if (doc.status === "approved") {
-        kb.text(`✅ [Tasdiqlangan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
-      } else if (doc.status === "needs_correction") {
-        kb.text(`🔴 [Tuzatishda] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
-      } else {
-        kb.text(`⚪ [Yuklanmagan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
-      }
-    } else {
-      kb.text(`⚪ [Yuklanmagan] ${docName}`, `admin_review_doc_${userId}_${key}`).row();
-    }
-  });
-
   if (hasPending) {
     kb.text(
-      isUz ? "⚡ Barcha Hujjatlarni Tasdiqlash" : "⚡ Approve All Pending Documents",
-      `admin_approve_all_student_docs_${userId}`
+      isUz ? "⚡ Barchasini Tasdiqlash (1-bosishda)" : "⚡ Approve All Documents",
+      `admin_approve_all_student_docs_${student.userId}`
     ).row();
   }
 
-  if (applications.length > 0) {
-    kb.text(
-      isUz
-        ? `📋 Topshirilgan Ariza: ${applications[0].programName.slice(0, 18)}`
-        : `📋 View Application: ${applications[0].programName.slice(0, 18)}`,
-      `admin_view_app_${applications[0].id}`
-    ).row();
-  }
+  const docs = student.documents || {};
+  Object.keys(docDefs).forEach((docKey) => {
+    const def = docDefs[docKey];
+    const doc = docs[docKey];
+    const status = doc?.status || "missing";
+    const statusIcon =
+      status === "approved" ? "✅" : status === "reviewing" ? "🟡" : status === "needs_correction" ? "🔴" : "⚪";
+    const title = def.name[lang] || def.name.en || docKey;
+    kb.text(`${statusIcon} ${title}`, `admin_review_doc_${student.userId}_${docKey}`).row();
+  });
 
-  kb.text(
-    isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Review Queue",
-    "admin_menu_docs"
-  )
-    .text(
-      isUz ? "👤 Talaba Profiliga" : "👤 Student Profile",
-      `admin_view_user_${userId}`
-    )
-    .row()
-    .text(isUz ? "🏠 Admin Panel" : "🏠 Admin Panel", "admin_main");
+  kb.text(isUz ? "◀️ Navbatga Qaytish" : "◀️ Back to Queue", "admin_menu_docs")
+    .text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
 
   return kb;
 }
 
 export function getAdminDocReviewKeyboard(
-  userId: number,
+  studentId: number,
   docKey: string,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "✅ Tasdiqlash (Qabul)" : "✅ Approve (Verified)", `admin_doc_decision_${userId}_${docKey}_approved`)
-    .text(isUz ? "🔴 Rad Etish (Tuzatish)" : "🔴 Reject (Needs Correction)", `admin_doc_decision_${userId}_${docKey}_needs_correction`)
-    .row()
-    .text(isUz ? "💬 Sabab Izohi Bilan Rad Etish" : "💬 Reject with Custom Reason Note", `admin_doc_reject_note_${userId}_${docKey}`)
-    .row()
-    .text(isUz ? "📁 Talaba Dossieriga Qaytish" : "📁 Back to Student Dossier", `admin_review_student_docs_${userId}`)
-    .text(isUz ? "◀️ Hujjatlar Navbatiga" : "◀️ Back to Queue", "admin_menu_docs");
-}
-
-export function getAdminPromoCodesKeyboard(
-  promos: PromoCodeRecord[],
-  page: number = 0,
-  pageSize: number = 6,
+  docStatus: string,
   lang: Language = "en"
 ): InlineKeyboard {
   const isUz = lang === "uz";
   const kb = new InlineKeyboard();
-  const start = page * pageSize;
-  const pagePromos = promos.slice(start, start + pageSize);
 
-  pagePromos.forEach((p) => {
-    const statusIcon = p.isExpired || !p.isActive ? "🔴" : p.usedCount >= p.maxUses ? "🔒" : "🟢";
-    const displayTier = p.tier === "NAWA" ? "NAWA" : "Full Application + NAWA";
-    kb.text(`${statusIcon} ${p.code} (${displayTier})`, `admin_view_promo_${p.code}`).row();
-  });
-
-  const totalPages = Math.ceil(promos.length / pageSize) || 1;
-  if (page > 0) kb.text("⬅️ Prev", `admin_promos_page_${page - 1}`);
-  if (page < totalPages - 1) kb.text("Next ➡️", `admin_promos_page_${page + 1}`);
-  if (page > 0 || page < totalPages - 1) kb.row();
-
-  kb.text(isUz ? "➕ Yangi Promokod Yaratish" : "➕ Generate Promo Code", "admin_create_promo_select")
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
-  return kb;
-}
-
-export function getAdminPromoProductSelectKeyboard(
-  lang: Language = "en",
-  pricing?: PricingConfig
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const nawaPrice = pricing ? pricing.nawaPrice : 15;
-  const fullPrice = pricing ? pricing.fullApplicationNawaPrice : 60;
-  return new InlineKeyboard()
-    .text(
-      isUz ? `📦 1. NAWA — $${nawaPrice} (Standart)` : `📦 1. NAWA — $${nawaPrice} (Standard)`,
-      "admin_create_promo_tier_NAWA"
-    )
-    .row()
-    .text(
-      isUz ? `💎 2. Full Application + NAWA — $${fullPrice} (To'liq Qabul)` : `💎 2. Full Application + NAWA — $${fullPrice} (Full Admissions)`,
-      "admin_create_promo_tier_NAWA_FULL"
-    )
-    .row()
-    .text(isUz ? "◀️ Promokodlar Ro'yxatiga" : "◀️ Back to Promo Codes", "admin_menu_promos");
-}
-
-export function getAdminPromoDetailKeyboard(promo: PromoCodeRecord, lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (promo.isActive && !promo.isExpired) {
-    kb.text(isUz ? "🔴 Promokodni To'xtatish" : "🔴 Expire / Deactivate Code", `admin_expire_promo_${promo.code}`).row();
-  } else {
-    kb.text(isUz ? "🟢 Promokodni Qayta Faollashtirish" : "🟢 Reactivate Code", `admin_reactivate_promo_${promo.code}`).row();
+  if (docStatus !== "approved") {
+    kb.text(isUz ? "✅ Tasdiqlash" : "✅ Approve", `admin_doc_decision_${studentId}_${docKey}_approved`);
   }
 
-  kb.text(isUz ? "🗑️ Promokodni Butunlay O'chirish" : "🗑️ Delete Promo Code", `admin_delete_promo_${promo.code}`).row();
-  kb.text(isUz ? "◀️ Promokodlar Ro'yxatiga" : "◀️ Back to Promo Codes", "admin_menu_promos");
+  kb.text(
+    isUz ? "🔴 Tuzatish So'rash (Izoh bilan)" : "🔴 Request Correction",
+    `admin_doc_reject_note_${studentId}_${docKey}`
+  ).row();
+
+  kb.text(isUz ? "◀️ Talaba Dosyesi" : "◀️ Student Dossier", `admin_review_student_docs_${studentId}`)
+    .text(isUz ? "📁 Hujjatlar Navbati" : "📁 Queue", "admin_menu_docs");
+
   return kb;
 }
 
-// Universities Management Keyboards for Admin
-export function getAdminUniversitiesKeyboard(
-  unis: University[],
-  page: number = 0,
-  pageSize: number = 6,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminUniversitiesKeyboard(unis: University[], page: number = 0, pageSize: number = 6): InlineKeyboard {
   const kb = new InlineKeyboard();
+  kb.text("➕ Add University", "admin_add_uni_prompt").row();
+
   const start = page * pageSize;
   const pageUnis = unis.slice(start, start + pageSize);
 
   pageUnis.forEach((u) => {
-    kb.text(`🏛️ ${u.name.slice(0, 22)} (${u.city})`, `admin_view_uni_${u.id}`).row();
+    kb.text(`🏛️ ${u.name} (${u.city})`, `admin_view_uni_${u.id}`).row();
   });
 
   const totalPages = Math.ceil(unis.length / pageSize) || 1;
@@ -629,75 +279,54 @@ export function getAdminUniversitiesKeyboard(
   if (page < totalPages - 1) kb.text("Next ➡️", `admin_unis_page_${page + 1}`);
   if (page > 0 || page < totalPages - 1) kb.row();
 
-  kb.text(isUz ? "➕ Yangi Universitet Qo'shish" : "➕ Add New University", "admin_add_uni_prompt")
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
+  kb.text("🎛️ Admin Dashboard", "admin_main");
   return kb;
 }
 
-export function getAdminUniversityEditKeyboard(uni: University, lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminUniversityEditKeyboard(uniId: string): InlineKeyboard {
   return new InlineKeyboard()
-    .url(isUz ? "🌐 Rasmiy Veb-Sayt" : "🌐 Official Link", uni.website || "https://studyinpoland.pl")
+    .text("🌐 Edit Website", `admin_edit_uni_web_${uniId}`)
+    .text("💰 Edit Tuition", `admin_edit_uni_tui_${uniId}`)
     .row()
-    .text(isUz ? "✏️ Veb-Sayt Havolasini Tahrirlash" : "✏️ Edit Website Link", `admin_edit_uni_web_${uni.id}`)
-    .text(isUz ? "✏️ Kontrakt Narxini Tahrirlash" : "✏️ Edit Tuition Info", `admin_edit_uni_tui_${uni.id}`)
+    .text("🗑️ Delete University", `admin_delete_uni_${uniId}`)
     .row()
-    .text(isUz ? "🗑️ Universitetni O'chirish" : "🗑️ Delete University", `admin_delete_uni_${uni.id}`)
-    .row()
-    .text(isUz ? "◀️ Universitetlar Ro'yxatiga" : "◀️ Back to Universities", "admin_menu_manage_unis");
+    .text("◀️ Back to Universities", "admin_menu_manage_unis")
+    .text("🎛️ Dashboard", "admin_main");
 }
 
-// Document Definitions Management Keyboards for Admin
-export function getAdminDocDefsKeyboard(
-  defs: Record<string, DocumentDefinition>,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminDocDefsKeyboard(defs: Record<string, DocumentDefinition>): InlineKeyboard {
   const kb = new InlineKeyboard();
+  kb.text("➕ Add Document Type", "admin_add_docdef_prompt").row();
 
   Object.values(defs).forEach((d) => {
-    const name = d.name[lang] || d.name.en;
-    const reqBadge = d.required ? (isUz ? "⭐ [Majburiy]" : "⭐ [Required]") : (isUz ? "⚪ [Ixtiyoriy]" : "⚪ [Optional]");
-    kb.text(`📄 ${name.slice(0, 18)} ${reqBadge}`, `admin_view_docdef_${d.id}`).row();
+    const req = d.required ? "🔴 Required" : "⚪ Optional";
+    kb.text(`📄 ${d.name.uz || d.name.en} (${req})`, `admin_view_docdef_${d.id}`).row();
   });
 
-  kb.text(isUz ? "➕ Yangi Hujjat Talabi Qo'shish" : "➕ Add New Document Requirement", "admin_add_docdef_prompt")
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
+  kb.text("🎛️ Admin Dashboard", "admin_main");
   return kb;
 }
 
-export function getAdminDocDefEditKeyboard(def: DocumentDefinition, lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminDocDefEditKeyboard(docKey: string, required: boolean): InlineKeyboard {
   return new InlineKeyboard()
-    .text(
-      def.required ? (isUz ? "⭐ Ixtiyoriy Qilish" : "⭐ Make Optional") : (isUz ? "⭐ Majburiy Qilish" : "⭐ Make Required"),
-      `admin_toggle_docdef_req_${def.id}`
-    )
+    .text(required ? "Make Optional" : "Make Required", `admin_toggle_docdef_req_${docKey}`)
     .row()
-    .text(isUz ? "🗑️ Hujjat Turini O'chirish" : "🗑️ Delete Document Type", `admin_delete_docdef_${def.id}`)
+    .text("🗑️ Delete Document Type", `admin_delete_docdef_${docKey}`)
     .row()
-    .text(isUz ? "◀️ Hujjat Turlariga Qaytish" : "◀️ Back to Document Types", "admin_menu_manage_docdefs");
+    .text("◀️ Back to Types", "admin_menu_manage_docdefs")
+    .text("🎛️ Dashboard", "admin_main");
 }
 
-// Reviews Management Keyboards for Admin
-export function getAdminReviewsListKeyboard(
-  reviews: StudentReview[],
-  page: number = 0,
-  pageSize: number = 6,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminReviewsListKeyboard(reviews: StudentReview[], page: number = 0, pageSize: number = 6): InlineKeyboard {
   const kb = new InlineKeyboard();
+  kb.text("➕ Add Review", "admin_add_rev_prompt").row();
+
   const start = page * pageSize;
   const pageRevs = reviews.slice(start, start + pageSize);
 
   pageRevs.forEach((r) => {
-    const statusIcon = r.status === "approved" ? "✅" : (isUz ? "🟡 [Kutilmoqda]" : "🟡 [Pending]");
-    kb.text(`${statusIcon} #${r.id} ${r.name.slice(0, 12)} (${r.rating}⭐)`, `admin_view_rev_${r.id}`).row();
+    const status = r.status === "approved" ? "✅" : "🟡";
+    kb.text(`${status} ⭐${r.rating} ${r.name} (${r.university})`, `admin_view_rev_${r.id}`).row();
   });
 
   const totalPages = Math.ceil(reviews.length / pageSize) || 1;
@@ -705,361 +334,64 @@ export function getAdminReviewsListKeyboard(
   if (page < totalPages - 1) kb.text("Next ➡️", `admin_revs_page_${page + 1}`);
   if (page > 0 || page < totalPages - 1) kb.row();
 
-  kb.text(isUz ? "➕ Yangi Sharh / Fikr Qo'shish" : "➕ Add New Review / Testimonial", "admin_add_rev_prompt")
-    .row()
-    .text(isUz ? "◀️ Admin Bosh Panel" : "◀️ Back to Admin", "admin_main");
-
+  kb.text("🎛️ Admin Dashboard", "admin_main");
   return kb;
 }
 
-export function getAdminReviewEditKeyboard(review: StudentReview, lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminReviewEditKeyboard(review: StudentReview): InlineKeyboard {
   const kb = new InlineKeyboard();
 
   if (review.status === "pending") {
-    kb.text(isUz ? "✅ Tasdiqlash & E'lon Qilish" : "✅ Approve & Publish", `admin_rev_decision_${review.id}_approve`)
-      .text(isUz ? "🔴 Rad Etish & O'chirish" : "🔴 Reject & Delete", `admin_rev_decision_${review.id}_reject`)
-      .row();
+    kb.text("✅ Approve Review", `admin_rev_decision_${review.id}_approve`).row();
+  } else {
+    kb.text("🟡 Mark Pending", `admin_rev_decision_${review.id}_reject`).row();
   }
 
-  kb.text(isUz ? "✏️ Sharh Matnini Tahrirlash" : "✏️ Edit Review Text", `admin_edit_rev_text_${review.id}`)
-    .text(isUz ? "⭐ Bahoni O'zgartirish (1-5)" : "⭐ Change Rating (1-5)", `admin_edit_rev_rating_${review.id}`)
+  kb.text("✏️ Edit Text", `admin_edit_rev_text_${review.id}`)
+    .text("⭐ Change Rating", `admin_edit_rev_rating_${review.id}`)
     .row()
-    .text(isUz ? "🗑️ Sharhni O'chirish" : "🗑️ Delete Review", `admin_delete_rev_${review.id}`)
+    .text("🗑️ Delete Review", `admin_delete_rev_${review.id}`)
     .row()
-    .text(isUz ? "◀️ Sharhlar Ro'yxatiga" : "◀️ Back to Reviews", "admin_menu_reviews");
+    .text("◀️ Back to Reviews", "admin_menu_reviews")
+    .text("🎛️ Dashboard", "admin_main");
 
   return kb;
 }
 
-// ================= SUPER ADMIN KEYBOARDS =================
-export function getSuperAdminDashboardKeyboard(
-  stats: {
-    adminsCount: number;
-    auditLogsCount: number;
-    usersCount: number;
-  },
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-
-  return new InlineKeyboard()
-    .text(
-      isUz ? `💰 Yashirin Moliyaviy Boshqaruv` : `💰 Private Financial HQ`,
-      "admin_super_financial_hq"
-    )
-    .text(
-      isUz ? `📄 Oferta & Narxlar` : `📄 Oferta & Pricing`,
-      "admin_menu_oferta_pricing"
-    )
-    .row()
-    .text(
-      isUz ? `📜 Barcha Admin Loglari (${stats.auditLogsCount})` : `📜 All Admin Audit Logs (${stats.auditLogsCount})`,
-      "admin_super_logs_0"
-    )
-    .row()
-    .text(
-      isUz ? `🛡️ Adminlar Boshqaruvi (${stats.adminsCount})` : `🛡️ Manage Admins (${stats.adminsCount})`,
-      "admin_super_admins_list"
-    )
-    .row()
-    .text(
-      isUz ? `🗄️ Supabase Cloud DB Holati` : `🗄️ Supabase Cloud DB Status`,
-      "admin_super_db_status"
-    )
-    .text(
-      isUz ? `🧹 Loglarni Tozalash` : `🧹 Purge Audit Logs`,
-      "admin_super_confirm_clear_logs"
-    )
-    .row()
-    .text(isUz ? `◀️ Asosiy Admin Dashboard` : `◀️ Back to Admin Dashboard`, "admin_refresh");
-}
-
-export function getSuperAdminFinancialHQKeyboard(lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "📋 Barcha Tranzaksiyalar" : "📋 All Transactions", "admin_super_txns_0")
-    .text(isUz ? "🟡 Kutilayotgan To'lovlar" : "🟡 Unverified Queue", "admin_super_txns_unverified_0")
-    .row()
-    .text(isUz ? "➕ Tashqi To'lovni Kiritish (Manual)" : "➕ Record External Payment", "admin_super_create_txn_prompt")
-    .row()
-    .text(isUz ? "🗑️ Barcha Tranzaksiyalarni Tozalash" : "🗑️ Purge All Transactions", "admin_super_purge_txns_confirm")
-    .row()
-    .text(isUz ? "🔄 Yangilash" : "🔄 Refresh", "admin_super_financial_hq")
-    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
-}
-
-export function getSuperAdminTransactionsKeyboard(
-  txns: TransactionRecord[],
-  page: number = 0,
-  pageSize: number = 5,
-  isUnverifiedOnly: boolean = false,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminTestsListKeyboard(tests: TestMaterial[]): InlineKeyboard {
   const kb = new InlineKeyboard();
-  const start = page * pageSize;
-  const pageTxns = txns.slice(start, start + pageSize);
-
-  pageTxns.forEach((t) => {
-    const icon =
-      t.status === "PAID"
-        ? "🟢"
-        : t.status === "UNVERIFIED"
-        ? "🟡"
-        : t.status === "REFUNDED"
-        ? "🔴"
-        : "⚪";
-    const prodLabel = t.product === "NAWA" ? "$15 NAWA" : "$50 Full";
-    kb.text(`${icon} ${t.id} (${prodLabel} | ${t.status})`, `admin_super_view_txn_${t.id}`).row();
-  });
-
-  const totalPages = Math.ceil(txns.length / pageSize) || 1;
-  const prefix = isUnverifiedOnly ? "admin_super_txns_unverified_" : "admin_super_txns_";
-
-  if (page > 0) kb.text("⬅️ Prev", `${prefix}${page - 1}`);
-  if (page < totalPages - 1) kb.text("Next ➡️", `${prefix}${page + 1}`);
-  if (page > 0 || page < totalPages - 1) kb.row();
-
-  kb.text(isUz ? "🔄 Yangilash" : "🔄 Refresh", `${prefix}${page}`)
-    .row()
-    .text(isUz ? "◀️ Moliyaviy Boshqaruv" : "◀️ Back to Financial HQ", "admin_super_financial_hq");
-
-  return kb;
-}
-
-export function getSuperAdminTransactionDetailKeyboard(
-  txn: TransactionRecord,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (txn.status === "UNVERIFIED") {
-    kb.text(isUz ? "✅ To'lovni Tasdiqlash & Premium Berish" : "✅ Verify Payment & Grant Premium", `admin_super_verify_txn_${txn.id}`).row();
-    kb.text(isUz ? "❌ Tranzaksiyani Bekor Qilish" : "❌ Cancel Transaction", `admin_super_cancel_txn_${txn.id}`).row();
-  } else if (txn.status === "PAID") {
-    kb.text(isUz ? "↩️ To'lovni Qaytarish (Refund)" : "↩️ Refund Payment", `admin_super_refund_txn_${txn.id}`).row();
-  }
-
-  kb.text(isUz ? "🗑️ Tranzaksiyani Butunlay O'chirish" : "🗑️ Delete Transaction Record", `admin_super_delete_txn_${txn.id}`).row();
-  kb.text(isUz ? "◀️ Tranzaksiyalar Ro'yxatiga" : "◀️ Back to Transactions", "admin_super_txns_0");
-  return kb;
-}
-
-export function getSuperAdminLogsKeyboard(
-  logs: AuditLogEntry[],
-  page: number = 0,
-  pageSize: number = 5,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-  const totalPages = Math.ceil(logs.length / pageSize) || 1;
-
-  if (page > 0) kb.text("⬅️ Prev", `admin_super_logs_${page - 1}`);
-  if (page < totalPages - 1) kb.text("Next ➡️", `admin_super_logs_${page + 1}`);
-  if (page > 0 || page < totalPages - 1) kb.row();
-
-  kb.text(isUz ? "🗑️ Barcha Loglarni Tozalash" : "🗑️ Clear All Logs", "admin_super_clear_logs_confirm")
-    .row()
-    .text(isUz ? `🔄 Yangilash` : `🔄 Refresh Logs`, `admin_super_logs_${page}`)
-    .row()
-    .text(isUz ? `◀️ Super Admin HQ` : `◀️ Super Admin HQ`, "admin_super_hq");
-
-  return kb;
-}
-
-export function getSuperAdminAdminsKeyboard(
-  admins: UserSessionData[],
-  currentUserId: number,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  admins.forEach((adm) => {
-    if (adm.isSuperAdmin || adm.adminRole === "super_admin" || adm.userId === currentUserId || adm.userId === 5059829001) return; // Hide Super Admin from list to maintain stealth
-    const name = adm.fullName || adm.firstName || (adm.username ? `@${adm.username}` : `User #${adm.userId}`);
-    kb.text(`🛡️ ${name}`, `admin_view_user_${adm.userId}`).row();
-    kb.text(isUz ? "❌ Lavozimdan Olish" : "❌ Demote", `admin_super_demote_${adm.userId}`)
-      .text(isUz ? "🗑️ O'chirish" : "🗑️ Delete", `admin_super_delete_admin_${adm.userId}`)
-      .row();
-  });
-
-  kb.text(isUz ? "➕ Yangi Admin Tayinlash (ID/User orqali)" : "➕ Appoint New Admin", "admin_super_appoint_prompt")
-    .row()
-    .text(isUz ? "🔐 Admin Parolini O'zgartirish" : "🔐 Change Admin Password", "admin_super_change_admin_passcode_prompt")
-    .row()
-    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
-
-  return kb;
-}
-
-export function getSuperAdminDbStatusKeyboard(lang: Language = "en"): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "🔄 Cloud Syncni Majburiy Qilish" : "🔄 Force Cloud Sync Now", "admin_super_force_sync")
-    .row()
-    .text(isUz ? "⚠️ Barcha Test Ma'lumotlarni 0 ga Qaytarish (Wipe)" : "⚠️ Wipe & Reset Database to 0", "admin_super_reset_db_confirm")
-    .row()
-    .text(isUz ? "◀️ Super Admin HQ" : "◀️ Super Admin HQ", "admin_super_hq");
-}
-
-export function getAdminOfertaPricingKeyboard(
-  pricing: PricingConfig,
-  oferta: OfertaRecord,
-  hasDraft: boolean,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  kb.text(
-    isUz ? `💵 NAWA Narxi ($${pricing.nawaPrice})` : `💵 NAWA Price ($${pricing.nawaPrice})`,
-    "admin_edit_price_nawa"
-  )
-    .text(
-      isUz ? `💎 Full App + NAWA ($${pricing.fullApplicationNawaPrice})` : `💎 Full App + NAWA ($${pricing.fullApplicationNawaPrice})`,
-      "admin_edit_price_full"
-    )
-    .row()
-    .text(
-      isUz ? `💶 Ariza To'lovi (€${pricing.applicationFee})` : `💶 App Fee (€${pricing.applicationFee})`,
-      "admin_edit_fee"
-    )
-    .text(
-      isUz ? `✏️ Oferta Matnini Tahrirlash` : `✏️ Edit Oferta Text`,
-      "admin_edit_oferta_text"
-    )
-    .row()
-    .text(
-      isUz ? `👁️ Ofertani Ko'rish (Preview)` : `👁️ Preview Oferta`,
-      "admin_preview_oferta"
-    );
-
-  if (hasDraft) {
-    kb.text(
-      isUz ? `🚀 Ofertani E'lon Qilish (Publish)` : `🚀 Publish New Oferta`,
-      "admin_publish_oferta_confirm"
-    );
-  }
-
-  kb.row().text(isUz ? `◀️ Super Admin HQ` : `◀️ Back to Super Admin HQ`, "admin_super_hq");
-
-  return kb;
-}
-
-export function getAdminOfertaPreviewKeyboard(
-  hasDraft: boolean,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  if (hasDraft) {
-    kb.text(
-      isUz ? `🚀 Tasdiqlash & E'lon Qilish (Publish)` : `🚀 Confirm & Publish`,
-      "admin_publish_oferta_execute"
-    ).row();
-  }
-
-  kb.text(
-    isUz ? `◀️ Oferta & Narxlar Paneliga` : `◀️ Back to Oferta & Pricing`,
-    "admin_menu_oferta_pricing"
-  );
-
-  return kb;
-}
-
-export function getSuperAdminPurgeTransactionsConfirmKeyboard(
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "🚨 Ha, barcha tranzaksiyalarni o'chirish" : "🚨 Yes, purge all transactions", "admin_super_purge_txns_execute")
-    .row()
-    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", "admin_super_financial_hq");
-}
-
-export function getSuperAdminClearLogsConfirmKeyboard(
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  return new InlineKeyboard()
-    .text(isUz ? "🚨 Ha, barcha loglarni tozalash" : "🚨 Yes, clear all logs", "admin_super_clear_logs_execute")
-    .row()
-    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", "admin_super_hq");
-}
-
-export function getAdminTestsListKeyboard(
-  tests: TestMaterial[],
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  kb.text(isUz ? "➕ Yangi Test Qo'shish" : "➕ Add New Test Material", "admin_add_test").row();
+  kb.text("➕ Yangi Test Qo'shish", "admin_add_test").row();
 
   tests.forEach((t) => {
-    const badge = t.isFree ? "🟢" : "🔒";
-    const title = (t.title[lang] || t.title.en).slice(0, 26);
-    kb.text(`${badge} ${title}`, `admin_view_test_${t.id}`).row();
+    kb.text(`📄 ${t.title.uz || t.title.en}`, `admin_view_test_${t.id}`).row();
   });
 
-  kb.text(isUz ? "◀️ Admin Panel" : "◀️ Back to Admin Panel", "admin_panel");
+  kb.text("🎛️ Boshqaruv Paneli", "admin_main");
   return kb;
 }
 
-export function getAdminTestDetailKeyboard(
-  test: TestMaterial,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
-  const kb = new InlineKeyboard();
-
-  kb.text(
-    isUz ? "✏️ Nomini Tahrirlash" : "✏️ Edit Title",
-    `admin_edit_test_title_${test.id}`
-  )
-    .text(
-      isUz ? "📚 Fanni Tahrirlash" : "📚 Edit Subject",
-      `admin_edit_test_subject_${test.id}`
-    )
-    .row()
-    .text(
-      isUz ? "🔗 Havola / Faylni O'zgartirish" : "🔗 Change File / Link",
-      `admin_edit_test_file_${test.id}`
-    )
-    .text(
-      test.isFree
-        ? (isUz ? "🔒 VIP Qilish" : "🔒 Make VIP")
-        : (isUz ? "🟢 Bepul Qilish" : "🟢 Make Free"),
-      `admin_toggle_test_vip_${test.id}`
-    )
-    .row();
-
-  if (test.fileUrl) {
-    kb.url(isUz ? "🌐 Havolani Tekshirish" : "🌐 Test URL Link", test.fileUrl).row();
-  }
-
-  kb.text(
-    isUz ? "🗑️ Testni O'chirish" : "🗑️ Delete Test Material",
-    `admin_del_test_confirm_${test.id}`
-  )
-    .row()
-    .text(isUz ? "◀️ Testlar Ro'yxatiga" : "◀️ Back to Tests", "admin_menu_tests");
-
-  return kb;
-}
-
-export function getAdminDeleteTestConfirmKeyboard(
-  testId: string,
-  lang: Language = "en"
-): InlineKeyboard {
-  const isUz = lang === "uz";
+export function getAdminTestDetailKeyboard(test: TestMaterial): InlineKeyboard {
   return new InlineKeyboard()
-    .text(isUz ? "🚨 Ha, o'chirilsin" : "🚨 Yes, Delete", `admin_del_test_execute_${testId}`)
+    .text("✏️ Sarlavhani Tahrirlash", `admin_edit_test_title_${test.id}`)
+    .text("📚 Fanni Tahrirlash", `admin_edit_test_subject_${test.id}`)
     .row()
-    .text(isUz ? "❌ Bekor qilish" : "❌ Cancel", `admin_view_test_${testId}`);
+    .text("📎 Faylni Yangilash", `admin_edit_test_file_${test.id}`)
+    .row()
+    .text("🗑️ Testni O'chirish", `admin_del_test_confirm_${test.id}`)
+    .row()
+    .text("◀️ Testlar Ro'yxatiga", "admin_menu_tests")
+    .text("🎛️ Boshqaruv Paneli", "admin_main");
+}
+
+export function getAdminDeleteTestConfirmKeyboard(testId: string): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("⚠️ Ha, O'chirilsin", `admin_del_test_execute_${testId}`)
+    .text("❌ Bekor Qilish", `admin_view_test_${testId}`);
+}
+
+export function getAdminOfertaPreviewKeyboard(isUz: boolean = true): InlineKeyboard {
+  return new InlineKeyboard()
+    .text(isUz ? "✏️ Matnni Tahrirlash" : "✏️ Edit Oferta Text", "admin_edit_oferta_text")
+    .row()
+    .text(isUz ? "🎛️ Boshqaruv Paneli" : "🎛️ Dashboard", "admin_main");
 }
