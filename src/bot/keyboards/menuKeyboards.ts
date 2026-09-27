@@ -13,15 +13,10 @@ export function getPhoneRequestKeyboard(lang: Language): Keyboard {
 
 export function getMainMenuKeyboard(lang: Language): InlineKeyboard {
   const isUz = lang === "uz";
+  const webappUrl = config.webappUrl || "https://poland-bot.onrender.com";
+
   return new InlineKeyboard()
-    .text(t(lang, "btn_universities"), "menu_unis")
-    .text(t(lang, "btn_programs"), "menu_progs")
-    .row()
-    .text(t(lang, "btn_documents"), "menu_docs")
-    .text(t(lang, "btn_exams"), "menu_exams")
-    .row()
-    .text(t(lang, "btn_reviews"), "menu_reviews")
-    .text(t(lang, "btn_profile"), "menu_profile")
+    .webApp(isUz ? "🚀 Portalga Kirish" : "🚀 Open Student Portal", webappUrl)
     .row()
     .text(isUz ? "📄 Ommaviy Oferta" : "📄 Terms & Oferta", "menu_oferta")
     .url(isUz ? "💬 Maslahatchi" : "💬 Advisor", `https://t.me/${config.advisorUsername}`);

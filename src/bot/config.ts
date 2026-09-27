@@ -22,6 +22,10 @@ export const config = {
     process.env.SUPABASE_ANON_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2ZGttYnh4aHd0YWpneHB4bXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDg4NDAsImV4cCI6MjEwMzAyNDg0MH0.-TK8p3wrcMgt2MDfE3rszqvSc0GdZfXxlF0QtGiCGSc",
+  webappUrl:
+    process.env.WEBAPP_URL ||
+    process.env.PUBLIC_URL ||
+    "https://poland-bot.onrender.com",
 };
 
 export function validateConfig() {

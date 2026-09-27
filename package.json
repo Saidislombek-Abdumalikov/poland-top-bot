@@ -8,24 +8,36 @@
     "start": "tsx src/bot/index.ts",
     "bot": "tsx src/bot/index.ts",
     "bot:dev": "tsx watch src/bot/index.ts",
-    "test": "tsx tests/bot.test.ts",
-    "build": "tsc"
+    "build:app": "vite build",
+    "build": "vite build && tsc",
+    "test": "tsx tests/bot.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "cors": "^2.8.5",
     "dotenv": "^17.4.2",
+    "express": "^4.21.2",
     "grammy": "^1.45.1",
+    "lucide-react": "^1.48.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsx": "^4.23.12"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
   },
-  "description": "Poland Top Universities (PTU) Telegram Bot",
+  "description": "Poland Top Universities (PTU) Telegram Bot & Mini App",
   "keywords": [
     "telegram-bot",
-    "poland-universities",
-    "grammy"
+    "telegram-mini-app",
+    "poland-universities"
   ],
   "author": "PTU Team",
   "license": "ISC"

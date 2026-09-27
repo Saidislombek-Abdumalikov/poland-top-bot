@@ -1,5 +1,6 @@
 import { Bot, Context, InlineKeyboard } from "grammy";
 import { db } from "../services/db";
+import { config } from "../config";
 import { t } from "../locales";
 import {
   getMainMenuKeyboard,
@@ -110,12 +111,25 @@ export function setupStartHandler(bot: Bot) {
       return;
     }
 
-    // Already registered student -> Welcome back with full menu
+    // Already registered student -> Welcome back with portal entry button
     const firstName = user.fullName || user.firstName || "Student";
+    const isUz = user.lang === "uz";
+
+    try {
+      await ctx.setChatMenuButton({
+        menu_button: {
+          type: "web_app",
+          text: isUz ? "🚀 Portal" : "🚀 Portal",
+          web_app: { url: config.webappUrl },
+        },
+      });
+    } catch {}
+
     const welcomeMsg =
       `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
-      `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
-      `👋 <b>${user.lang === "uz" ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>`;
+      `👋 <b>${isUz ? "Xush kelibsiz" : "Welcome back"}, ${escapeHtml(firstName)}!</b>\n\n` +
+      `🏛️ ${isUz ? "Barcha Polsha oliygohlari, dasturlar, hujjatlar monitoringi va imtihon materiallari Sizning shaxsiy portalingizda jamlangan." : "Explore Polish universities, degree programs, track documents, and practice entrance exams in your personal portal."}\n\n` +
+      `👇 <b>${isUz ? "Shaxsiy kabinetingizga kirish uchun pastdagi tugmani bosing:" : "Tap below to enter your student portal:"}</b>`;
 
     const msg = await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",
@@ -361,13 +375,23 @@ export function setupStartHandler(bot: Bot) {
       show_alert: true,
     });
 
+    try {
+      await ctx.setChatMenuButton({
+        menu_button: {
+          type: "web_app",
+          text: isUz ? "🚀 Portal" : "🚀 Portal",
+          web_app: { url: config.webappUrl },
+        },
+      });
+    } catch {}
+
     const firstName = user.fullName || user.firstName || "Student";
     const welcomeMsg =
       `🎉 <b>${isUz ? "TABRIKLAYMIZ!" : "CONGRATULATIONS!"}</b>\n\n` +
-      `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
-      `${escapeHtml(t(user.lang, "welcome_desc"))}\n\n` +
       `👋 <b>${isUz ? "Xush kelibsiz" : "Welcome"}, ${escapeHtml(firstName)}!</b>\n\n` +
-      `🚀 ${isUz ? "Endi siz Polsha universitetlarini ko'rishingiz, arizangizni topshirishingiz va barcha imkoniyatlardan foydalanishingiz mumkin." : "You can now explore Polish universities, apply for programs, and access all bot features."}`;
+      `🇵🇱 <b>${escapeHtml(t(user.lang, "welcome_title"))}</b>\n\n` +
+      `🚀 ${isUz ? "Sizning shaxsiy talaba portalingiz muvaffaqiyatli faollashtirildi! Endi barcha nufuzli Polsha oliygohlari, ta'lim yo'nalishlari, hujjatlar tekshiruvi va qabul arizalari bitta qulay mobil portalda." : "Your student portal is now active! Explore Polish universities, programs, track documents and manage applications in your personal mobile portal."}\n\n` +
+      `👇 <b>${isUz ? "Portaldan foydalanish uchun pastdagi tugmani bosing:" : "Tap below to launch your portal:"}</b>`;
 
     try {
       await ctx.editMessageText(welcomeMsg, {
@@ -375,7 +399,7 @@ export function setupStartHandler(bot: Bot) {
       });
     } catch {}
 
-    await ctx.reply(`🏠 <b>${escapeHtml(isUz ? "Bosh Menyu Ochildi" : "Main Menu Unlocked")}</b>`, {
+    await ctx.reply(isUz ? "🚀 <b>Sizning Shaxsiy Portalingiz:</b>" : "🚀 <b>Your Student Portal:</b>", {
       parse_mode: "HTML",
       reply_markup: getMainMenuKeyboard(user.lang),
     });
