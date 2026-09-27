@@ -185,7 +185,6 @@ export const App: React.FC = () => {
         user={user}
         lang={lang}
         onLanguageChange={setLang}
-        onOpenAdmin={() => setIsAdminView(true)}
       />
 
       {/* Main Tab Content - Full screen width with responsive container */}
@@ -230,7 +229,6 @@ export const App: React.FC = () => {
             applications={applications}
             reviews={reviews}
             lang={lang}
-            onOpenAdmin={() => setIsAdminView(true)}
             onRefreshReviews={reloadReviews}
           />
         )}

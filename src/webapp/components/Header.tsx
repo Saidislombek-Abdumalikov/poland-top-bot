@@ -7,14 +7,12 @@ interface HeaderProps {
   user: UserProfile | null;
   lang: Language;
   onLanguageChange: (lang: Language) => void;
-  onOpenAdmin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   user,
   lang,
   onLanguageChange,
-  onOpenAdmin,
 }) => {
   const toggleLang = () => {
     triggerHaptic("light");
@@ -64,10 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Initials Avatar */}
           <div
-            onClick={user?.isAdmin ? onOpenAdmin : undefined}
-            className={`w-8 h-8 rounded-lg bg-slate-800 text-white font-semibold text-xs flex items-center justify-center shadow-sm select-none ${
-              user?.isAdmin ? "cursor-pointer hover:bg-slate-700" : ""
-            }`}
+            className="w-8 h-8 rounded-lg bg-slate-800 text-white font-semibold text-xs flex items-center justify-center shadow-sm select-none"
             title={displayName}
           >
             {initials}

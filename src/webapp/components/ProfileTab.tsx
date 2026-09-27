@@ -1,17 +1,13 @@
 import React, { useState } from "react";
 import { UserProfile, ApplicationItem, ReviewItem, Language } from "../types";
-import { triggerHaptic, addReview, adminLogin } from "../services/api";
+import { triggerHaptic, addReview } from "../services/api";
 import {
   Phone,
   CheckCircle2,
-  Clock,
   GraduationCap,
   Star,
-  MessageSquare,
   Send,
   X,
-  Shield,
-  Key,
 } from "lucide-react";
 
 interface ProfileTabProps {
@@ -19,7 +15,6 @@ interface ProfileTabProps {
   applications: ApplicationItem[];
   reviews: ReviewItem[];
   lang: Language;
-  onOpenAdmin: () => void;
   onRefreshReviews: () => void;
 }
 
@@ -28,14 +23,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   applications,
   reviews,
   lang,
-  onOpenAdmin,
   onRefreshReviews,
 }) => {
   const isUz = lang === "uz";
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [passcode, setPasscode] = useState("");
-  const [passcodeError, setPasscodeError] = useState(false);
 
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -66,20 +57,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
     setShowReviewModal(false);
     setComment("");
     onRefreshReviews();
-  };
-
-  const handleAdminAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passcode) return;
-    const ok = await adminLogin(passcode, user?.id);
-    if (ok) {
-      triggerHaptic("success");
-      setShowAdminLogin(false);
-      onOpenAdmin();
-    } else {
-      triggerHaptic("error");
-      setPasscodeError(true);
-    }
   };
 
   return (
@@ -220,65 +197,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Discrete Admin Access Section */}
-      <div className="pt-4 pb-8 flex flex-col items-center justify-center text-center">
-        {user?.isAdmin ? (
-          <button
-            onClick={() => {
-              triggerHaptic("medium");
-              onOpenAdmin();
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all"
-          >
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isUz ? "Admin Portalga O'tish" : "Open Admin Portal"}</span>
-          </button>
-        ) : (
-          <div>
-            {!showAdminLogin ? (
-              <button
-                onClick={() => setShowAdminLogin(true)}
-                className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"
-              >
-                <Key className="w-3 h-3" />
-                <span>{isUz ? "Boshqaruv (Admin)" : "Staff Login"}</span>
-              </button>
-            ) : (
-              <form onSubmit={handleAdminAuth} className="flex items-center gap-2 mt-2">
-                <input
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => {
-                    setPasscode(e.target.value);
-                    setPasscodeError(false);
-                  }}
-                  placeholder="Admin passcode..."
-                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-slate-800"
-                />
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold"
-                >
-                  Kirish
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAdminLogin(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </form>
-            )}
-            {passcodeError && (
-              <p className="text-[10px] text-rose-500 mt-1 font-semibold">
-                {isUz ? "Parol noto'g'ri" : "Invalid passcode"}
-              </p>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Review Modal */}
