@@ -26,7 +26,7 @@ import { ProgramsTab } from "./components/ProgramsTab";
 import { DocumentsTab } from "./components/DocumentsTab";
 import { TestsTab } from "./components/TestsTab";
 import { ProfileTab } from "./components/ProfileTab";
-import { AdminModal } from "./components/AdminModal";
+import { AdminPortal } from "./components/AdminPortal";
 import { NotRegisteredScreen } from "./components/NotRegisteredScreen";
 
 export const App: React.FC = () => {
@@ -43,9 +43,9 @@ export const App: React.FC = () => {
   const [tests, setTests] = useState<TestItem[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
 
-  // Navigation filters
+  // Navigation filters & Admin View
   const [filterUniForPrograms, setFilterUniForPrograms] = useState<string | null>(null);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isAdminView, setIsAdminView] = useState(false);
 
   useEffect(() => {
     // Expand Telegram WebApp to full mobile height
@@ -129,17 +129,27 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="mobile-shell max-w-md mx-auto w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-500 text-white flex items-center justify-center font-black text-2xl shadow-lg animate-pulse">
+      <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xl shadow-sm">
           🇵🇱
         </div>
         <div className="space-y-1">
-          <h2 className="text-sm font-extrabold text-slate-800">
+          <h2 className="text-sm font-bold text-slate-900">
             Poland Top Universities
           </h2>
           <p className="text-xs text-slate-400">Portal yuklanmoqda...</p>
         </div>
       </div>
+    );
+  }
+
+  // If in Admin Portal Mode
+  if (isAdminView) {
+    return (
+      <AdminPortal
+        onBack={() => setIsAdminView(false)}
+        lang={lang}
+      />
     );
   }
 
@@ -149,29 +159,31 @@ export const App: React.FC = () => {
 
   if (!isRegisteredAndAgreed) {
     return (
-      <div className="mobile-shell max-w-md mx-auto w-full min-h-screen bg-slate-50 flex flex-col relative shadow-2xl">
+      <div className="app-container w-full min-h-screen bg-slate-50 flex flex-col">
         <Header
           user={user}
           lang={lang}
           onLanguageChange={setLang}
         />
-        <NotRegisteredScreen lang={lang} />
+        <main className="flex-1 max-w-lg mx-auto w-full px-4 flex items-center justify-center">
+          <NotRegisteredScreen lang={lang} />
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="mobile-shell max-w-md mx-auto w-full min-h-screen bg-slate-50 flex flex-col relative shadow-2xl overflow-x-hidden">
+    <div className="app-container w-full min-h-screen bg-slate-50 flex flex-col">
       {/* Top Header */}
       <Header
         user={user}
         lang={lang}
         onLanguageChange={setLang}
-        onOpenAdmin={() => setIsAdminModalOpen(true)}
+        onOpenAdmin={() => setIsAdminView(true)}
       />
 
-      {/* Main Tab Content */}
-      <main className="flex-1 overflow-y-auto px-4 pt-3 pb-24 space-y-4">
+      {/* Main Tab Content - Full screen width with responsive container */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-24 space-y-4 overflow-y-auto">
         {activeTab === "unis" && (
           <UniversitiesTab
             universities={universities}
@@ -212,7 +224,7 @@ export const App: React.FC = () => {
             applications={applications}
             reviews={reviews}
             lang={lang}
-            onOpenAdmin={() => setIsAdminModalOpen(true)}
+            onOpenAdmin={() => setIsAdminView(true)}
             onRefreshReviews={reloadReviews}
           />
         )}
@@ -224,13 +236,6 @@ export const App: React.FC = () => {
         onChangeTab={setActiveTab}
         lang={lang}
         docsPendingCount={pendingDocsCount}
-      />
-
-      {/* Admin CRM Drawer */}
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        lang={lang}
       />
     </div>
   );

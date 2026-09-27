@@ -21,12 +21,12 @@ export interface UniversityItem {
   name: string;
   city: string;
   ranking?: string;
-  description: {
+  description?: {
     uz: string;
     en: string;
   };
   tuitionRange: string;
-  popularFaculties: string[];
+  popularFaculties?: string[];
   intake?: string;
   websiteUrl?: string;
   imageUrl?: string;
@@ -93,4 +93,16 @@ export interface ReviewItem {
   comment: string;
   date: string;
   isVerified?: boolean;
+}
+
+export interface AdminUserItem {
+  id: number;
+  userId: number;
+  fullName: string;
+  username: string;
+  phone: string;
+  preferredLevel: string;
+  isRegistered: boolean;
+  acceptedOfertaAt?: number;
+  registeredAt?: number;
 }

@@ -5,18 +5,14 @@ import * as fs from "fs";
 import * as path from "path";
 import { config, validateConfig } from "./config";
 import { db } from "./services/db";
-import { isAuthorizedAdmin } from "./services/auth";
+import { isAuthorizedAdmin, authenticatePasscode, startAdminSession } from "./services/auth";
 import { programs } from "./data/programs";
 import { AppStage, DocStatus } from "./types";
+import { escapeHtml } from "./utils/format";
 import { setupStartHandler } from "./handlers/startHandler";
-import { setupUniversityHandler } from "./handlers/universityHandler";
-import { setupProgramHandler } from "./handlers/programHandler";
-import { setupDocumentHandler } from "./handlers/documentHandler";
-import { setupExamHandler } from "./handlers/examHandler";
-import { setupProfileHandler } from "./handlers/profileHandler";
 import { setupTextInputHandler } from "./handlers/textInputHandler";
-import { setupAdminHandler } from "./handlers/adminHandler";
-import { setupReviewHandler } from "./handlers/reviewHandler";
+
+let activeBotInstance: Bot | null = null;
 
 export function createBot(token?: string) {
   const activeToken = token || config.botToken;
@@ -26,6 +22,7 @@ export function createBot(token?: string) {
   }
 
   const bot = new Bot(activeToken);
+  activeBotInstance = bot;
 
   // Error handling
   bot.catch((err) => {
@@ -41,15 +38,8 @@ export function createBot(token?: string) {
     }
   });
 
-  // Setup all feature handlers
-  setupAdminHandler(bot);
+  // Setup lean onboarding handlers (all other interactions live in Mini App)
   setupStartHandler(bot);
-  setupUniversityHandler(bot);
-  setupProgramHandler(bot);
-  setupDocumentHandler(bot);
-  setupExamHandler(bot);
-  setupReviewHandler(bot);
-  setupProfileHandler(bot);
   setupTextInputHandler(bot);
 
   // Version/Health command for instant verification
@@ -240,6 +230,16 @@ export function createServerApp() {
     res.json({ success: true, review });
   });
 
+  // Admin Authentication & Login
+  app.post("/api/admin/login", (req, res) => {
+    const { passcode, userId } = req.body;
+    const valid = authenticatePasscode(passcode);
+    if (valid && userId) {
+      startAdminSession(Number(userId));
+    }
+    res.json({ success: valid });
+  });
+
   // Admin CRM APIs
   app.get("/api/admin/stats", (_req, res) => {
     const totalStudents = db.getUserCount();
@@ -247,6 +247,21 @@ export function createServerApp() {
     const pendingDocs = db.getPendingDocuments().length;
     const acceptedStudents = db.getAllApplications().filter((a) => a.stage === "Accepted").length;
     res.json({ totalStudents, totalApplications, pendingDocs, acceptedStudents });
+  });
+
+  app.get("/api/admin/users", (_req, res) => {
+    const users = db.getAllUsers().map((u) => ({
+      id: u.userId,
+      userId: u.userId,
+      fullName: u.fullName || u.firstName || "Student",
+      username: u.username || "",
+      phone: u.phone || "",
+      preferredLevel: u.preferredLevel || "Bachelor",
+      isRegistered: u.isRegistered,
+      acceptedOfertaAt: u.acceptedOfertaAt,
+      registeredAt: u.registeredAt,
+    }));
+    res.json({ users });
   });
 
   app.get("/api/admin/applications", (_req, res) => {
@@ -273,6 +288,75 @@ export function createServerApp() {
     const targetUserId = Number(userId || req.params.id);
     const updated = db.updateDocumentStatus(targetUserId, docKey || "passport", status as DocStatus, feedback);
     res.json({ success: Boolean(updated) });
+  });
+
+  app.post("/api/admin/universities", (req, res) => {
+    const { id, name, city, tuitionRange, popularFaculties } = req.body;
+    const uniId = id || `uni-${Date.now()}`;
+    const saved = db.saveUniversity({
+      id: uniId,
+      name,
+      city: city || "Warsaw",
+      tuition: {
+        eu: tuitionRange || "€2,500 / yil",
+        nonEu: tuitionRange || "€2,500 / yil",
+        english: tuitionRange || "€2,500 / yil",
+      },
+      faculties: Array.isArray(popularFaculties) ? popularFaculties : ["General Studies"],
+      ranking: "Accredited Polish University",
+      abbr: uniId.toUpperCase().slice(0, 4),
+      type: "Public",
+      founded: 2000,
+      website: "https://polandstudy.org",
+      programsCount: 10,
+      students: 3000,
+      internationalStudents: 400,
+      logo: "PL",
+      description: { en: name, uz: name },
+      requirements: ["High School Diploma", "Language Certificate"],
+      deadline: "Oktyabr 2026",
+    });
+    res.json({ success: true, university: saved });
+  });
+
+  app.delete("/api/admin/universities/:id", (req, res) => {
+    const success = db.deleteUniversity(req.params.id);
+    res.json({ success });
+  });
+
+  app.get("/api/admin/oferta", (_req, res) => {
+    res.json({ text: db.getRenderedOferta() });
+  });
+
+  app.post("/api/admin/oferta", (req, res) => {
+    const { text, publisherName } = req.body;
+    if (!text) return res.status(400).json({ error: "Missing text" });
+    const updated = db.updateOferta(text, publisherName || "Admin");
+    res.json({ success: true, oferta: updated });
+  });
+
+  // Admin Broadcast Message to all students
+  app.post("/api/admin/broadcast", async (req, res) => {
+    const { message } = req.body;
+    if (!message || !activeBotInstance) {
+      return res.status(400).json({ error: "Missing message or bot not ready" });
+    }
+
+    const users = db.getAllUsers().filter((u) => u.userId);
+    let sentCount = 0;
+    for (const u of users) {
+      try {
+        await activeBotInstance.api.sendMessage(
+          u.userId,
+          `📢 <b>E'LON / ANNOUNCEMENT:</b>\n\n${escapeHtml(message)}`,
+          { parse_mode: "HTML" }
+        );
+        sentCount++;
+      } catch (err) {
+        // Ignore blocked
+      }
+    }
+    res.json({ success: true, sentCount, totalUsers: users.length });
   });
 
   // Serve static assets from dist/ if built
@@ -323,7 +407,7 @@ export async function startBot(token?: string) {
   await bot.start({
     onStart: (botInfo) => {
       console.log(`✅ PTU Bot is running as @${botInfo.username} (ID: ${botInfo.id})`);
-      console.log("🇵🇱 Universities, Programs, Exams & Document Tracker ready!");
+      console.log("🇵🇱 Poland Top Universities Bot & Mini App Portal ready!");
     },
   });
 }

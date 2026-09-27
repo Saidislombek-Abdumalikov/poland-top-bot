@@ -243,42 +243,48 @@ export function setupStartHandler(bot: Bot) {
     }
   });
 
-  // Help & Info
-  bot.command("help", async (ctx: Context) => {
-    const userId = ctx.from?.id;
-    if (!userId) return;
-    try {
-      await ctx.deleteMessage();
-    } catch {}
+  // Redirect all legacy commands to the Mini App portal
+  bot.command(
+    ["universities", "programs", "documents", "tests", "exams", "profile", "admin", "help"],
+    async (ctx: Context) => {
+      const userId = ctx.from?.id;
+      if (!userId) return;
+      try {
+        await ctx.deleteMessage();
+      } catch {}
 
-    const user = db.getUser(userId);
+      const user = db.getUser(userId);
+      const isUz = user.lang === "uz";
 
-    if (!user.isRegistered) {
-      const msg = await ctx.reply(
-        "⚠️ <b>Please complete your registration first:</b>\n\nChoose your language below to start:",
+      if (!user.isRegistered && !user.acceptedOfertaAt) {
+        const msg = await ctx.reply(
+          isUz
+            ? "⚠️ <b>Iltimos, avval ro'yxatdan o'ting:</b>\nBoshlash uchun tilni tanlang:"
+            : "⚠️ <b>Please complete registration first:</b>\nChoose language to begin:",
+          {
+            parse_mode: "HTML",
+            reply_markup: getOnboardingLanguageKeyboard(),
+          }
+        );
+        db.setLastPromptMsgId(userId, msg.message_id);
+        return;
+      }
+
+      await ctx.reply(
+        isUz
+          ? `🏛️ <b>Poland Top Universities Portali</b>\n\n` +
+            `Barcha oliygohlar, dasturlar, hujjatlar monitoringi va boshqaruv shaxsiy portalga ko'chirilgan.\n\n` +
+            `👇 <b>Kirish uchun pastdagi havola tugmasini bosing:</b>`
+          : `🏛️ <b>Poland Top Universities Portal</b>\n\n` +
+            `All admissions, programs, document tracking and admin features are inside your portal.\n\n` +
+            `👇 <b>Tap below to open portal:</b>`,
         {
           parse_mode: "HTML",
-          reply_markup: getOnboardingLanguageKeyboard(),
+          reply_markup: getMainMenuKeyboard(user.lang, userId),
         }
       );
-      db.setLastPromptMsgId(userId, msg.message_id);
-      return;
     }
-
-    const helpText =
-      `🇵🇱 <b>Poland Top Universities (PTU) Bot Help:</b>\n\n` +
-      `• /start - Open main menu\n` +
-      `• /register - Update registration details\n` +
-      `• /universities - Browse top Polish universities\n` +
-      `• /programs - Search degree programs\n` +
-      `• /documents - Track application document status\n` +
-      `• /tests - Entrance exams & sample test papers (PDF)\n` +
-      `• /profile - View saved programs & application status\n` +
-      `• /admin - Access Admin CRM panel (for advisors)\n` +
-      `• /lang - Change language (English / O'zbekcha)`;
-
-    await ctx.reply(helpText, { parse_mode: "HTML" });
-  });
+  );
 
   // Callback to return to main menu
   bot.callbackQuery("go_main_menu", async (ctx: Context) => {

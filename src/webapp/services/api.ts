@@ -624,3 +624,94 @@ export async function updateDocumentStatus(
   } catch (e) {}
   return true;
 }
+
+export async function adminLogin(passcode: string, userId?: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode, userId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Boolean(data.success);
+    }
+  } catch (e) {}
+  return false;
+}
+
+export async function fetchAdminUsers(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.users || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+export async function createAdminUniversity(uni: {
+  name: string;
+  city: string;
+  tuitionRange: string;
+  popularFaculties?: string[];
+}): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/universities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(uni),
+    });
+    return res.ok;
+  } catch (e) {}
+  return false;
+}
+
+export async function deleteAdminUniversity(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/universities/${id}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch (e) {}
+  return false;
+}
+
+export async function fetchAdminOferta(): Promise<string> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/oferta`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.text || "";
+    }
+  } catch (e) {}
+  return "";
+}
+
+export async function saveAdminOferta(text: string, publisherName?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/oferta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, publisherName }),
+    });
+    return res.ok;
+  } catch (e) {}
+  return false;
+}
+
+export async function sendAdminBroadcast(message: string): Promise<{ success: boolean; sentCount: number; totalUsers: number }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/broadcast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {}
+  return { success: false, sentCount: 0, totalUsers: 0 };
+}
+
