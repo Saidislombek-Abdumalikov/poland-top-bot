@@ -110,11 +110,46 @@ export function createServerApp() {
   });
 
   app.get("/api/universities", (_req, res) => {
-    res.json({ universities: db.getAllUniversities() });
+    const rawUnis = db.getAllUniversities();
+    const mappedUnis = rawUnis.map((u) => ({
+      id: u.id,
+      name: u.name,
+      city: u.city,
+      ranking: u.ranking || "",
+      description: u.description || { uz: "", en: "" },
+      tuitionRange:
+        typeof u.tuition === "object"
+          ? u.tuition?.english || u.tuition?.nonEu || "€2,500 / yil"
+          : String(u.tuition || "€2,500 / yil"),
+      popularFaculties: Array.isArray(u.faculties) ? u.faculties : [],
+      intake: u.deadline || "Oktyabr 2026",
+      websiteUrl: u.website || "",
+      imageUrl: u.logo || "",
+    }));
+    res.json({ universities: mappedUnis });
   });
 
   app.get("/api/programs", (_req, res) => {
-    res.json({ programs });
+    const mappedPrograms = programs.map((p) => {
+      const isMaster = (p.level || "").toLowerCase().includes("master");
+      const durationNum = p.duration ? parseInt(p.duration.replace(/\D/g, ""), 10) || 3 : 3;
+      return {
+        id: p.id,
+        name: p.name,
+        degree: isMaster ? "master" : "bachelor",
+        universityId: p.uniId || "uw",
+        universityName: p.university || "Poland University",
+        tuitionFee: p.tuition || "€2,500 / yil",
+        durationYears: durationNum,
+        language: p.lang || "English",
+        faculty: p.field || "General Studies",
+        description:
+          typeof p.about === "object"
+            ? p.about?.uz || p.about?.en || ""
+            : String(p.about || ""),
+      };
+    });
+    res.json({ programs: mappedPrograms });
   });
 
   app.get("/api/documents", (req, res) => {

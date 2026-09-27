@@ -46,12 +46,13 @@ export const ProgramsTab: React.FC<ProgramsTabProps> = ({
     );
   };
 
-  const filtered = programs.filter((p) => {
+  const filtered = (programs || []).filter((p) => {
     const matchesDegree = degreeFilter === "all" || p.degree === degreeFilter;
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.universityName.toLowerCase().includes(search.toLowerCase()) ||
-      p.faculty.toLowerCase().includes(search.toLowerCase());
+    const pName = (p.name || "").toLowerCase();
+    const pUni = (p.universityName || "").toLowerCase();
+    const pFac = (p.faculty || "").toLowerCase();
+    const q = (search || "").toLowerCase();
+    const matchesSearch = pName.includes(q) || pUni.includes(q) || pFac.includes(q);
     const matchesUni = !activeUniFilter || p.universityId === activeUniFilter;
     return matchesDegree && matchesSearch && matchesUni;
   });

@@ -64,24 +64,32 @@ export const App: React.FC = () => {
           setUser(u);
           setLang(u.lang || "uz");
 
-          const [docs, apps] = await Promise.all([
-            fetchUserDocuments(u.id),
-            fetchUserApplications(u.id),
-          ]);
-          setDocuments(docs);
-          setApplications(apps);
+          try {
+            const [docs, apps] = await Promise.all([
+              fetchUserDocuments(u.id),
+              fetchUserApplications(u.id),
+            ]);
+            setDocuments(Array.isArray(docs) ? docs : []);
+            setApplications(Array.isArray(apps) ? apps : []);
+          } catch (e) {
+            console.warn("Docs/apps fetch error:", e);
+          }
         }
 
-        const [unis, progs, tsts, revs] = await Promise.all([
-          fetchUniversities(),
-          fetchPrograms(),
-          fetchTests(),
-          fetchReviews(),
-        ]);
-        setUniversities(unis);
-        setPrograms(progs);
-        setTests(tsts);
-        setReviews(revs);
+        try {
+          const [unis, progs, tsts, revs] = await Promise.all([
+            fetchUniversities(),
+            fetchPrograms(),
+            fetchTests(),
+            fetchReviews(),
+          ]);
+          setUniversities(Array.isArray(unis) ? unis : []);
+          setPrograms(Array.isArray(progs) ? progs : []);
+          setTests(Array.isArray(tsts) ? tsts : []);
+          setReviews(Array.isArray(revs) ? revs : []);
+        } catch (e) {
+          console.warn("Catalog fetch error:", e);
+        }
       } catch (err) {
         console.error("Initialization error:", err);
       } finally {
@@ -100,22 +108,22 @@ export const App: React.FC = () => {
   const reloadUserDocuments = async () => {
     if (!user) return;
     const docs = await fetchUserDocuments(user.id);
-    setDocuments(docs);
+    setDocuments(Array.isArray(docs) ? docs : []);
   };
 
   const reloadUserApplications = async () => {
     if (!user) return;
     const apps = await fetchUserApplications(user.id);
-    setApplications(apps);
+    setApplications(Array.isArray(apps) ? apps : []);
   };
 
   const reloadReviews = async () => {
     const revs = await fetchReviews();
-    setReviews(revs);
+    setReviews(Array.isArray(revs) ? revs : []);
   };
 
   // Check pending docs
-  const pendingDocsCount = documents.filter(
+  const pendingDocsCount = (documents || []).filter(
     (d) => d.status === "pending" || d.status === "needs_correction"
   ).length;
 

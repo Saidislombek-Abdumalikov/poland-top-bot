@@ -141,7 +141,7 @@ export const UniversitiesTab: React.FC<UniversitiesTabProps> = ({
 
             {/* Popular Faculties Pills */}
             <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-              {uni.popularFaculties.slice(0, 3).map((fac, idx) => (
+              {(uni.popularFaculties || []).slice(0, 3).map((fac, idx) => (
                 <span
                   key={idx}
                   className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[11px] font-medium"
@@ -149,9 +149,9 @@ export const UniversitiesTab: React.FC<UniversitiesTabProps> = ({
                   {fac}
                 </span>
               ))}
-              {uni.popularFaculties.length > 3 && (
+              {(uni.popularFaculties || []).length > 3 && (
                 <span className="px-1.5 py-0.5 text-slate-400 text-[11px]">
-                  +{uni.popularFaculties.length - 3}
+                  +{(uni.popularFaculties || []).length - 3}
                 </span>
               )}
             </div>
@@ -233,7 +233,11 @@ export const UniversitiesTab: React.FC<UniversitiesTabProps> = ({
                   {isUz ? "Universitet haqida" : "About University"}
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  {isUz ? selectedUni.description.uz : selectedUni.description.en}
+                  {typeof selectedUni.description === "object"
+                    ? isUz
+                      ? selectedUni.description?.uz || selectedUni.description?.en || ""
+                      : selectedUni.description?.en || selectedUni.description?.uz || ""
+                    : String(selectedUni.description || "")}
                 </p>
               </div>
 
@@ -243,7 +247,7 @@ export const UniversitiesTab: React.FC<UniversitiesTabProps> = ({
                   {isUz ? "Asosiy fakultetlar" : "Popular Faculties"}
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {selectedUni.popularFaculties.map((fac, i) => (
+                  {(selectedUni.popularFaculties || []).map((fac, i) => (
                     <div
                       key={i}
                       className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-2"

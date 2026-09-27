@@ -38,8 +38,20 @@ declare global {
 }
 
 export function getTelegramUser() {
-  if (typeof window !== "undefined" && window.Telegram?.WebApp?.initDataUnsafe?.user) {
-    return window.Telegram.WebApp.initDataUnsafe.user;
+  if (typeof window !== "undefined") {
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+      return window.Telegram.WebApp.initDataUnsafe.user;
+    }
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qId = params.get("userId") || params.get("id");
+      if (qId) {
+        return {
+          id: parseInt(qId, 10),
+          first_name: params.get("name") || "Student",
+        };
+      }
+    } catch (e) {}
   }
   return null;
 }

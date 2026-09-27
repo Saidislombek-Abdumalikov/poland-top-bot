@@ -115,13 +115,10 @@ export function setupStartHandler(bot: Bot) {
     const firstName = user.fullName || user.firstName || "Student";
     const isUz = user.lang === "uz";
 
+    // Reset menu button to default so mini app is NOT exposed as a persistent menu button
     try {
       await ctx.setChatMenuButton({
-        menu_button: {
-          type: "web_app",
-          text: isUz ? "🚀 Portal" : "🚀 Portal",
-          web_app: { url: config.webappUrl },
-        },
+        menu_button: { type: "default" },
       });
     } catch {}
 
@@ -133,7 +130,7 @@ export function setupStartHandler(bot: Bot) {
 
     const msg = await ctx.reply(welcomeMsg, {
       parse_mode: "HTML",
-      reply_markup: getMainMenuKeyboard(user.lang),
+      reply_markup: getMainMenuKeyboard(user.lang, userId),
     });
     db.setLastPromptMsgId(userId, msg.message_id);
   });
@@ -375,13 +372,10 @@ export function setupStartHandler(bot: Bot) {
       show_alert: true,
     });
 
+    // Reset menu button to default so mini app is NOT exposed as a persistent menu button
     try {
       await ctx.setChatMenuButton({
-        menu_button: {
-          type: "web_app",
-          text: isUz ? "🚀 Portal" : "🚀 Portal",
-          web_app: { url: config.webappUrl },
-        },
+        menu_button: { type: "default" },
       });
     } catch {}
 
@@ -401,7 +395,7 @@ export function setupStartHandler(bot: Bot) {
 
     await ctx.reply(isUz ? "🚀 <b>Sizning Shaxsiy Portalingiz:</b>" : "🚀 <b>Your Student Portal:</b>", {
       parse_mode: "HTML",
-      reply_markup: getMainMenuKeyboard(user.lang),
+      reply_markup: getMainMenuKeyboard(user.lang, userId),
     });
   });
 }

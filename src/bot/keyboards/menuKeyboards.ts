@@ -11,9 +11,10 @@ export function getPhoneRequestKeyboard(lang: Language): Keyboard {
     .oneTime();
 }
 
-export function getMainMenuKeyboard(lang: Language): InlineKeyboard {
+export function getMainMenuKeyboard(lang: Language, userId?: number): InlineKeyboard {
   const isUz = lang === "uz";
-  const webappUrl = config.webappUrl || "https://poland-top-bot.onrender.com";
+  const baseUrl = config.webappUrl || "https://poland-top-bot.onrender.com";
+  const webappUrl = userId ? `${baseUrl}?userId=${userId}` : baseUrl;
 
   return new InlineKeyboard()
     .webApp(isUz ? "🚀 Portalga Kirish" : "🚀 Open Student Portal", webappUrl)

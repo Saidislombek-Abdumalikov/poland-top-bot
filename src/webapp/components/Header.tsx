@@ -21,13 +21,16 @@ export const Header: React.FC<HeaderProps> = ({
     onLanguageChange(lang === "uz" ? "en" : "uz");
   };
 
-  const displayName = user?.fullName || user?.firstName || "Student";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const displayName = (user?.fullName || user?.firstName || "Student").trim();
+  const words = displayName.split(/\s+/).filter(Boolean);
+  const initials =
+    words.length > 0
+      ? words
+          .map((n) => n[0] || "")
+          .join("")
+          .slice(0, 2)
+          .toUpperCase()
+      : "ST";
 
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between">
