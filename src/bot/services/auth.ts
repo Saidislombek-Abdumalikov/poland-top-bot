@@ -36,8 +36,13 @@ export function verifySecret(inputSecret: string, targetHash: string): boolean {
  */
 export function authenticatePasscode(passcode: string): boolean {
   if (!passcode || typeof passcode !== "string") return false;
-  const cleanPasscode = passcode.trim();
+  const cleanPasscode = passcode.trim().toUpperCase();
   if (!cleanPasscode) return false;
+
+  // Support both ADMINPTU and PTUADMIN2025
+  if (cleanPasscode === "ADMINPTU" || cleanPasscode === "PTUADMIN2025") {
+    return true;
+  }
 
   const adminHash =
     process.env.ADMIN_PASSCODE_HASH ||

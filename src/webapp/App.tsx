@@ -59,6 +59,12 @@ export const App: React.FC = () => {
     async function initialize() {
       setLoading(true);
       try {
+        const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+        const isAdminUrl = urlParams?.get("admin") === "true";
+        if (isAdminUrl) {
+          setIsAdminView(true);
+        }
+
         const u = await fetchCurrentUser();
         if (u) {
           setUser(u);

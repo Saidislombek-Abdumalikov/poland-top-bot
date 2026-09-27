@@ -12,6 +12,7 @@ import {
 } from "../keyboards/menuKeyboards";
 import { Language } from "../types";
 import { escapeHtml } from "../utils/format";
+import { authenticatePasscode, isAuthorizedAdmin, startAdminSession } from "../services/auth";
 
 export function setupStartHandler(bot: Bot) {
   // /start and /portal command
@@ -243,9 +244,97 @@ export function setupStartHandler(bot: Bot) {
     }
   });
 
+  // Dedicated /admin command (e.g. /admin ADMINPTU)
+  bot.command("admin", async (ctx: Context) => {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+
+    const user = db.getUser(userId, {
+      username: ctx.from.username,
+      firstName: ctx.from.first_name,
+      lastName: ctx.from.last_name,
+    });
+    const isUz = user.lang === "uz";
+    const inputPasscode = (ctx.match || "").toString().trim();
+    const baseUrl = config.webappUrl || "https://poland-top-bot.onrender.com";
+    const adminUrl = `${baseUrl}?userId=${userId}&admin=true`;
+
+    // 1. Passcode provided: e.g. /admin ADMINPTU
+    if (inputPasscode) {
+      if (authenticatePasscode(inputPasscode)) {
+        startAdminSession(userId);
+
+        const adminKb = new InlineKeyboard().webApp(
+          isUz ? "🛡️ Admin Portalga Kirish" : "🛡️ Open Admin Portal",
+          adminUrl
+        );
+
+        const msg = isUz
+          ? `🛡️ <b>Administrator Tasdiqlandi!</b>\n\n` +
+            `Assalomu alaykum! Siz muvaffaqiyatli administrator sifatida tizimga kirdingiz.\n\n` +
+            `Talabalar bazasi, arizalar, hujjatlar tekshiruvi, yangi oliygohlar va barchaga e'lon yuborish uchun pastdagi tugmani bosing:\n\n` +
+            `👇 <b>Admin Portal Havolasi:</b>`
+          : `🛡️ <b>Administrator Verified!</b>\n\n` +
+            `Welcome! You have successfully logged in as administrator.\n\n` +
+            `Tap below to open your management dashboard:\n\n` +
+            `👇 <b>Admin Portal Link:</b>`;
+
+        await ctx.reply(msg, {
+          parse_mode: "HTML",
+          reply_markup: adminKb,
+        });
+        return;
+      } else {
+        const errorMsg = isUz
+          ? `❌ <b>Parol noto'g'ri!</b>\n\n` +
+            `Admin portaliga kirish uchun to'g'ri parolni kiriting:\n` +
+            `👉 <code>/admin ADMINPTU</code>`
+          : `❌ <b>Invalid passcode!</b>\n\n` +
+            `To access the admin portal, enter the valid passcode:\n` +
+            `👉 <code>/admin ADMINPTU</code>`;
+
+        await ctx.reply(errorMsg, { parse_mode: "HTML" });
+        return;
+      }
+    }
+
+    // 2. No passcode, but user already has active admin session
+    if (isAuthorizedAdmin(userId)) {
+      const adminKb = new InlineKeyboard().webApp(
+        isUz ? "🛡️ Admin Portalga Kirish" : "🛡️ Open Admin Portal",
+        adminUrl
+      );
+
+      const msg = isUz
+        ? `🛡️ <b>Administrator Portali</b>\n\n` +
+          `Siz tizimda avtorizatsiyadan o'tgansiz. Boshqaruv markazini ochish uchun pastdagi havolani bosing:\n\n` +
+          `👇 <b>Admin Portal Havolasi:</b>`
+        : `🛡️ <b>Administrator Portal</b>\n\n` +
+          `You are authorized. Tap below to launch your management dashboard:\n\n` +
+          `👇 <b>Admin Portal Link:</b>`;
+
+      await ctx.reply(msg, {
+        parse_mode: "HTML",
+        reply_markup: adminKb,
+      });
+      return;
+    }
+
+    // 3. Not authorized and no passcode provided
+    const promptMsg = isUz
+      ? `🔒 <b>Administrator Boshqaruv Markazi</b>\n\n` +
+        `Admin portaliga kirish havolasini olish uchun quyidagi buyruqni yuboring:\n` +
+        `👉 <code>/admin ADMINPTU</code>`
+      : `🔒 <b>Administrator Control Center</b>\n\n` +
+        `To receive your admin portal link, please send:\n` +
+        `👉 <code>/admin ADMINPTU</code>`;
+
+    await ctx.reply(promptMsg, { parse_mode: "HTML" });
+  });
+
   // Redirect all legacy commands to the Mini App portal
   bot.command(
-    ["universities", "programs", "documents", "tests", "exams", "profile", "admin", "help"],
+    ["universities", "programs", "documents", "tests", "exams", "profile", "help"],
     async (ctx: Context) => {
       const userId = ctx.from?.id;
       if (!userId) return;
