@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { config, validateConfig } from "./config";
 import { db } from "./services/db";
+import { isAuthorizedAdmin } from "./services/auth";
 import { programs } from "./data/programs";
 import { AppStage, DocStatus } from "./types";
 import { setupStartHandler } from "./handlers/startHandler";
@@ -87,7 +88,25 @@ export function createServerApp() {
       return res.status(400).json({ error: "Missing userId" });
     }
     const user = db.getUser(userId);
-    res.json({ user });
+    const isAdmin = isAuthorizedAdmin(userId) || Boolean(user.isAdmin);
+    res.json({
+      user: {
+        id: user.userId,
+        userId: user.userId,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.fullName,
+        phone: user.phone,
+        lang: user.lang,
+        isRegistered: user.isRegistered,
+        isAdmin,
+        preferredLevel: user.preferredLevel,
+        acceptedOfertaAt: user.acceptedOfertaAt
+          ? new Date(user.acceptedOfertaAt).getTime()
+          : undefined,
+      },
+    });
   });
 
   app.get("/api/universities", (_req, res) => {
