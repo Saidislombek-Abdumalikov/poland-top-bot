@@ -60,84 +60,89 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto w-full">
-      {/* Student Profile Card */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-bold text-lg flex items-center justify-center shadow-sm">
+    <div className="space-y-6 max-w-4xl mx-auto w-full">
+      {/* Student Profile Card - Sleek Dark Design */}
+      <div className="relative bg-slate-900 rounded-[2rem] p-6 shadow-xl overflow-hidden">
+        {/* Abstract Background Element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
+
+        <div className="flex items-center gap-4 relative z-10 mb-6">
+          <div className="w-16 h-16 rounded-[1.25rem] bg-gradient-to-br from-slate-100 to-slate-300 text-slate-900 font-black text-xl flex items-center justify-center shadow-lg border-2 border-white/10">
             {displayName.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-base font-bold text-slate-900 truncate">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl sm:text-2xl font-black text-white truncate tracking-tight">
                 {displayName}
               </h2>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
             </div>
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-              <Phone className="w-3 h-3 text-slate-400" />
+            <p className="text-[13px] font-medium text-slate-400 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5" />
               {phone}
             </p>
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">
+        <div className="grid grid-cols-2 gap-3 relative z-10">
+          <div className="p-3.5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-widest mb-1">
               {isUz ? "Ta'lim Bosqichi" : "Degree Level"}
             </span>
-            <span className="font-semibold text-slate-800 mt-0.5 block">{preferredLevel}</span>
+            <span className="font-bold text-white text-sm">{preferredLevel}</span>
           </div>
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">
+          <div className="p-3.5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-widest mb-1">
               {isUz ? "Ommaviy Oferta" : "Terms & Oferta"}
             </span>
-            <span className="font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
-              ✅ {isUz ? "Qabul qilingan" : "Accepted"}
+            <span className="font-bold text-emerald-400 text-sm flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" />
+              {isUz ? "Qabul qilingan" : "Accepted"}
             </span>
           </div>
         </div>
       </div>
 
       {/* Applications Tracker */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
+      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-              <GraduationCap className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100/80 text-slate-700 flex items-center justify-center border border-slate-200/50 shadow-sm">
+              <GraduationCap className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-base font-black text-slate-900 tracking-tight">
               {isUz ? "Mening Arizalarim" : "My Applications"}
             </h3>
           </div>
-          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+          <span className="text-[11px] font-bold text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/50">
             {applications.length} {isUz ? "ta" : "total"}
           </span>
         </div>
 
         {applications.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             {applications.map((app) => (
               <div
                 key={app.id}
-                className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-2"
+                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-3"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                    <h4 className="font-black text-slate-900 text-sm sm:text-base leading-snug">
                       {app.programName}
                     </h4>
-                    <p className="text-xs text-slate-500">{app.universityName}</p>
+                    <p className="text-[13px] text-slate-500 font-medium mt-0.5">{app.universityName}</p>
                   </div>
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-800 uppercase">
-                    {app.stage}
+                  <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-slate-900 text-white uppercase tracking-wider shadow-sm flex-shrink-0">
+                    {app.stage.replace(/_/g, " ")}
                   </span>
                 </div>
 
                 {app.counselorNotes && (
-                  <div className="p-2.5 bg-white rounded-lg text-xs text-slate-700 border border-slate-200">
-                    <span className="font-bold block text-[10px] text-slate-500 uppercase">
+                  <div className="p-3 bg-blue-50/50 rounded-xl text-[13px] text-slate-700 border border-blue-100/50 leading-relaxed">
+                    <span className="font-black block text-[10px] text-blue-500 uppercase tracking-wider mb-1">
                       {isUz ? "Maslahatchi izohi:" : "Counselor Note:"}
                     </span>
                     {app.counselorNotes}
@@ -147,7 +152,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             ))}
           </div>
         ) : (
-          <div className="py-6 text-center text-xs text-slate-400">
+          <div className="py-8 text-center text-[13px] font-medium text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 mt-2">
             {isUz ? "Hozircha arizalar topshirilmagan" : "No applications submitted yet"}
           </div>
         )}

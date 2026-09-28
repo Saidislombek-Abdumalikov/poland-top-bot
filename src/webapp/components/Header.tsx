@@ -31,44 +31,44 @@ export const Header: React.FC<HeaderProps> = ({
       : "ST";
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="sticky top-2 sm:top-4 z-30 px-3 sm:px-6 mx-auto w-full max-w-7xl">
+      <header className="bg-white/70 backdrop-blur-2xl border border-white/80 rounded-3xl px-4 py-2.5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
         {/* Brand & Flag */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm font-bold text-base sm:text-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[14px] bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center text-white shadow-md font-bold text-lg sm:text-xl transform transition-transform hover:scale-105">
             🇵🇱
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 leading-none">
+            <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-rose-500/90 leading-tight">
               Poland Top
             </div>
-            <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
-              Universities Portal
+            <h1 className="text-[13px] sm:text-[15px] font-black text-slate-900 tracking-tight leading-tight">
+              Universities
             </h1>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Language Switch */}
           <button
             onClick={toggleLang}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-95 transition-all border border-slate-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/80 text-slate-700 hover:bg-white active:scale-90 transition-all duration-300 shadow-sm border border-slate-100"
             title="Change Language"
           >
-            <Globe className="w-3.5 h-3.5 text-slate-500" />
+            <Globe className="w-3.5 h-3.5 text-slate-400" />
             <span>{lang === "uz" ? "UZ" : "EN"}</span>
           </button>
 
           {/* User Initials Avatar */}
           <div
-            className="w-8 h-8 rounded-lg bg-slate-800 text-white font-semibold text-xs flex items-center justify-center shadow-sm select-none"
+            className="w-9 h-9 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center shadow-md select-none border-2 border-white/50"
             title={displayName}
           >
             {initials}
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 };

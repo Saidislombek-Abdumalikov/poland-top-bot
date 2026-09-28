@@ -64,7 +64,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-0 sm:bottom-4 left-0 right-0 max-w-lg mx-auto z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 sm:rounded-2xl px-3 py-2 flex items-center justify-around shadow-sm sm:shadow-md">
+    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-40 bg-white/70 backdrop-blur-2xl border border-white/80 rounded-3xl p-1.5 flex items-center justify-between shadow-[0_12px_40px_-8px_rgba(0,0,0,0.1)]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -73,30 +73,37 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <button
             key={tab.id}
             onClick={() => handleSelect(tab.id)}
-            className={`flex-1 relative flex flex-col items-center justify-center py-1 rounded-xl transition-all active:scale-95 ${
+            className={`relative flex flex-col items-center justify-center pt-2 pb-1.5 rounded-2xl transition-all duration-300 ease-out active:scale-90 flex-1 ${
               isActive
-                ? "text-slate-900 font-bold"
-                : "text-slate-400 hover:text-slate-700 font-medium"
+                ? "text-slate-900"
+                : "text-slate-400 hover:text-slate-600"
             }`}
           >
-            {isActive && (
-              <span className="absolute inset-0 bg-slate-100 rounded-xl -z-10" />
-            )}
+            {/* Active Pill Background */}
+            <div
+              className={`absolute inset-0 bg-white/80 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-opacity duration-300 ${
+                isActive ? "opacity-100" : "opacity-0"
+              }`}
+            />
 
-            <div className="relative">
+            <div className="relative z-10">
               <Icon
-                className={`w-5 h-5 transition-transform duration-150 ${
-                  isActive ? "scale-105 stroke-[2.3]" : "stroke-[1.8]"
+                className={`w-[22px] h-[22px] transition-all duration-300 ${
+                  isActive ? "stroke-[2.5] scale-110 -translate-y-0.5" : "stroke-[1.8]"
                 }`}
               />
               {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
+                <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm z-20">
                   {tab.badge}
                 </span>
               )}
             </div>
 
-            <span className="text-[11px] mt-1 tracking-tight truncate max-w-[72px]">
+            <span
+              className={`text-[10px] mt-1 z-10 transition-all duration-300 tracking-tight ${
+                isActive ? "font-bold opacity-100" : "font-medium opacity-80"
+              }`}
+            >
               {tab.label}
             </span>
           </button>
