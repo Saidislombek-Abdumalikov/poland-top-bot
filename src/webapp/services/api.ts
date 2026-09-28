@@ -48,9 +48,24 @@ export function getTelegramUser() {
       if (qId) {
         return {
           id: parseInt(qId, 10),
-          first_name: params.get("name") || "Student",
+          first_name: params.get("name") || "Talaba",
         };
       }
+      // Check stored session student ID
+      const stored = localStorage.getItem("ptu_student_id");
+      if (stored) {
+        return {
+          id: parseInt(stored, 10),
+          first_name: "Talaba",
+        };
+      }
+      // Generate guest student ID
+      const guestId = Math.floor(100000 + Math.random() * 900000);
+      localStorage.setItem("ptu_student_id", String(guestId));
+      return {
+        id: guestId,
+        first_name: "Talaba",
+      };
     } catch (e) {}
   }
   return null;
@@ -90,19 +105,18 @@ export async function fetchCurrentUser(userId?: number): Promise<UserProfile | n
     console.warn("API offline or dev mode:", err);
   }
 
-  // Fallback demo/mock user if server not reached
+  // Fallback guest user if server not reached: not registered, prompts onboarding
   return {
     id: effectiveId,
     firstName: tgUser?.first_name || "Talaba",
     lastName: tgUser?.last_name || "",
-    fullName: `${tgUser?.first_name || "Saidislom"} ${tgUser?.last_name || "Karimov"}`.trim(),
-    username: tgUser?.username || "student_poland",
-    phone: "+998901234567",
+    fullName: tgUser?.first_name || "Talaba",
+    username: tgUser?.username || "student",
+    phone: "",
     lang: "uz",
-    isRegistered: true,
-    isAdmin: effectiveId === 123456 || Boolean(tgUser?.username?.includes("admin")),
-    preferredLevel: "bachelor",
-    acceptedOfertaAt: Date.now() - 3600000,
+    isRegistered: false,
+    isAdmin: Boolean(tgUser?.username?.includes("admin")),
+    preferredLevel: "Bachelor",
   };
 }
 
@@ -343,46 +357,7 @@ export async function fetchUserDocuments(userId: number): Promise<DocumentItem[]
     }
   } catch (e) {}
 
-  return [
-    {
-      id: "doc-1",
-      userId,
-      docType: "passport",
-      status: "approved",
-      fileUrl: "https://example.com/passport.pdf",
-      updatedAt: "2026-03-20",
-    },
-    {
-      id: "doc-2",
-      userId,
-      docType: "diploma",
-      status: "reviewing",
-      fileUrl: "https://example.com/diploma.pdf",
-      updatedAt: "2026-03-24",
-    },
-    {
-      id: "doc-3",
-      userId,
-      docType: "language_cert",
-      status: "pending",
-      updatedAt: "2026-03-25",
-    },
-    {
-      id: "doc-4",
-      userId,
-      docType: "eligibility",
-      status: "pending",
-      updatedAt: "2026-03-25",
-    },
-    {
-      id: "doc-5",
-      userId,
-      docType: "photo",
-      status: "approved",
-      fileUrl: "https://example.com/photo.jpg",
-      updatedAt: "2026-03-22",
-    },
-  ];
+  return [];
 }
 
 export async function submitDocument(
@@ -413,19 +388,7 @@ export async function fetchUserApplications(userId: number): Promise<Application
     }
   } catch (e) {}
 
-  return [
-    {
-      id: "app-101",
-      userId,
-      programId: "prog-cs-bachelor-uw",
-      programName: "Kompyuter fanlari va Sun'iy intellekt (B.Sc.)",
-      universityName: "University of Warsaw",
-      degree: "bachelor",
-      stage: "university_review",
-      counselorNotes: "Barcha hujjatlar universitet qabul komissiyasiga topshirildi. Rasmiy qabul xati 10 ish kunida chiqadi.",
-      createdAt: "2026-03-15",
-    },
-  ];
+  return [];
 }
 
 export async function applyToProgram(
@@ -527,42 +490,7 @@ export async function fetchReviews(): Promise<ReviewItem[]> {
       return data.reviews;
     }
   } catch (e) {}
-
-  return [
-    {
-      id: "rev-1",
-      userId: 7771,
-      studentName: "Shaxzod Aliyev",
-      rating: 5,
-      universityName: "University of Warsaw",
-      programName: "Kompyuter fanlari va AI",
-      comment: "Hujjatlarimni topshirish juda oson kechdi. Maslahatchilar vizagacha yordam berishdi. Hozir 2-kursdaman, ta'lim sifati Yevropa darajasida a'lo!",
-      date: "2026-02-14",
-      isVerified: true,
-    },
-    {
-      id: "rev-2",
-      userId: 7772,
-      studentName: "Madina Rustamova",
-      rating: 5,
-      universityName: "Kozminski University",
-      programName: "Xalqaro biznes",
-      comment: "Kozminski biznes bo'yicha haqiqatan kuchli. Xalqaro muhit, turli mamlakatlardan do'stlar orttirdim. Bot orqali ariza topshirganimdan xursandman.",
-      date: "2026-03-01",
-      isVerified: true,
-    },
-    {
-      id: "rev-3",
-      userId: 7773,
-      studentName: "Javohir Olimov",
-      rating: 5,
-      universityName: "Wrocław University of Tech",
-      programName: "Kiberxavfsizlik",
-      comment: "Vrotslav talabalar uchun qulay shahar. Dasturlash laboratoriyalari zamonaviy. Polsha vizasini birinchi urinishda oldim.",
-      date: "2026-03-18",
-      isVerified: true,
-    },
-  ];
+  return [];
 }
 
 export async function addReview(review: {

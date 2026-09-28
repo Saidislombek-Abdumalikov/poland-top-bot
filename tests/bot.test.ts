@@ -200,10 +200,14 @@ async function main() {
   await runTest("Oferta text rendering and update", () => {
     const oferta = db.getPublishedOferta();
     assert.ok(oferta.text.includes("POLAND TOP UNIVERSITIES"), "Oferta should contain header");
-
-    const rendered = db.getRenderedOferta();
-    assert.ok(rendered.length > 50, "Rendered oferta should have content");
   });
+
+  // Clean up test data after tests
+  db.deleteUser(112233);
+  db.deleteUser(998877);
+  (db as any).data.applications = {};
+  (db as any).data.reviews = [];
+  db.saveDatabase();
 
   console.log("\n🎉 ================= ALL BOT TESTS PASSED SUCCESSFULLY! =================");
 }

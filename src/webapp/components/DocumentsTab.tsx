@@ -168,10 +168,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
       {/* Checklist Header */}
       <div className="flex items-center justify-between px-2">
-        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+        <span className="text-[11px] font-black text-white/60 uppercase tracking-widest">
           {isUz ? "Majburiy Hujjatlar" : "Required Documents"}
         </span>
-        <span className="text-[11px] font-bold text-slate-500 bg-white/60 backdrop-blur-md px-2 py-0.5 rounded border border-slate-200/50">
+        <span className="text-[11px] font-bold text-white/75 bg-slate-900/80 px-2 py-0.5 rounded border border-white/10">
           5 {isUz ? "ta talab qilinadi" : "items"}
         </span>
       </div>
@@ -185,28 +185,28 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
           return (
             <div
               key={def.id}
-              className="bg-white/80 backdrop-blur-md rounded-[1.5rem] p-5 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 transition-all hover:border-slate-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)]"
+              className="bg-slate-900/80 rounded-[1.5rem] p-5 border border-white/10 space-y-4 transition-all hover:border-white/20 shadow-lg"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3.5">
                   <div
                     className={`w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm border ${
                       status === "approved"
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                         : status === "reviewing"
-                        ? "bg-blue-50 text-blue-600 border-blue-100"
+                        ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
                         : status === "needs_correction"
-                        ? "bg-rose-50 text-rose-600 border-rose-100"
-                        : "bg-slate-50 text-slate-500 border-slate-100"
+                        ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                        : "bg-slate-800 text-white/50 border-white/10"
                     }`}
                   >
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                    <h4 className="font-bold text-white/95 text-sm sm:text-base leading-snug">
                       {def.title}
                     </h4>
-                    <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">
+                    <p className="text-[13px] text-white/75 mt-1 leading-relaxed font-normal">
                       {def.desc}
                     </p>
                   </div>
@@ -214,28 +214,28 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
               </div>
 
               {/* Status Badge & Action */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
+              <div className="flex items-center justify-between pt-3 border-t border-white/10">
                 <div>
                   {status === "approved" && (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-emerald-200/50">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-emerald-500/30">
                       <CheckCircle className="w-3.5 h-3.5" />
                       {isUz ? "Tasdiqlangan" : "Approved"}
                     </span>
                   )}
                   {status === "reviewing" && (
-                    <span className="inline-flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-blue-200/50">
+                    <span className="inline-flex items-center gap-1.5 text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-blue-500/30">
                       <Clock className="w-3.5 h-3.5" />
                       {isUz ? "Tekshirilmoqda" : "Under Review"}
                     </span>
                   )}
                   {status === "needs_correction" && (
-                    <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-rose-200/50">
+                    <span className="inline-flex items-center gap-1.5 text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-rose-500/30">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       {isUz ? "Tuzatish lozim" : "Needs Correction"}
                     </span>
                   )}
                   {status === "pending" && (
-                    <span className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100/50 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200/50">
+                    <span className="inline-flex items-center gap-1.5 text-white/60 bg-slate-800/80 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                       {isUz ? "Kutilmoqda" : "Pending"}
                     </span>
@@ -246,8 +246,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                   onClick={() => handleOpenUpload(def.id)}
                   className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all duration-300 ${
                     status === "approved"
-                      ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      : "bg-slate-900 text-white shadow-md shadow-slate-900/20 hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-900/30"
+                      ? "bg-slate-800 text-white/85 hover:bg-slate-700 border border-white/10"
+                      : "bg-blue-600 text-white/95 shadow-md shadow-blue-600/30 hover:bg-blue-500"
                   }`}
                 >
                   <UploadCloud className="w-4 h-4" />
@@ -263,8 +263,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
               {/* Feedback Note if rejected or needs correction */}
               {doc?.feedback && (
-                <div className="bg-rose-50/50 border border-rose-200/50 text-rose-800 text-[13px] p-3 rounded-xl flex gap-2 items-start mt-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                <div className="bg-rose-950/30 border border-rose-500/30 text-rose-200 text-[13px] p-3 rounded-xl flex gap-2 items-start mt-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <b className="font-bold block mb-0.5">{isUz ? "Maslahatchi eslatmasi:" : "Advisor note:"}</b> 
                     {doc.feedback}
@@ -278,28 +278,28 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
       {/* Upload Bottom Sheet Modal */}
       {uploadingDocType && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-sm p-0 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm p-0 animate-fade-in">
           <div
-            className="w-full max-w-md bg-white rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl animate-slide-up overflow-hidden"
+            className="w-full max-w-md bg-slate-950 border border-white/15 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl animate-slide-up overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-4 border-b border-white/10 bg-slate-900/90 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold">
                   <UploadCloud className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm font-extrabold text-white/95">
                     {isUz ? "Hujjatni Yuklash" : "Upload Document"}
                   </h3>
-                  <span className="text-[11px] text-slate-500 font-medium">
+                  <span className="text-[11px] text-white/60 font-medium">
                     {docDefs.find((d) => d.id === uploadingDocType)?.title}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setUploadingDocType(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
+                className="w-7 h-7 rounded-full bg-slate-800 text-white/60 flex items-center justify-center hover:bg-slate-700 hover:text-white/95 border border-white/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -308,13 +308,13 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
             <div className="p-4 overflow-y-auto space-y-4 flex-1">
               {uploadSuccess ? (
                 <div className="py-8 text-center space-y-3 animate-fade-in">
-                  <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                  <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto shadow-lg">
                     <CheckCircle className="w-8 h-8" />
                   </div>
-                  <h3 className="text-base font-extrabold text-slate-900">
+                  <h3 className="text-base font-extrabold text-white/95">
                     {isUz ? "Hujjat Tekshirishga Yuborildi!" : "Document Submitted!"}
                   </h3>
-                  <p className="text-xs text-slate-600 max-w-xs mx-auto">
+                  <p className="text-xs text-white/75 max-w-xs mx-auto">
                     {isUz
                       ? "Maslahatchilarimiz hujjat sifatini tekshiradi va tez orada tasdiqlaydi."
                       : "Admissions advisors will verify the document format and quality shortly."}
@@ -323,7 +323,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
               ) : (
                 <>
                   <div className="space-y-3">
-                    <label className="text-[13px] font-black text-slate-700">
+                    <label className="text-[13px] font-black text-white/90">
                       {isUz ? "Hujjatni tanlang (PDF, JPG, PNG):" : "Select document (PDF, JPG, PNG):"}
                     </label>
                     
@@ -339,9 +339,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                         }}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       />
-                      <div className="w-full px-4 py-4 bg-slate-50 border-2 border-dashed border-slate-300 rounded-[1.25rem] text-center flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
-                        <UploadCloud className="w-6 h-6 text-slate-400" />
-                        <span className="text-[13px] font-bold text-slate-600">
+                      <div className="w-full px-4 py-6 bg-slate-900/80 border-2 border-dashed border-white/20 rounded-[1.25rem] text-center flex flex-col items-center justify-center gap-2 hover:bg-slate-800/80 hover:border-blue-400/50 transition-colors">
+                        <UploadCloud className="w-7 h-7 text-blue-400" />
+                        <span className="text-[13px] font-bold text-white/85">
                           {fileUrlInput
                             ? fileUrlInput
                             : isUz
@@ -351,15 +351,15 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                       </div>
                     </div>
                     
-                    <p className="text-[11px] text-slate-400 font-medium">
+                    <p className="text-[11px] text-white/50 font-medium">
                       {isUz
                         ? "Eslatma: Yuklangan fayl xavfsiz tarzda saqlanadi va maslahatchiga yuboriladi."
                         : "Note: Uploaded file will be securely stored and sent to the advisor."}
                     </p>
                   </div>
 
-                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-200/70 text-xs text-blue-900 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <div className="bg-blue-950/30 p-3 rounded-xl border border-blue-500/30 text-xs text-blue-300 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-blue-400 flex-shrink-0" />
                     <span>
                       {isUz
                         ? "Barcha shaxsiy hujjatlar xavfsiz shifrlangan tarzda saqlanadi."
@@ -371,11 +371,11 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
             </div>
 
             {!uploadSuccess && (
-              <div className="p-4 border-t border-slate-100 bg-white">
+              <div className="p-4 border-t border-white/10 bg-slate-900/90">
                 <button
                   disabled={isUploading || !fileUrlInput}
                   onClick={handleUploadSubmit}
-                  className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-[1.25rem] font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                  className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white/95 rounded-[1.25rem] font-bold text-sm shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                 >
                   {isUploading ? (
                     <span>{isUz ? "Yuklanmoqda..." : "Uploading..."}</span>

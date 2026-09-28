@@ -80,8 +80,8 @@ export const TestsTab: React.FC<TestsTabProps> = ({ tests, lang }) => {
             }}
             className={`px-4 py-2 rounded-[1rem] text-[13px] font-bold whitespace-nowrap transition-all duration-300 ${
               selectedSubject === sub
-                ? "bg-slate-900 text-white shadow-md shadow-slate-900/20 scale-105"
-                : "bg-white/60 backdrop-blur-md text-slate-500 border border-slate-200/60 hover:text-slate-800 hover:bg-white"
+                ? "bg-blue-600 text-white/95 shadow-md shadow-blue-600/30"
+                : "bg-slate-900/70 text-white/75 border border-white/10 hover:text-white/95 hover:bg-slate-800/80"
             }`}
           >
             {sub === "all" ? (isUz ? "📚 Barcha fanlar" : "📚 All Subjects") : sub}
@@ -90,36 +90,36 @@ export const TestsTab: React.FC<TestsTabProps> = ({ tests, lang }) => {
       </div>
 
       {/* Tests List Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-8">
         {filtered.map((test) => (
           <div
             key={test.id}
-            className="group bg-white/80 backdrop-blur-md rounded-[1.5rem] p-5 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 hover:border-slate-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 flex flex-col justify-between"
+            className="group bg-slate-900/80 rounded-[1.5rem] p-5 border border-white/10 space-y-4 hover:border-white/20 transition-all duration-300 flex flex-col justify-between shadow-lg"
           >
             <div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50/80 text-indigo-700 text-[10px] font-black uppercase tracking-wider border border-indigo-200/50 mb-3">
-                <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/30 mb-3">
+                <FileCheck className="w-3.5 h-3.5" />
                 {test.subject}
               </span>
-              <h4 className="font-black text-slate-900 text-base leading-snug">
+              <h4 className="font-black text-white/95 text-base leading-snug">
                 {isUz ? test.title.uz : test.title.en}
               </h4>
               
-              <p className="text-[13px] text-slate-600 leading-relaxed font-medium mt-2 bg-slate-50/50 p-3 rounded-[1rem] border border-slate-100/80">
+              <p className="text-[13px] text-white/75 leading-relaxed font-normal mt-2 bg-slate-800/60 p-3 rounded-[1rem] border border-white/5">
                 {isUz ? test.description.uz : test.description.en}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100/80">
-              <div className="flex items-center gap-2.5 text-[11px] font-bold text-slate-500">
+            <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/10">
+              <div className="flex items-center gap-2.5 text-[11px] font-bold text-white/60">
                 {test.durationMinutes && (
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <Clock className="w-3.5 h-3.5 text-white/40" />
                     {test.durationMinutes} {isUz ? "daqiqa" : "mins"}
                   </span>
                 )}
                 {test.format && (
-                  <span className="bg-slate-100/80 px-2 py-1 rounded text-[10px] uppercase tracking-wider">
+                  <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider text-white/75 border border-white/5">
                     {test.format}
                   </span>
                 )}
@@ -127,7 +127,7 @@ export const TestsTab: React.FC<TestsTabProps> = ({ tests, lang }) => {
 
               <button
                 onClick={() => handleDownload(test)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-[1rem] text-[11px] font-black shadow-md shadow-slate-900/10 active:scale-95 transition-all flex items-center gap-1.5"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white/95 rounded-[1rem] text-[11px] font-black shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 {isUz ? "Yuklab olish" : "Download PDF"}

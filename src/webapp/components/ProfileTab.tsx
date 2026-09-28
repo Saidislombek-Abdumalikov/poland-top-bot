@@ -121,17 +121,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       </div>
 
       {/* Applications Tracker */}
-      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="bg-slate-900/80 rounded-[2rem] p-6 border border-white/10 shadow-lg space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slate-100/80 text-slate-700 flex items-center justify-center border border-slate-200/50 shadow-sm">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30 shadow-sm">
               <GraduationCap className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-black text-slate-900 tracking-tight">
+            <h3 className="text-base font-black text-white/95 tracking-tight">
               {isUz ? "Mening Arizalarim" : "My Applications"}
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/50">
+          <span className="text-[11px] font-bold text-white/75 bg-slate-800 px-2.5 py-1 rounded-lg border border-white/5">
             {applications.length} {isUz ? "ta" : "total"}
           </span>
         </div>
@@ -141,16 +141,16 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             {applications.map((app) => (
               <div
                 key={app.id}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-3"
+                className="bg-slate-800/70 rounded-2xl p-4 border border-white/5 space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="font-black text-slate-900 text-sm sm:text-base leading-snug">
+                    <h4 className="font-black text-white/95 text-sm sm:text-base leading-snug">
                       {app.programName}
                     </h4>
-                    <p className="text-[13px] text-slate-500 font-medium mt-0.5">{app.universityName}</p>
+                    <p className="text-[13px] text-white/75 font-medium mt-0.5">{app.universityName}</p>
                   </div>
-                  <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-slate-900 text-white uppercase tracking-wider shadow-sm flex-shrink-0">
+                  <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-blue-600/30 text-blue-400 border border-blue-500/30 uppercase tracking-wider shadow-sm flex-shrink-0">
                     {(() => {
                       if (isUz) {
                         switch (app.stage) {
@@ -176,8 +176,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 </div>
 
                 {app.counselorNotes && (
-                  <div className="p-3 bg-blue-50/50 rounded-xl text-[13px] text-slate-700 border border-blue-100/50 leading-relaxed">
-                    <span className="font-black block text-[10px] text-blue-500 uppercase tracking-wider mb-1">
+                  <div className="p-3 bg-blue-950/30 rounded-xl text-[13px] text-white/80 border border-blue-500/20 leading-relaxed">
+                    <span className="font-black block text-[10px] text-blue-400 uppercase tracking-wider mb-1">
                       {isUz ? "Maslahatchi izohi:" : "Counselor Note:"}
                     </span>
                     {app.counselorNotes}
@@ -187,19 +187,19 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             ))}
           </div>
         ) : (
-          <div className="py-8 text-center text-[13px] font-medium text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 mt-2">
+          <div className="py-8 text-center text-[13px] font-medium text-white/60 bg-slate-800/40 rounded-2xl border border-dashed border-white/10 mt-2">
             {isUz ? "Hozircha arizalar topshirilmagan" : "No applications submitted yet"}
           </div>
         )}
       </div>
 
       {/* Official Admissions Advisor Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-[2rem] p-5 border border-blue-900/60 shadow-lg text-white flex items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-[2rem] p-5 border border-blue-500/30 shadow-lg text-white flex items-center justify-between gap-4">
         <div className="space-y-1">
           <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 block">
             {isUz ? "Rasmiy Maslahatchi" : "Official Admissions Advisor"}
           </span>
-          <h4 className="text-sm font-bold text-white">
+          <h4 className="text-sm font-bold text-white/95">
             {isUz ? "Savollar yoki yordam kerakmi?" : "Need admissions help?"}
           </h4>
           <p className="text-xs text-blue-200/90 font-mono">
@@ -217,13 +217,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       </div>
 
       {/* Student Reviews Section */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
+      <div className="bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-white/10 shadow-lg space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-              <Star className="w-4 h-4 text-amber-500" />
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+              <Star className="w-4 h-4 fill-amber-400" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-white/95">
               {isUz ? "Talabalar Fikrlari" : "Student Reviews"}
             </h3>
           </div>
@@ -234,7 +234,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 triggerHaptic("light");
                 setShowReviewModal(true);
               }}
-              className="text-xs font-semibold text-slate-900 hover:text-blue-600 transition-colors"
+              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
             >
               + {isUz ? "Fikr bildirish" : "Write Review"}
             </button>
@@ -242,38 +242,47 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         </div>
 
         <div className="space-y-2.5">
-          {reviews.slice(0, 3).map((rev) => (
-            <div
-              key={rev.id}
-              className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">
-                  {rev.studentName}
-                </span>
-                <div className="flex text-amber-500 text-xs">
-                  {"★".repeat(rev.rating)}
+          {reviews.length > 0 ? (
+            reviews.slice(0, 3).map((rev) => (
+              <div
+                key={rev.id}
+                className="p-3.5 bg-slate-800/70 rounded-xl border border-white/5 space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white/95">
+                    {rev.studentName}
+                  </span>
+                  <div className="flex text-amber-400 text-xs">
+                    {"★".repeat(rev.rating)}
+                  </div>
+                </div>
+                <p className="text-xs text-white/75 leading-relaxed">{rev.comment}</p>
+                <div className="text-[10px] text-white/50 font-mono">
+                  {rev.universityName} · {rev.programName}
                 </div>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
-              <div className="text-[10px] text-slate-400">
-                {rev.universityName} · {rev.programName}
-              </div>
+            ))
+          ) : (
+            <div className="py-6 text-center text-xs text-white/50">
+              {isUz ? "Hozircha sharhlar mavjud emas" : "No reviews yet"}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-sm bg-white rounded-2xl p-5 space-y-4 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-sm bg-slate-950 border border-white/15 rounded-2xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-white/95">
                 {isUz ? "Sharh Qoldirish" : "Write Review"}
               </h3>
-              <button onClick={() => setShowReviewModal(false)}>
-                <X className="w-4 h-4 text-slate-400" />
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-800 text-white/60 hover:text-white/95 flex items-center justify-center border border-white/10"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -286,7 +295,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     onClick={() => setRating(s)}
                     className="p-1 text-xl"
                   >
-                    <span className={s <= rating ? "text-amber-500" : "text-slate-200"}>
+                    <span className={s <= rating ? "text-amber-400" : "text-slate-700"}>
                       ★
                     </span>
                   </button>
@@ -298,14 +307,14 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder={isUz ? "Fikringizni yozing..." : "Your review..."}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-slate-800 resize-none"
+                className="w-full p-3 bg-slate-900 border border-white/10 rounded-xl text-xs text-white/95 placeholder-white/40 focus:outline-none focus:border-blue-500 resize-none shadow-inner"
               />
             </div>
 
             <button
               onClick={handleSendReview}
               disabled={submittingReview || !comment.trim()}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white/95 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-lg shadow-blue-600/30"
             >
               {isUz ? "Yuborish" : "Submit"}
             </button>

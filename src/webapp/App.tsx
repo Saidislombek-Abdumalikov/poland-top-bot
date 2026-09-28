@@ -136,15 +136,15 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-3">
-        <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+      <div className="w-full min-h-screen bg-[#070b14] text-white/95 flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/10 text-white flex items-center justify-center font-bold text-xl shadow-lg">
           🇵🇱
         </div>
         <div className="space-y-1">
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-sm font-black text-white/95 tracking-tight">
             Poland Top Universities
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-white/60">
             {lang === "uz" ? "Portal yuklanmoqda..." : "Loading portal..."}
           </p>
         </div>
@@ -162,25 +162,40 @@ export const App: React.FC = () => {
     );
   }
 
-  // Gatekeeping: if not registered or no accepted terms
-  const isRegisteredAndAgreed = Boolean(user?.isRegistered);
+  // Gatekeeping: Require complete student onboarding (birth year & education status)
+  const hasCompletedOnboarding = Boolean(
+    user && user.isRegistered && user.birthYear && user.educationStatus
+  );
 
-  if (!isRegisteredAndAgreed) {
+  if (!hasCompletedOnboarding) {
     return (
-      <div className="app-container w-full min-h-screen bg-slate-950 flex flex-col">
-        <main className="flex-1 max-w-lg mx-auto w-full flex items-center justify-center">
+      <div className="app-container w-full min-h-screen bg-[#070b14] text-white/95 flex flex-col">
+        <main className="flex-1 max-w-lg mx-auto w-full flex items-center justify-center p-3 sm:p-4">
           <NotRegisteredScreen 
             lang={lang} 
             userId={user?.id}
             onComplete={async (data) => {
-              if (user) {
-                setUser({ ...user, ...data, isRegistered: true });
-                setActiveTab("roadmap"); // Show roadmap right after onboarding
-                try {
-                  const freshUser = await fetchCurrentUser();
-                  if (freshUser) setUser(freshUser);
-                } catch (e) {}
-              }
+              const updatedUser: UserProfile = {
+                ...(user || {
+                  id: (data as any).userId || 100001,
+                  fullName: data.fullName || "Talaba",
+                  firstName: (data.fullName || "Talaba").split(" ")[0],
+                  lastName: (data.fullName || "Talaba").split(" ")[1] || "",
+                  username: "student",
+                  phone: data.phone || "",
+                  lang,
+                  preferredLevel: data.preferredLevel || "Bachelor",
+                  isAdmin: false,
+                }),
+                ...data,
+                isRegistered: true,
+              };
+              setUser(updatedUser);
+              setActiveTab("roadmap"); // Show roadmap right after onboarding
+              try {
+                const freshUser = await fetchCurrentUser(updatedUser.id);
+                if (freshUser) setUser(freshUser);
+              } catch (e) {}
             }} 
           />
         </main>
@@ -189,7 +204,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="app-container w-full min-h-screen bg-slate-50 flex flex-col">
+    <div className="app-container w-full min-h-screen bg-[#070b14] text-white/95 flex flex-col selection:bg-blue-600 selection:text-white">
       {/* Top Header */}
       <Header
         user={user}
