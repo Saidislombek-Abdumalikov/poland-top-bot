@@ -492,4 +492,26 @@ export function setupStartHandler(bot: Bot) {
       reply_markup: getMainMenuKeyboard(user.lang, userId),
     });
   });
+
+  // Contact / Help commands
+  bot.command(["contact", "murojaat", "help"], async (ctx) => {
+    const userId = ctx.from?.id;
+    const isUz = (userId ? db.getUser(userId).lang : "uz") === "uz";
+    const contactText = isUz
+      ? `📞 <b>Savollar va Murojaat uchun:</b>\n\n` +
+        `Polsha universitetlariga qabul, viza va hujjatlar bo'yicha rasmiy maslahatchimiz:\n` +
+        `👉 <b>Telegram:</b> @mirzausmon1\n\n` +
+        `Barcha savollaringizga mamnuniyat bilan javob beramiz!`
+      : `📞 <b>Official Admissions Contact:</b>\n\n` +
+        `For questions regarding Polish universities, documents, and student visas:\n` +
+        `👉 <b>Telegram:</b> @mirzausmon1`;
+
+    await ctx.reply(contactText, {
+      parse_mode: "HTML",
+      reply_markup: new InlineKeyboard().url(
+        isUz ? "💬 Telegramda yozish" : "💬 Message on Telegram",
+        "https://t.me/mirzausmon1"
+      ),
+    });
+  });
 }

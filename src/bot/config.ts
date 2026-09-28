@@ -7,7 +7,7 @@ export const config = {
     process.env.BOT_TOKEN ||
     process.env.TELEGRAM_BOT_TOKEN ||
     "8387916648:AAG1elnfEXLhEwtOYX1r64S52vG0AECCnK0",
-  advisorUsername: process.env.ADVISOR_USERNAME || "polandM7",
+  advisorUsername: process.env.ADVISOR_USERNAME || "mirzausmon1",
   adminPasscode: process.env.ADMIN_PASSCODE || "PTUADMIN2025",
   adminIds: (process.env.ADMIN_IDS || "")
     .split(",")

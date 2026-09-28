@@ -18,6 +18,9 @@ export interface UserProfile {
   
   // Onboarding
   age?: number;
+  birthYear?: number;
+  educationStatus?: string;
+  graduationYear?: number;
   hasPassport?: string;
   budget?: string;
   preferredField?: string;

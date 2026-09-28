@@ -184,6 +184,9 @@ export interface UserSessionData {
 
   // Onboarding
   age?: number;
+  birthYear?: number;
+  educationStatus?: string;
+  graduationYear?: number;
   hasPassport?: string;
   budget?: string;
   preferredField?: string;

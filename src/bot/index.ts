@@ -97,6 +97,9 @@ export function createServerApp() {
           ? new Date(user.acceptedOfertaAt).getTime()
           : undefined,
         age: user.age,
+        birthYear: user.birthYear,
+        educationStatus: user.educationStatus,
+        graduationYear: user.graduationYear,
         hasPassport: user.hasPassport,
         budget: user.budget,
         preferredField: user.preferredField,

@@ -33,7 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   }[] = [
     {
       id: "roadmap",
-      label: isUz ? "Xarita" : "Roadmap",
+      label: isUz ? "Yo'l Xaritasi" : "Roadmap",
       icon: MapPin,
     },
     {

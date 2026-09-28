@@ -167,15 +167,19 @@ export const App: React.FC = () => {
 
   if (!isRegisteredAndAgreed) {
     return (
-      <div className="app-container w-full min-h-screen bg-slate-50 flex flex-col">
+      <div className="app-container w-full min-h-screen bg-slate-950 flex flex-col">
         <main className="flex-1 max-w-lg mx-auto w-full flex items-center justify-center">
           <NotRegisteredScreen 
             lang={lang} 
             userId={user?.id}
-            onComplete={(data) => {
+            onComplete={async (data) => {
               if (user) {
                 setUser({ ...user, ...data, isRegistered: true });
                 setActiveTab("roadmap"); // Show roadmap right after onboarding
+                try {
+                  const freshUser = await fetchCurrentUser();
+                  if (freshUser) setUser(freshUser);
+                } catch (e) {}
               }
             }} 
           />

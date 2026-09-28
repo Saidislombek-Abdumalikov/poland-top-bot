@@ -193,6 +193,29 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         )}
       </div>
 
+      {/* Official Admissions Advisor Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-[2rem] p-5 border border-blue-900/60 shadow-lg text-white flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 block">
+            {isUz ? "Rasmiy Maslahatchi" : "Official Admissions Advisor"}
+          </span>
+          <h4 className="text-sm font-bold text-white">
+            {isUz ? "Savollar yoki yordam kerakmi?" : "Need admissions help?"}
+          </h4>
+          <p className="text-xs text-blue-200/90 font-mono">
+            {isUz ? "Murojaat uchun: @mirzausmon1" : "Contact on Telegram: @mirzausmon1"}
+          </p>
+        </div>
+        <a
+          href="https://t.me/mirzausmon1"
+          target="_blank"
+          rel="noreferrer"
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shrink-0 transition-colors shadow-lg shadow-blue-600/30"
+        >
+          {isUz ? "Bog'lanish" : "Contact"}
+        </a>
+      </div>
+
       {/* Student Reviews Section */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
         <div className="flex items-center justify-between">

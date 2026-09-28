@@ -39,14 +39,16 @@ export async function analyzeStudentProfile(
   const prompt = `You are the lead admissions AI counselor for Poland Top Universities (PTU).
 Analyze this international student applicant profile:
 - Full Name: ${user.fullName || "Student"}
-- Age: ${user.age || "Not specified"}
+- Birth Year: ${user.birthYear || user.age || "2006"}
+- Current Education Status: ${user.educationStatus || "High school / Lyceum"}
+- Graduation Year: ${user.graduationYear || "2026"}
 - Target Degree Level: ${user.preferredLevel || "Bachelor"}
 - Target Field of Study: ${user.preferredField || "IT"}
-- English Language Certificate: ${user.englishLevel || "None"}
+- English Language Certificate / Level: ${user.englishLevel || "None"}
 - Polish Language Level: ${user.polishLevel || "None"}
 - Math Proficiency: ${user.mathLevel || "Average"}
 - SAT: ${user.hasSat || "No"}
-- Budget (Tuition): ${user.budget || "Average ($2,800 - $4,400)"}
+- Budget (Tuition): ${user.budget || "Average ($2,800 - $4,400 USD)"}
 - Target Intake Year: ${user.targetIntake || "2026"}
 - Has International Passport: ${user.hasPassport || "Yes"}
 
