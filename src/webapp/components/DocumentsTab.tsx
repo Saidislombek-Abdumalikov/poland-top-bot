@@ -37,7 +37,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   const docDefs = [
     {
       id: "passport",
-      title: isUz ? "Xorijga Chiqish Pasporti (Zagran)" : "International Passport",
+      title: isUz ? "Xorijga Chiqish Pasporti" : "International Passport",
       desc: isUz
         ? "Rangli skaner nusxa, kamida 18 oy amal qilish muddati."
         : "Color scan of info page, valid for at least 18 months.",
@@ -61,7 +61,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     },
     {
       id: "eligibility",
-      title: isUz ? "O'qish Huquqi Ma'lumotnomasi (Eligibility)" : "Eligibility Letter",
+      title: isUz ? "O'qish Huquqi Ma'lumotnomasi" : "Eligibility Letter",
       desc: isUz
         ? "Oldingi ta'lim diplomi keyingi bosqichda o'qish huquqini berishi haqida."
         : "Confirmation of eligibility for higher education studies.",

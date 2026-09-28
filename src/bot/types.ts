@@ -193,6 +193,7 @@ export interface UserSessionData {
   hasSat?: string;
   interests?: string;
   targetIntake?: string;
+  aiAnalysis?: any;
   isRegistered: boolean;
   isAdmin: boolean;
   adminRole?: AdminRole;

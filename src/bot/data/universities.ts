@@ -2,389 +2,739 @@ import { University } from "../types";
 
 export const universities: University[] = [
   {
-    id: "uw",
-    name: "University of Warsaw",
-    abbr: "UW",
-    city: "Warsaw",
-    type: "Public",
-    founded: 1816,
-    website: "https://en.uw.edu.pl",
-    programsCount: 214,
-    students: 42000,
-    internationalStudents: 3800,
-    ranking: "Top 1 in Poland (#1 Perspektywy)",
-    logo: "UW",
-    description: {
-      en: "The University of Warsaw is the largest and most prestigious research university in Poland. It offers a wide array of English-medium undergraduate and graduate programs.",
-      uz: "Varshava universiteti Polshaning eng yirik va nufuzli ilmiy tadqiqot universitetidir. Ingliz tilidagi ko'plab bakalavr va magistratura dasturlarini taklif etadi.",
+    "id": "uw",
+    "name": "University of Warsaw",
+    "abbr": "UW",
+    "city": "Warsaw",
+    "type": "Public",
+    "founded": 1816,
+    "website": "https://en.uw.edu.pl",
+    "programsCount": 214,
+    "students": 42000,
+    "internationalStudents": 3800,
+    "ranking": "Top 1 in Poland (#1 Perspektywy)",
+    "logo": "UW",
+    "description": {
+      "en": "The University of Warsaw is the largest and most prestigious research university in Poland. It offers a wide array of English-medium undergraduate and graduate programs.",
+      "uz": "Varshava universiteti Polshaning eng yirik va nufuzli ilmiy tadqiqot universitetidir. Ingliz tilidagi ko'plab bakalavr va magistratura dasturlarini taklif etadi."
     },
-    faculties: [
-      "Faculty of Mathematics, Informatics and Mechanics",
-      "Faculty of Economic Sciences",
-      "Faculty of Law and Administration",
-      "Faculty of Physics",
-      "Faculty of Political Science and International Studies",
-      "Faculty of Management",
+    "faculties": [
+      "Faculty of Mathematics, Informatics and Mechanics | Matematika, Informatika va Mexanika fakulteti",
+      "Faculty of Economic Sciences | Iqtisodiy Fanlar fakulteti",
+      "Faculty of Law and Administration | Huquq va Boshqaruv fakulteti",
+      "Faculty of Physics | Fizika fakulteti",
+      "Faculty of Political Science and International Studies | Siyosatshunoslik va Xalqaro Tadqiqotlar fakulteti",
+      "Faculty of Management | Menejment fakulteti"
     ],
-    tuition: {
-      eu: "Free (for Polish-taught programs)",
-      nonEu: "2,000 – 5,000 EUR / year",
-      english: "3,000 – 5,200 EUR / year (8,500 – 22,000 PLN)",
+    "tuition": {
+      "eu": "Free (for Polish-taught programs)",
+      "nonEu": "$2,400 – $5,500 USD / year",
+      "english": "$3,300 – $5,700 USD / year"
     },
-    requirements: [
+    "requirements": [
       "High School Diploma (Matura equivalent) with Apostille",
       "English proficiency B2 (IELTS 6.0+ / TOEFL iBT 87+)",
       "Certified translation of documents into Polish",
-      "Passport scan & ID photos",
+      "Passport scan & ID photos"
     ],
-    deadline: "May 31, 2025 (October 2025 intake)",
+    "deadline": "July 15, 2026"
   },
   {
-    id: "uj",
-    name: "Jagiellonian University",
-    abbr: "JU",
-    city: "Kraków",
-    type: "Public",
-    founded: 1364,
-    website: "https://en.uj.edu.pl",
-    programsCount: 196,
-    students: 38000,
-    internationalStudents: 4200,
-    ranking: "Top 2 in Poland (#2 Perspektywy)",
-    logo: "JU",
-    description: {
-      en: "One of Europe's oldest universities, founded in 1364 by King Casimir the Great. Renowned for Medicine, Law, Philosophy, and International Studies.",
-      uz: "Yevropaning eng qadimiy universitetlaridan biri, 1364-yilda tashkil etilgan. Tibbiyot, Huquq, Falsafa va Xalqaro munosabatlar yo'nalishlarida mashhur.",
+    "id": "uj",
+    "name": "Jagiellonian University",
+    "abbr": "JU",
+    "city": "Kraków",
+    "type": "Public",
+    "founded": 1364,
+    "website": "https://en.uj.edu.pl",
+    "programsCount": 196,
+    "students": 38000,
+    "internationalStudents": 4200,
+    "ranking": "Top 2 in Poland (#2 Perspektywy)",
+    "logo": "JU",
+    "description": {
+      "en": "One of Europe's oldest universities, founded in 1364 by King Casimir the Great. Renowned for Medicine, Law, Philosophy, and International Studies.",
+      "uz": "Yevropaning eng qadimiy universitetlaridan biri, 1364-yilda tashkil etilgan. Tibbiyot, Huquq, Falsafa va Xalqaro munosabatlar yo'nalishlarida mashhur."
     },
-    faculties: [
-      "Faculty of Medicine (Collegium Medicum)",
-      "Faculty of Law and Administration",
-      "Faculty of International and Political Studies",
-      "Faculty of Physics, Astronomy and Applied CS",
-      "Faculty of Biochemistry, Biophysics and Biotechnology",
+    "faculties": [
+      "Faculty of Medicine (Collegium Medicum) | Tibbiyot fakulteti",
+      "Faculty of Law and Administration | Huquq va Boshqaruv fakulteti",
+      "Faculty of International and Political Studies | Xalqaro va Siyosiy Tadqiqotlar fakulteti",
+      "Faculty of Physics, Astronomy and Applied CS | Fizika, Astronomiya va Amaliy IT fakulteti",
+      "Faculty of Biochemistry, Biophysics and Biotechnology | Biokimyo va Biotexnologiya fakulteti"
     ],
-    tuition: {
-      eu: "Free (for Polish-taught programs)",
-      nonEu: "2,200 – 4,500 EUR / year",
-      english: "4,000 – 14,000 EUR / year (Medicine: ~15,000 EUR)",
+    "tuition": {
+      "eu": "Free (for Polish-taught programs)",
+      "nonEu": "$2,800 – $5,000 USD / year",
+      "english": "$4,400 – $15,400 USD / year (Medicine: ~$16,500 USD)"
     },
-    requirements: [
+    "requirements": [
       "Secondary school diploma with Apostille",
-      "English B2/C1 certificate",
+      "English B2/C1 certificate (IELTS 6.5+)",
       "Medical checkup certificate (for Medicine)",
-      "Entrance examination / interview (for select programs)",
+      "Entrance examination / interview"
     ],
-    deadline: "June 15, 2025",
+    "deadline": "June 30, 2026"
   },
   {
-    id: "pw",
-    name: "Warsaw University of Technology",
-    abbr: "WUT",
-    city: "Warsaw",
-    type: "Public",
-    founded: 1826,
-    website: "https://www.pw.edu.pl/engpw",
-    programsCount: 87,
-    students: 32000,
-    internationalStudents: 2500,
-    ranking: "Top 1 Technical University in Poland",
-    logo: "PW",
-    description: {
-      en: "The leading technical university in Central Europe, producing top software engineers, architects, data scientists, and robotics specialists.",
-      uz: "Markaziy Yevropadagi yetakchi texnika universiteti bo'lib, eng yaxshi dasturchilar, arxitektorlar va muhandislarni tayyorlaydi.",
+    "id": "pw",
+    "name": "Warsaw University of Technology",
+    "abbr": "WUT",
+    "city": "Warsaw",
+    "type": "Public",
+    "founded": 1826,
+    "website": "https://www.pw.edu.pl/engpw",
+    "programsCount": 87,
+    "students": 32000,
+    "internationalStudents": 2500,
+    "ranking": "Top 1 Technical University in Poland",
+    "logo": "PW",
+    "description": {
+      "en": "The leading technical university in Central Europe, producing top software engineers, architects, data scientists, and robotics specialists.",
+      "uz": "Markaziy Yevropadagi yetakchi texnika universiteti bo'lib, eng yaxshi dasturchilar, arxitektorlar va muhandislarni tayyorlaydi."
     },
-    faculties: [
-      "Faculty of Electronics and Information Technology",
-      "Faculty of Mathematics and Information Science",
-      "Faculty of Civil Engineering",
-      "Faculty of Architecture",
-      "Faculty of Power and Aeronautical Engineering",
+    "faculties": [
+      "Faculty of Electronics and Information Technology | Elektronika va Axborot Texnologiyalari fakulteti",
+      "Faculty of Mathematics and Information Science | Matematika va Axborot Fanlari fakulteti",
+      "Faculty of Civil Engineering | Fuqarolik Qurlishi Muhandisligi fakulteti",
+      "Faculty of Architecture | Arxitektura fakulteti",
+      "Faculty of Power and Aeronautical Engineering | Energetika va Aeronavtika fakulteti"
     ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "3,000 – 4,500 EUR / year",
-      english: "3,000 – 4,500 EUR / year (approx. 9,000 – 19,000 PLN)",
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$3,300 – $5,000 USD / year",
+      "english": "$3,300 – $5,000 USD / year"
     },
-    requirements: [
+    "requirements": [
       "High school diploma with Mathematics & Physics grades",
       "English B2 certificate (IELTS 6.0+)",
       "Entrance math exam (online)",
-      "Apostille & certified Polish translation",
+      "Apostille & certified translation"
     ],
-    deadline: "June 30, 2025",
+    "deadline": "July 10, 2026"
   },
   {
-    id: "agh",
-    name: "AGH University of Krakow",
-    abbr: "AGH",
-    city: "Kraków",
-    type: "Public",
-    founded: 1919,
-    website: "https://www.agh.edu.pl/en",
-    programsCount: 72,
-    students: 27000,
-    internationalStudents: 2100,
-    ranking: "Top 2 Technical University in Poland",
-    logo: "AGH",
-    description: {
-      en: "A modern technical university with world-class laboratories, computer science centers, and strong industry partnerships with global tech giants.",
-      uz: "Zamonaviy laboratoriyalar, IT markazlari va jahon texnologiya gigantlari bilan mustahkam hamkorlikka ega nufuzli texnika universiteti.",
+    "id": "agh",
+    "name": "AGH University of Krakow",
+    "abbr": "AGH",
+    "city": "Kraków",
+    "type": "Public",
+    "founded": 1919,
+    "website": "https://www.agh.edu.pl/en",
+    "programsCount": 72,
+    "students": 27000,
+    "internationalStudents": 2100,
+    "ranking": "Top 2 Technical University in Poland",
+    "logo": "AGH",
+    "description": {
+      "en": "A modern technical university with world-class laboratories, computer science centers, and strong industry partnerships with global tech giants.",
+      "uz": "Zamonaviy laboratoriyalar, IT markazlari va jahon texnologiya gigantlari bilan mustahkam hamkorlikka ega nufuzli texnika universiteti."
     },
-    faculties: [
-      "Faculty of Computer Science, Electronics and Telecom",
-      "Faculty of Electrical Engineering and Robotics",
-      "Faculty of Mechanical Engineering",
-      "Faculty of Energy and Fuels",
+    "faculties": [
+      "Faculty of Computer Science, Electronics and Telecom | Informatika, Elektronika va Telekommunikatsiya fakulteti",
+      "Faculty of Electrical Engineering and Robotics | Elektrotexnika va Robototexnika fakulteti",
+      "Faculty of Mechanical Engineering and Robotics | Mexanika Muhandisligi fakulteti",
+      "Faculty of Energy and Fuels | Energetika va Yoqilg'i fakulteti"
     ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "2,000 – 3,500 EUR / year",
-      english: "2,500 – 3,800 EUR / year (approx. 7,000 – 16,000 PLN)",
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,400 – $4,000 USD / year",
+      "english": "$2,800 – $4,200 USD / year"
     },
-    requirements: [
+    "requirements": [
       "High school diploma + Apostille",
       "IELTS 6.0 / TOEFL 80 or equivalent",
-      "Strong background in STEM subjects",
+      "Strong background in STEM subjects"
     ],
-    deadline: "June 10, 2025",
+    "deadline": "June 30, 2026"
   },
   {
-    id: "pwr",
-    name: "Wrocław University of Science and Technology",
-    abbr: "PWr",
-    city: "Wrocław",
-    type: "Public",
-    founded: 1945,
-    website: "https://pwr.edu.pl/en",
-    programsCount: 63,
-    students: 25000,
-    internationalStudents: 1800,
-    ranking: "Top 3 Technical University in Poland",
-    logo: "PWr",
-    description: {
-      en: "Located in Poland's Silicon Valley (Wrocław), PWr offers exceptional technical education, high graduate employment, and modern campus facilities.",
-      uz: "Polshaning IT markazi (Vrotslav) shahrida joylashgan bo'lib, yuqori ish bilan ta'minlanish darajasi va zamonaviy kampusga ega.",
+    "id": "pwr",
+    "name": "Wrocław University of Science and Technology",
+    "abbr": "PWr",
+    "city": "Wrocław",
+    "type": "Public",
+    "founded": 1945,
+    "website": "https://pwr.edu.pl/en",
+    "programsCount": 63,
+    "students": 25000,
+    "internationalStudents": 1800,
+    "ranking": "Top 3 Technical University in Poland",
+    "logo": "PWr",
+    "description": {
+      "en": "Located in Poland's Silicon Valley (Wrocław), PWr offers exceptional technical education, high graduate employment, and modern campus facilities.",
+      "uz": "Polshaning IT markazi (Vrotslav) shahrida joylashgan bo'lib, yuqori ish bilan ta'minlanish darajasi va zamonaviy kampusga ega."
     },
-    faculties: [
-      "Faculty of Information and Communication Technology",
-      "Faculty of Mechanical and Power Engineering",
-      "Faculty of Chemistry",
-      "Faculty of Environmental Engineering",
+    "faculties": [
+      "Faculty of Information and Communication Technology | Axborot va Kommunikatsiya Texnologiyalari fakulteti",
+      "Faculty of Mechanical and Power Engineering | Mexanika va Energetika fakulteti",
+      "Faculty of Chemistry | Kimyo fakulteti",
+      "Faculty of Environmental Engineering | Atrof-muhit Muhandisligi fakulteti"
     ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "2,500 – 3,500 EUR / year",
-      english: "3,000 – 4,000 EUR / year",
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,800 – $4,000 USD / year",
+      "english": "$3,300 – $4,500 USD / year"
     },
-    requirements: [
+    "requirements": [
       "Secondary education certificate + Apostille",
       "English B2 level certificate",
-      "Math and Physics proficiency",
+      "Math and Physics proficiency"
     ],
-    deadline: "May 30, 2025",
+    "deadline": "June 25, 2026"
   },
   {
-    id: "amu",
-    name: "Adam Mickiewicz University",
-    abbr: "AMU",
-    city: "Poznań",
-    type: "Public",
-    founded: 1919,
-    website: "https://amu.edu.pl/en",
-    programsCount: 158,
-    students: 35000,
-    internationalStudents: 2200,
-    ranking: "Top 3 Comprehensive University",
-    logo: "AMU",
-    description: {
-      en: "One of the largest Polish universities, offering outstanding programs in Humanities, Social Sciences, Natural Sciences, and Linguistics in Poznań.",
-      uz: "Poznan shahrida joylashgan bo'lib, Gumanitar, Ijtimoiy, Tabiiy fanlar va Tilshunoslik bo'yicha yetakchi hisoblanadi.",
+    "id": "put",
+    "name": "Poznań University of Technology",
+    "abbr": "PUT",
+    "city": "Poznań",
+    "type": "Public",
+    "founded": 1919,
+    "website": "https://put.poznan.pl/en",
+    "programsCount": 45,
+    "students": 18000,
+    "internationalStudents": 1200,
+    "ranking": "Top 4 Technical University in Poland",
+    "logo": "PUT",
+    "description": {
+      "en": "One of Poland's premier engineering schools, known for automotive engineering, artificial intelligence, and aerospace engineering in Poznań.",
+      "uz": "Polshaning yetakchi muhandislik oliygohlaridan biri. Avtomobilsozlik, sun'iy intellekt va aviatsiya sohalarida nufuzli hisoblanadi."
     },
-    faculties: [
-      "Faculty of Psychology and Cognitive Science",
-      "Faculty of English & Modern Languages",
-      "Faculty of Law and Administration",
-      "Faculty of Biology",
+    "faculties": [
+      "Faculty of Computing and Telecommunications | Hisoblash va Telekommunikatsiya fakulteti",
+      "Faculty of Mechanical Engineering | Mexanika Muhandisligi fakulteti",
+      "Faculty of Architecture | Arxitektura fakulteti",
+      "Faculty of Engineering Management | Muhandislik Menejmenti fakulteti"
     ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "1,800 – 3,200 EUR / year",
-      english: "2,200 – 4,000 EUR / year",
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,500 – $3,800 USD / year",
+      "english": "$2,800 – $4,200 USD / year"
     },
-    requirements: [
-      "High school diploma + Apostille",
-      "English B2 or Polish B2 (depending on track)",
+    "requirements": [
+      "High school diploma with Apostille",
+      "English B2 certificate (IELTS 6.0+)",
+      "Math background"
     ],
-    deadline: "May 20, 2025",
+    "deadline": "July 15, 2026"
   },
   {
-    id: "kozminski",
-    name: "Kozminski University",
-    abbr: "KU",
-    city: "Warsaw",
-    type: "Private",
-    founded: 1993,
-    website: "https://www.kozminski.edu.pl/en",
-    programsCount: 28,
-    students: 9000,
-    internationalStudents: 2800,
-    ranking: "#1 Private Business University in Central Europe (FT Ranked)",
-    logo: "KU",
-    description: {
-      en: "Triple-crown accredited (EQUIS, AMBA, AACSB) top-ranked international business school offering premier degrees in Management, Finance, and AI.",
-      uz: "Xalqaro 'Triple Crown' (EQUIS, AMBA, AACSB) akkreditatsiyasiga ega, Yevropadagi yetakchi xususiy biznes va moliya universiteti.",
+    "id": "sgh",
+    "name": "SGH Warsaw School of Economics",
+    "abbr": "SGH",
+    "city": "Warsaw",
+    "type": "Public",
+    "founded": 1906,
+    "website": "https://www.sgh.waw.pl/en",
+    "programsCount": 35,
+    "students": 13000,
+    "internationalStudents": 1400,
+    "ranking": "Top #1 Economics University in Poland",
+    "logo": "SGH",
+    "description": {
+      "en": "The oldest and most prestigious economics and business university in Poland, renowned for producing ministers, CEOs, and financial leaders.",
+      "uz": "Polshaning eng qadimiy va nufuzli iqtisodiyot universiteti bo'lib, yetakchi iqtisodchilar va moliyachilarni yetishtirib chiqaradi."
     },
-    faculties: [
-      "Kozminski Business School",
-      "Kozminski Law School",
-      "Department of Finance and Banking",
-      "Center for AI and Digital Transformation",
+    "faculties": [
+      "Collegium of World Economy | Jahon Iqtisodiyoti Kollegiyasi",
+      "Collegium of Economic Analysis | Iqtisodiy Tahlil Kollegiyasi",
+      "Collegium of Management and Finance | Menejment va Moliya Kollegiyasi",
+      "Collegium of Socio-Economics | Ijtimoiy-Iqtisodiy Kollegiya"
     ],
-    tuition: {
-      eu: "4,500 – 8,000 EUR / year",
-      nonEu: "4,500 – 9,000 EUR / year (18,000 – 36,000 PLN)",
-      english: "4,500 – 9,000 EUR / year",
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,800 – $4,800 USD / year",
+      "english": "$3,300 – $5,300 USD / year"
     },
-    requirements: [
-      "High school certificate",
-      "English B2/C1 (IELTS 6.5+ / TOEFL)",
-      "Online interview & motivation essay",
-    ],
-    deadline: "Rolling admissions (early intake encouraged)",
-  },
-  {
-    id: "swps",
-    name: "SWPS University of Social Sciences and Humanities",
-    abbr: "SWPS",
-    city: "Warsaw",
-    type: "Private",
-    founded: 1996,
-    website: "https://english.swps.pl",
-    programsCount: 41,
-    students: 17000,
-    internationalStudents: 2000,
-    ranking: "#1 Private Social Sciences & Psychology University",
-    logo: "SWPS",
-    description: {
-      en: "Poland's top university for Psychology, Design, Law, and Social Sciences with campuses in Warsaw, Wrocław, Poznań, Kraków, and Katowice.",
-      uz: "Polshaning Psixologiya, Dizayn va Ijtimoiy fanlar bo'yicha 1-raqamli xususiy universiteti.",
-    },
-    faculties: [
-      "Faculty of Psychology in Warsaw",
-      "Faculty of Arts and Social Sciences",
-      "School of Form (Design)",
-      "Faculty of Law",
-    ],
-    tuition: {
-      eu: "3,500 – 6,500 EUR / year",
-      nonEu: "3,500 – 7,000 EUR / year (14,000 – 28,000 PLN)",
-      english: "3,800 – 7,000 EUR / year",
-    },
-    requirements: [
-      "Secondary school certificate",
-      "English B2 certificate",
-      "Portfolio (for Design programs)",
-    ],
-    deadline: "July 15, 2025",
-  },
-  {
-    id: "sgh",
-    name: "SGH Warsaw School of Economics",
-    abbr: "SGH",
-    city: "Warsaw",
-    type: "Public",
-    founded: 1906,
-    website: "https://www.sgh.waw.pl/en",
-    programsCount: 35,
-    students: 13000,
-    internationalStudents: 1400,
-    ranking: "Top #1 Economics University in Poland",
-    logo: "SGH",
-    description: {
-      en: "The oldest and most prestigious economics and business university in Poland, renowned for producing ministers, CEOs, and financial leaders.",
-      uz: "Polshaning eng qadimiy va nufuzli iqtisodiyot universiteti bo'lib, yetakchi iqtisodchilar va moliyachilarni yetishtirib chiqaradi.",
-    },
-    faculties: [
-      "Collegium of World Economy",
-      "Collegium of Economic Analysis",
-      "Collegium of Management and Finance",
-      "Collegium of Socio-Economics",
-    ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "2,500 – 4,200 EUR / year",
-      english: "3,000 – 4,800 EUR / year (12,000 – 20,000 PLN)",
-    },
-    requirements: [
+    "requirements": [
       "High school diploma with Mathematics emphasis",
       "English proficiency B2+",
-      "SGH online knowledge assessment",
+      "SGH online knowledge assessment"
     ],
-    deadline: "June 20, 2025",
+    "deadline": "June 20, 2026"
   },
   {
-    id: "pg",
-    name: "Gdańsk University of Technology",
-    abbr: "GUT",
-    city: "Gdańsk",
-    type: "Public",
-    founded: 1904,
-    website: "https://pg.edu.pl/en",
-    programsCount: 54,
-    students: 16000,
-    internationalStudents: 1300,
-    ranking: "Top Technical University on Baltic Coast",
-    logo: "PG",
-    description: {
-      en: "A historic Baltic university offering strong engineering, architecture, electronics, and maritime technology programs.",
-      uz: "Boltiq bo'yidagi qadimiy texnika universiteti; muhandislik, IT va dengiz texnologiyalari bo'yicha mashhur.",
+    "id": "kozminski",
+    "name": "Kozminski University",
+    "abbr": "KU",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1993,
+    "website": "https://www.kozminski.edu.pl/en",
+    "programsCount": 28,
+    "students": 9000,
+    "internationalStudents": 2800,
+    "ranking": "#1 Private Business University in Central Europe (FT Ranked)",
+    "logo": "KU",
+    "description": {
+      "en": "Triple-crown accredited (EQUIS, AMBA, AACSB) top-ranked international business school offering premier degrees in Management, Finance, and AI.",
+      "uz": "Xalqaro 'Triple Crown' (EQUIS, AMBA, AACSB) akkreditatsiyasiga ega, Yevropadagi yetakchi xususiy biznes va moliya universiteti."
     },
-    faculties: [
-      "Faculty of Electronics, Telecom and Informatics",
-      "Faculty of Civil and Environmental Engineering",
-      "Faculty of Applied Physics and Mathematics",
+    "faculties": [
+      "Kozminski Business School | Kozminski Biznes Maktabi",
+      "Kozminski Law School | Kozminski Huquq Maktabi",
+      "Department of Finance and Banking | Moliya va Bank Ishi Departamenti",
+      "Center for AI and Digital Transformation | Sun'iy Intellekt va Raqamlashtirish Markazi"
     ],
-    tuition: {
-      eu: "Free (Polish programs)",
-      nonEu: "2,000 – 3,500 EUR / year",
-      english: "2,800 – 4,000 EUR / year",
+    "tuition": {
+      "eu": "$5,000 – $8,800 USD / year",
+      "nonEu": "$5,000 – $9,900 USD / year",
+      "english": "$5,000 – $9,900 USD / year"
     },
-    requirements: ["High school diploma + Apostille", "English B2 certificate"],
-    deadline: "July 1, 2025",
+    "requirements": [
+      "High school certificate + Apostille",
+      "English B2/C1 (IELTS 6.5+ / TOEFL)",
+      "Online interview & motivation essay"
+    ],
+    "deadline": "August 1, 2026 (Rolling)"
   },
   {
-    id: "pjatk",
-    name: "Polish-Japanese Academy of Information Technology",
-    abbr: "PJATK",
-    city: "Warsaw",
-    type: "Private",
-    founded: 1994,
-    website: "https://pja.edu.pl/en",
-    programsCount: 15,
-    students: 6000,
-    internationalStudents: 1500,
-    ranking: "#1 Private IT University in Poland",
-    logo: "PJATK",
-    description: {
-      en: "One of the best IT and Computer Science academies in Poland, established in cooperation with the Japanese government, offering cutting-edge tech and design degrees.",
-      uz: "Polshadagi eng yaxshi IT va Kompyuter fanlari akademiyasi bo'lib, Yaponiya hukumati bilan hamkorlikda tashkil etilgan. Eng zamonaviy texnologiya va dizayn dasturlarini taklif etadi.",
+    "id": "pjatk",
+    "name": "Polish-Japanese Academy of Information Technology",
+    "abbr": "PJATK",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1994,
+    "website": "https://pja.edu.pl/en",
+    "programsCount": 15,
+    "students": 6000,
+    "internationalStudents": 1500,
+    "ranking": "#1 Private IT University in Poland",
+    "logo": "PJATK",
+    "description": {
+      "en": "One of the best IT and Computer Science academies in Poland, established in cooperation with the Japanese government, offering cutting-edge tech and design degrees.",
+      "uz": "Polshadagi eng yaxshi IT va Kompyuter fanlari akademiyasi bo'lib, Yaponiya hukumati bilan hamkorlikda tashkil etilgan. Eng zamonaviy texnologiya va dizayn dasturlarini taklif etadi."
     },
-    faculties: [
-      "Faculty of Information Management",
-      "Faculty of Computer Science",
-      "Faculty of New Media Arts",
-      "Faculty of Japanese Culture"
+    "faculties": [
+      "Faculty of Computer Science | Kompyuter Fanlari fakulteti",
+      "Faculty of Information Management | Axborot Menejmenti fakulteti",
+      "Faculty of New Media Arts | Yangi Media San'ati va Dizayn fakulteti",
+      "Faculty of Japanese Culture | Yaponiya Madaniyati fakulteti"
     ],
-    tuition: {
-      eu: "3,500 – 4,500 EUR / year",
-      nonEu: "4,000 – 5,000 EUR / year",
-      english: "4,200 – 5,500 EUR / year"
+    "tuition": {
+      "eu": "$3,800 – $5,000 USD / year",
+      "nonEu": "$4,400 – $5,500 USD / year",
+      "english": "$4,600 – $6,000 USD / year"
     },
-    requirements: [
+    "requirements": [
       "High School Diploma with Math emphasis",
       "English B2 level (IELTS 6.0 or TOEFL 80)",
       "Online Interview"
     ],
-    deadline: "July 20, 2025"
+    "deadline": "July 25, 2026"
+  },
+  {
+    "id": "vistula",
+    "name": "Vistula University",
+    "abbr": "VU",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1992,
+    "website": "https://vistula.edu.pl/en",
+    "programsCount": 40,
+    "students": 9500,
+    "internationalStudents": 4500,
+    "ranking": "#1 Most International University in Poland",
+    "logo": "VU",
+    "description": {
+      "en": "Poland's most international university with students from over 100 countries. Offers career-focused degrees in IT, Business, International Relations, and Tourism.",
+      "uz": "100 dan ortiq davlatlardan talabalar o'qiydigan Polshaning eng xalqaro universiteti. IT, Biznes, Xalqaro munosabatlar va Turizm sohalarida amaliy ta'lim beradi."
+    },
+    "faculties": [
+      "Faculty of Business and International Relations | Biznes va Xalqaro Munosabatlar fakulteti",
+      "Faculty of Computer Science | Kompyuter Fanlari va Dasturlash fakulteti",
+      "Faculty of Architecture and Civil Engineering | Arxitektura va Muhandislik fakulteti",
+      "School of Hospitality and Tourism | Mehmondo'stlik va Turizm Maktabi"
+    ],
+    "tuition": {
+      "eu": "$2,800 – $4,200 USD / year",
+      "nonEu": "$3,000 – $4,500 USD / year",
+      "english": "$3,200 – $4,800 USD / year"
+    },
+    "requirements": [
+      "Secondary School Certificate",
+      "English B2 certificate (IELTS 5.5+ or Duolingo)",
+      "Apostille and certified Polish translation"
+    ],
+    "deadline": "August 15, 2026 (Rolling admissions)"
+  },
+  {
+    "id": "lazarski",
+    "name": "Lazarski University",
+    "abbr": "LU",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1993,
+    "website": "https://www.lazarski.pl/en",
+    "programsCount": 30,
+    "students": 7000,
+    "internationalStudents": 2200,
+    "ranking": "Top Private Law and Business University in Warsaw",
+    "logo": "LU",
+    "description": {
+      "en": "Premier private university in Warsaw renowned for Law, Medicine (MD), Aviation Law, and British double-degree programs with Coventry University.",
+      "uz": "Varshavadagi yetakchi xususiy universitet bo'lib, Huquq, Tibbiyot (MD), Aviatsiya huquqi va Britaniya diplomi (Coventry University) dasturlari bilan mashhur."
+    },
+    "faculties": [
+      "Faculty of Law and Administration | Huquq va Boshqaruv fakulteti",
+      "Faculty of Economics and Management | Iqtisodiyot va Menejment fakulteti",
+      "Faculty of Medicine | Tibbiyot fakulteti (Collegium Medicum)",
+      "Department of Aviation and Space Law | Aviatsiya va Fazoviy Huquq Departamenti"
+    ],
+    "tuition": {
+      "eu": "$3,500 – $6,000 USD / year",
+      "nonEu": "$3,800 – $7,500 USD / year (Medicine: ~$13,500 USD)",
+      "english": "$4,000 – $7,500 USD / year"
+    },
+    "requirements": [
+      "High School Diploma + Apostille",
+      "English B2 certificate",
+      "Interview for Medicine / Aviation"
+    ],
+    "deadline": "July 31, 2026"
+  },
+  {
+    "id": "wsb",
+    "name": "WSB Merito University",
+    "abbr": "WSB",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1998,
+    "website": "https://www.merito.pl/english",
+    "programsCount": 50,
+    "students": 45000,
+    "internationalStudents": 5000,
+    "ranking": "Largest Private University Network in Poland",
+    "logo": "WSB",
+    "description": {
+      "en": "Poland's largest private university network with modern campuses in Warsaw, Wrocław, Poznań, and Gdańsk. Highly practical, flexible, and affordable.",
+      "uz": "Polshaning eng yirik xususiy universitetlar tarmog'i. Varshava, Vrotslav, Poznan va Gdanskda zamonaviy korpuslari mavjud. Qulay narx va amaliy ta'lim."
+    },
+    "faculties": [
+      "Faculty of Information Technology | Axborot Texnologiyalari fakulteti",
+      "Faculty of Finance and Management | Moliya va Menejment fakulteti",
+      "Faculty of Logistics and Transport | Logistika va Transport fakulteti",
+      "Faculty of Applied Psychology | Amaliy Psixologiya fakulteti"
+    ],
+    "tuition": {
+      "eu": "$2,200 – $3,500 USD / year",
+      "nonEu": "$2,400 – $3,800 USD / year",
+      "english": "$2,600 – $4,000 USD / year"
+    },
+    "requirements": [
+      "High School Certificate + Apostille",
+      "English B2 certificate (IELTS / Duolingo accepted)",
+      "Passport copy"
+    ],
+    "deadline": "August 20, 2026"
+  },
+  {
+    "id": "uek",
+    "name": "Kraków University of Economics",
+    "abbr": "CUE",
+    "city": "Kraków",
+    "type": "Public",
+    "founded": 1925,
+    "website": "https://uek.krakow.pl/en",
+    "programsCount": 55,
+    "students": 15000,
+    "internationalStudents": 1600,
+    "ranking": "Top Business and Economics University in Southern Poland",
+    "logo": "UEK",
+    "description": {
+      "en": "The largest university of economic sciences in Poland, offering prestigious programs in International Business, Corporate Finance, Logistics, and Data Analytics.",
+      "uz": "Polshadagi eng yirik iqtisodiy oliygoh. Xalqaro biznes, korporativ moliya, logistika va ma'lumotlar tahlili yo'nalishlarida yetakchi."
+    },
+    "faculties": [
+      "College of Economics, Finance and Law | Iqtisodiyot, Moliya va Huquq Kolleji",
+      "College of Management and Quality Sciences | Menejment va Sifat Fanlari Kolleji",
+      "College of Public Economy and Administration | Davlat Iqtisodiyoti va Boshqaruvi Kolleji"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,400 – $3,800 USD / year",
+      "english": "$2,600 – $4,000 USD / year"
+    },
+    "requirements": [
+      "High school certificate with Mathematics",
+      "English B2 certificate (IELTS 6.0+)",
+      "Apostille and Polish certified translation"
+    ],
+    "deadline": "July 5, 2026"
+  },
+  {
+    "id": "swps",
+    "name": "SWPS University of Social Sciences and Humanities",
+    "abbr": "SWPS",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1996,
+    "website": "https://english.swps.pl",
+    "programsCount": 41,
+    "students": 17000,
+    "internationalStudents": 2000,
+    "ranking": "#1 Private Social Sciences & Psychology University",
+    "logo": "SWPS",
+    "description": {
+      "en": "Poland's top university for Psychology, Design, Law, and Social Sciences with campuses in Warsaw, Wrocław, Poznań, Kraków, and Katowice.",
+      "uz": "Polshaning Psixologiya, Dizayn va Ijtimoiy fanlar bo'yicha 1-raqamli xususiy universiteti."
+    },
+    "faculties": [
+      "Faculty of Psychology | Psixologiya fakulteti",
+      "School of Form (Industrial Design) | Dizayn Maktabi (School of Form)",
+      "Faculty of Law | Huquq fakulteti",
+      "Faculty of Arts and Social Sciences | San'at va Ijtimoiy Fanlar fakulteti"
+    ],
+    "tuition": {
+      "eu": "$3,800 – $7,200 USD / year",
+      "nonEu": "$4,000 – $7,700 USD / year",
+      "english": "$4,200 – $7,700 USD / year"
+    },
+    "requirements": [
+      "Secondary school certificate + Apostille",
+      "English B2 certificate",
+      "Portfolio (for Design programs)"
+    ],
+    "deadline": "July 20, 2026"
+  },
+  {
+    "id": "pg",
+    "name": "Gdańsk University of Technology",
+    "abbr": "GUT",
+    "city": "Gdańsk",
+    "type": "Public",
+    "founded": 1904,
+    "website": "https://pg.edu.pl/en",
+    "programsCount": 54,
+    "students": 16000,
+    "internationalStudents": 1300,
+    "ranking": "Top Technical University on Baltic Coast",
+    "logo": "PG",
+    "description": {
+      "en": "A historic Baltic university offering strong engineering, architecture, electronics, and maritime technology programs.",
+      "uz": "Boltiq bo'yidagi qadimiy texnika universiteti; muhandislik, IT va dengiz texnologiyalari bo'yicha mashhur."
+    },
+    "faculties": [
+      "Faculty of Electronics, Telecom and Informatics | Elektronika, Telekom va Informatika fakulteti",
+      "Faculty of Civil and Environmental Engineering | Fuqarolik va Ekologik Muhandislik fakulteti",
+      "Faculty of Applied Physics and Mathematics | Amaliy Fizika va Matematika fakulteti",
+      "Faculty of Mechanical Engineering and Ship Technology | Mexanika va Kema Muhandisligi fakulteti"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,400 – $4,000 USD / year",
+      "english": "$3,100 – $4,400 USD / year"
+    },
+    "requirements": [
+      "High school diploma + Apostille",
+      "English B2 certificate (IELTS 6.0+)"
+    ],
+    "deadline": "July 1, 2026"
+  },
+  {
+    "id": "muw",
+    "name": "Medical University of Warsaw",
+    "abbr": "MUW",
+    "city": "Warsaw",
+    "type": "Public",
+    "founded": 1950,
+    "website": "https://wum.edu.pl/en",
+    "programsCount": 20,
+    "students": 10000,
+    "internationalStudents": 900,
+    "ranking": "#1 Medical University in Poland",
+    "logo": "MUW",
+    "description": {
+      "en": "Poland's premier medical school with 200+ years of medical training traditions. Offers internationally recognized 6-year MD and 5-year Dentistry in English.",
+      "uz": "Polshaning 1-raqamli tibbiyot universiteti. Ingliz tilida xalqaro tan olingan 6 yillik Shifokorlik (MD) va 5 yillik Stomatologiya dasturlarini taklif etadi."
+    },
+    "faculties": [
+      "Faculty of Medicine (MD Program) | Davolash Ishi fakulteti (MD)",
+      "Faculty of Dental Medicine | Stomatologiya fakulteti",
+      "Faculty of Pharmacy | Farmatsiya fakulteti",
+      "Faculty of Health Sciences | Sog'liqni Saqlash Fanlari fakulteti"
+    ],
+    "tuition": {
+      "eu": "$14,500 – $16,500 USD / year",
+      "nonEu": "$15,000 – $17,000 USD / year",
+      "english": "$15,000 – $17,000 USD / year"
+    },
+    "requirements": [
+      "High School Diploma with Biology and Chemistry grades",
+      "English B2/C1 (IELTS 6.5+)",
+      "Entrance exam in Biology & Chemistry (online)",
+      "Medical fitness certificate"
+    ],
+    "deadline": "June 15, 2026"
+  },
+  {
+    "id": "uwr",
+    "name": "University of Wrocław",
+    "abbr": "UWr",
+    "city": "Wrocław",
+    "type": "Public",
+    "founded": 1702,
+    "website": "https://uwr.edu.pl/en",
+    "programsCount": 110,
+    "students": 26000,
+    "internationalStudents": 1900,
+    "ranking": "Top Comprehensive University in Lower Silesia (9 Nobel Laureates)",
+    "logo": "UWr",
+    "description": {
+      "en": "A historic comprehensive university with 9 Nobel Prize laureates in its history. Renowned for Computer Science, Biotechnology, Law, and International Relations.",
+      "uz": "Tarixida 9 nafar Nobel mukofoti sovrindorlari bo'lgan qadimiy oliygoh. Informatika, Biotexnologiya va Xalqaro munosabatlar yo'nalishlarida yetakchi."
+    },
+    "faculties": [
+      "Faculty of Mathematics and Computer Science | Matematika va Informatika fakulteti",
+      "Faculty of Biotechnology | Biotexnologiya fakulteti",
+      "Faculty of Law, Administration and Economics | Huquq, Boshqaruv va Iqtisodiyot fakulteti",
+      "Faculty of Social Sciences | Ijtimoiy Fanlar fakulteti"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,200 – $3,800 USD / year",
+      "english": "$2,600 – $4,200 USD / year"
+    },
+    "requirements": [
+      "High school diploma + Apostille",
+      "English B2 certificate"
+    ],
+    "deadline": "July 15, 2026"
+  },
+  {
+    "id": "amu",
+    "name": "Adam Mickiewicz University",
+    "abbr": "AMU",
+    "city": "Poznań",
+    "type": "Public",
+    "founded": 1919,
+    "website": "https://amu.edu.pl/en",
+    "programsCount": 158,
+    "students": 35000,
+    "internationalStudents": 2200,
+    "ranking": "Top 3 Comprehensive University in Poland",
+    "logo": "AMU",
+    "description": {
+      "en": "One of the largest Polish universities, offering outstanding programs in Humanities, Social Sciences, Natural Sciences, and Linguistics in Poznań.",
+      "uz": "Poznan shahrida joylashgan bo'lib, Gumanitar, Ijtimoiy, Tabiiy fanlar va Tilshunoslik bo'yicha yetakchi hisoblanadi."
+    },
+    "faculties": [
+      "Faculty of Psychology and Cognitive Science | Psixologiya va Kognitiv Fanlar fakulteti",
+      "Faculty of English & Modern Languages | Ingliz Tili va Zamonaviy Tillar fakulteti",
+      "Faculty of Law and Administration | Huquq va Boshqaruv fakulteti",
+      "Faculty of Biology | Biologiya fakulteti"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,000 – $3,500 USD / year",
+      "english": "$2,400 – $4,400 USD / year"
+    },
+    "requirements": [
+      "High school diploma + Apostille",
+      "English B2 or Polish B2"
+    ],
+    "deadline": "July 10, 2026"
+  },
+  {
+    "id": "tul",
+    "name": "Lodz University of Technology",
+    "abbr": "TUL",
+    "city": "Łódź",
+    "type": "Public",
+    "founded": 1945,
+    "website": "https://p.lodz.pl/en",
+    "programsCount": 52,
+    "students": 14000,
+    "internationalStudents": 1100,
+    "ranking": "Top Technical University in Central Poland",
+    "logo": "TUL",
+    "description": {
+      "en": "A premier engineering university offering French and English dual-degree programs, cutting-edge IT hubs, and telecommunications laboratories in Łódź.",
+      "uz": "Lodz shahrida joylashgan yetakchi texnika universiteti. Ingliz tilidagi dasturlar, zamonaviy IT va telekommunikatsiya laboratoriyalari bilan mashhur."
+    },
+    "faculties": [
+      "Faculty of Electrical, Electronic, Computer and Control Engineering | Elektrotexnika, Elektronika va IT fakulteti",
+      "Faculty of Mechanical Engineering | Mexanika Muhandisligi fakulteti",
+      "Faculty of Biotechnology and Food Sciences | Biotexnologiya va Oziq-ovqat Fanlari fakulteti",
+      "International Faculty of Engineering (IFE) | Xalqaro Muhandislik fakulteti"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,200 – $3,600 USD / year",
+      "english": "$2,500 – $3,800 USD / year"
+    },
+    "requirements": [
+      "High school diploma with Apostille",
+      "English B2 certificate (IELTS 6.0+)"
+    ],
+    "deadline": "July 15, 2026"
+  },
+  {
+    "id": "polsl",
+    "name": "Silesian University of Technology",
+    "abbr": "SUT",
+    "city": "Gliwice / Katowice",
+    "type": "Public",
+    "founded": 1945,
+    "website": "https://polsl.pl/en",
+    "programsCount": 60,
+    "students": 19000,
+    "internationalStudents": 1400,
+    "ranking": "Top Research Technical University in Silesia",
+    "logo": "SUT",
+    "description": {
+      "en": "One of Poland's 10 Excellence Initiative Research Universities. Strong industry links with Silesian industrial and automotive automotive zones.",
+      "uz": "Polshaning 10 ta eng nufuzli tadqiqot universitetlaridan biri. Sanoat va avtomobilsozlik klasterlari bilan mustahkam hamkorlikka ega."
+    },
+    "faculties": [
+      "Faculty of Automatic Control, Electronics and CS | Avtomatika, Elektronika va IT fakulteti",
+      "Faculty of Civil Engineering | Fuqarolik Qurlishi fakulteti",
+      "Faculty of Biomedical Engineering | Tibbiy-biologik Muhandislik fakulteti",
+      "Faculty of Transport and Aviation Engineering | Transport va Aviatsiya fakulteti"
+    ],
+    "tuition": {
+      "eu": "Free (Polish programs)",
+      "nonEu": "$2,200 – $3,500 USD / year",
+      "english": "$2,500 – $3,800 USD / year"
+    },
+    "requirements": [
+      "High school diploma + Apostille",
+      "English B2 level"
+    ],
+    "deadline": "July 20, 2026"
+  },
+  {
+    "id": "collegiumcivitas",
+    "name": "Collegium Civitas",
+    "abbr": "CC",
+    "city": "Warsaw",
+    "type": "Private",
+    "founded": 1997,
+    "website": "https://civitas.edu.pl/en",
+    "programsCount": 22,
+    "students": 3500,
+    "internationalStudents": 1200,
+    "ranking": "Top Boutique University located in the Palace of Culture and Science",
+    "logo": "CC",
+    "description": {
+      "en": "Located inside Warsaw's iconic Palace of Culture and Science. Renowned for International Relations, Diplomacy, Journalism, and Security Studies.",
+      "uz": "Varshava markazidagi Madaniyat va Fan Saroyida joylashgan elit butik universitet. Diplomatiya, Xalqaro munosabatlar va Jurnalistika bo'yicha mashhur."
+    },
+    "faculties": [
+      "Department of International Relations | Xalqaro Munosabatlar Departamenti",
+      "Department of Sociology | Sotsiologiya Departamenti",
+      "Department of Journalism and New Media | Jurnalistika va Yangi Media Departamenti",
+      "Center for Terrorism Research | Xavfsizlik va Terrorizmni O'rganish Markazi"
+    ],
+    "tuition": {
+      "eu": "$3,200 – $4,800 USD / year",
+      "nonEu": "$3,500 – $5,200 USD / year",
+      "english": "$3,800 – $5,500 USD / year"
+    },
+    "requirements": [
+      "High School Diploma + Apostille",
+      "English B2 certificate"
+    ],
+    "deadline": "August 10, 2026"
   }
 ];

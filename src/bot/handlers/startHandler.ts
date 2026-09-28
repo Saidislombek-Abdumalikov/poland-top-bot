@@ -6,7 +6,6 @@ import {
   getMainMenuKeyboard,
   getLanguageInlineKeyboard,
   getOnboardingLanguageKeyboard,
-  getOnboardingDegreeKeyboard,
   getPhoneRequestKeyboard,
   getOfertaKeyboard,
 } from "../keyboards/menuKeyboards";
@@ -31,23 +30,29 @@ export function setupStartHandler(bot: Bot) {
       const isUz = user.lang === "uz";
 
       // 1. If info is complete, show Oferta with [ ✅ Roziman ]
-      if (user.fullName && user.phone && user.preferredLevel) {
+      if (user.fullName && user.phone) {
         db.setWaitingFor(userId, "waiting_oferta_acceptance");
         const renderedOferta = db.getRenderedOferta();
+        const levelLineUz = user.preferredLevel
+          ? `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(user.preferredLevel)}\n`
+          : "";
+        const levelLineEn = user.preferredLevel
+          ? `• 🎓 <b>Target Degree:</b> ${escapeHtml(user.preferredLevel)}\n`
+          : "";
         const ofertaMessage = isUz
           ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
             `• 👤 <b>Ism:</b> ${escapeHtml(user.fullName)}\n` +
             `• 📞 <b>Telefon:</b> ${escapeHtml(user.phone)}\n` +
-            `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
+            levelLineUz +
+            `\n━━━━━━━━━━━━━━━━━━━━\n` +
             `${renderedOferta}\n` +
             `━━━━━━━━━━━━━━━━━━━━\n\n` +
             `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
           : `📋 <b>Your Profile Summary:</b>\n` +
             `• 👤 <b>Name:</b> ${escapeHtml(user.fullName)}\n` +
             `• 📞 <b>Phone:</b> ${escapeHtml(user.phone)}\n` +
-            `• 🎓 <b>Target Degree:</b> ${escapeHtml(user.preferredLevel)}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
+            levelLineEn +
+            `\n━━━━━━━━━━━━━━━━━━━━\n` +
             `${renderedOferta}\n` +
             `━━━━━━━━━━━━━━━━━━━━\n\n` +
             `👇 <b>To unlock the bot and begin, please read the Terms above and tap "✅ I Agree":</b>`;
@@ -79,24 +84,7 @@ export function setupStartHandler(bot: Bot) {
         return;
       }
 
-      // 3. If phone is entered and waiting for degree level
-      if (user.fullName && user.phone && !user.preferredLevel) {
-        db.setWaitingFor(userId, "registration_level");
-        const levelPrompt = isUz
-          ? `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
-            `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-          : `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
-            `Please choose the degree level you plan to study in Poland:`;
-
-        const msg = await ctx.reply(levelPrompt, {
-          parse_mode: "HTML",
-          reply_markup: getOnboardingDegreeKeyboard(user.lang),
-        });
-        db.setLastPromptMsgId(userId, msg.message_id);
-        return;
-      }
-
-      // 4. Initial start -> Select Language
+      // 3. Initial start -> Select Language
       const welcomeText =
         `🇵🇱 <b>Welcome to Poland Top Universities (PTU)!</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -414,17 +402,28 @@ export function setupStartHandler(bot: Bot) {
     const user = db.getUser(userId);
     const renderedOferta = db.getRenderedOferta();
     const isUz = user.lang === "uz";
-    const isRegistered = user.isRegistered;
+    const hasAccepted = Boolean(user.acceptedOfertaAt || user.isRegistered);
+    const acceptedDate = user.acceptedOfertaAt
+      ? new Date(user.acceptedOfertaAt).toLocaleDateString(isUz ? "uz-UZ" : "en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "2026-yil";
 
-    const text = isRegistered
+    const text = hasAccepted
       ? `${renderedOferta}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `✅ <b>${isUz ? "Siz ushbu Ommaviy Ofertani qabul qilgansiz." : "You have previously accepted this Oferta."}</b>`
+        `✅ <b>${
+          isUz
+            ? `Siz ushbu Ommaviy Ofertani allaqachon qabul qilgansiz.\n📅 Tasdiqlangan sana: ${acceptedDate}`
+            : `You have already accepted this Public Oferta.\n📅 Accepted on: ${acceptedDate}`
+        }</b>`
       : `${renderedOferta}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `👇 <b>${isUz ? "Davom etish uchun shartlarni qabul qiling" : "Please accept terms to continue"}:</b>`;
 
-    const kb = isRegistered
+    const kb = hasAccepted
       ? new InlineKeyboard().text(isUz ? "🏠 Bosh Menyu" : "🏠 Main Menu", "go_main_menu")
       : getOfertaKeyboard(user.lang);
 

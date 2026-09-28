@@ -144,7 +144,9 @@ export const App: React.FC = () => {
           <h2 className="text-sm font-bold text-slate-900">
             Poland Top Universities
           </h2>
-          <p className="text-xs text-slate-400">Portal yuklanmoqda...</p>
+          <p className="text-xs text-slate-400">
+            {lang === "uz" ? "Portal yuklanmoqda..." : "Loading portal..."}
+          </p>
         </div>
       </div>
     );

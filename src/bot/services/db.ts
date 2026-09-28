@@ -166,6 +166,14 @@ export const defaultTestMaterials: Record<string, TestMaterial> = {
   },
 };
 
+export interface BroadcastRecord {
+  id: string;
+  message: string;
+  sentAt: string;
+  sentCount: number;
+  messages: { chatId: number; messageId: number }[];
+}
+
 interface DatabaseSchema {
   users: Record<number, UserSessionData>;
   applications: Record<string, ApplicationRecord>;
@@ -174,6 +182,7 @@ interface DatabaseSchema {
   tests: Record<string, TestMaterial>;
   oferta: OfertaRecord;
   reviews: StudentReview[];
+  broadcasts: BroadcastRecord[];
 }
 
 export class DatabaseService {
@@ -183,6 +192,7 @@ export class DatabaseService {
     universities: {},
     documentDefinitions: {},
     tests: { ...defaultTestMaterials },
+    broadcasts: [],
     oferta: {
       version: 1,
       text: defaultOfertaTemplate,
@@ -243,19 +253,20 @@ export class DatabaseService {
             status: "published",
           },
           reviews: parsed.reviews || [],
+          broadcasts: parsed.broadcasts || [],
         };
       }
     } catch (e) {
       // Ignore
     }
 
-    // Seed default universities if empty
-    if (!this.data.universities || Object.keys(this.data.universities).length === 0) {
-      this.data.universities = {};
-      defaultUniversities.forEach((u) => {
+    // Seed/merge default universities
+    if (!this.data.universities) this.data.universities = {};
+    defaultUniversities.forEach((u) => {
+      if (!this.data.universities[u.id]) {
         this.data.universities[u.id] = u;
-      });
-    }
+      }
+    });
 
     // Seed default tests if empty
     if (!this.data.tests || Object.keys(this.data.tests).length === 0) {
@@ -341,11 +352,39 @@ export class DatabaseService {
     return uni;
   }
 
+  public updateUniversity(id: string, updates: Partial<University>): University | null {
+    if (!this.data.universities || !this.data.universities[id]) return null;
+    this.data.universities[id] = { ...this.data.universities[id], ...updates };
+    this.saveDatabase();
+    return this.data.universities[id];
+  }
+
   public deleteUniversity(id: string): boolean {
     if (!this.data.universities || !this.data.universities[id]) return false;
     delete this.data.universities[id];
     this.saveDatabase();
     return true;
+  }
+
+  // ================= BROADCASTS CRUD =================
+  public getAllBroadcasts(): BroadcastRecord[] {
+    return (this.data.broadcasts || []).slice().reverse();
+  }
+
+  public saveBroadcast(b: BroadcastRecord): BroadcastRecord {
+    if (!this.data.broadcasts) this.data.broadcasts = [];
+    this.data.broadcasts.push(b);
+    this.saveDatabase();
+    return b;
+  }
+
+  public deleteBroadcast(id: string): BroadcastRecord | null {
+    if (!this.data.broadcasts) return null;
+    const idx = this.data.broadcasts.findIndex((b) => b.id === id);
+    if (idx === -1) return null;
+    const [removed] = this.data.broadcasts.splice(idx, 1);
+    this.saveDatabase();
+    return removed;
   }
 
   // ================= DOCUMENT DEFINITIONS CRUD =================

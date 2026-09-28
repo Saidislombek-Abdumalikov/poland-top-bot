@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { UniversityItem, Language } from "../types";
 import { triggerHaptic } from "../services/api";
-import { Search, MapPin, Euro, ArrowRight, X } from "lucide-react";
+import { Search, MapPin, DollarSign, ArrowRight, X } from "lucide-react";
 
 interface UniversitiesTabProps {
   universities: UniversityItem[];
@@ -119,12 +119,48 @@ export const UniversitiesTab: React.FC<UniversitiesTabProps> = ({
               <h3 className="font-black text-slate-900 text-base sm:text-lg leading-tight group-hover:text-slate-800 transition-colors">
                 {uni.name}
               </h3>
+
+              {/* Popular Faculties: English title with Uzbek subtitle */}
+              {uni.popularFaculties && uni.popularFaculties.length > 0 && (
+                <div className="pt-2 space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    {isUz ? "Fakultetlar" : "Faculties"}
+                  </span>
+                  <div className="space-y-1">
+                    {uni.popularFaculties.slice(0, 3).map((fac, idx) => {
+                      const parts = fac.split("|").map((s) => s.trim());
+                      const titleEn = parts[0];
+                      const titleUz = parts[1] || "";
+                      return (
+                        <div
+                          key={idx}
+                          className="flex flex-col bg-slate-50/90 rounded-xl px-2.5 py-1 border border-slate-100/80"
+                        >
+                          <span className="text-xs font-bold text-slate-800 leading-snug">
+                            {titleEn}
+                          </span>
+                          {titleUz && (
+                            <span className="text-[10px] text-slate-400 font-medium leading-snug">
+                              {titleUz}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {uni.popularFaculties.length > 3 && (
+                    <span className="text-[10px] font-bold text-slate-400 pl-1 block">
+                      +{uni.popularFaculties.length - 3} {isUz ? "boshqa fakultetlar" : "more faculties"}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="pt-4 mt-4 border-t border-slate-100/80 flex items-center justify-between relative z-10">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200/50">
-                <Euro className="w-3.5 h-3.5 text-slate-400" />
-                <span>{uni.tuitionRange || "€2,500 / yil"}</span>
+                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                <span>{uni.tuitionRange || "$2,800 / yil"}</span>
               </div>
 
               <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300">

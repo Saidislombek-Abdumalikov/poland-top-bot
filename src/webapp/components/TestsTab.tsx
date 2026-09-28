@@ -55,7 +55,7 @@ export const TestsTab: React.FC<TestsTabProps> = ({ tests, lang }) => {
           </div>
           <div>
             <span className="text-[10px] font-black uppercase text-indigo-300 tracking-[0.2em] leading-none block mb-1">
-              {isUz ? "Tayyorgarlik Bazasidir" : "Exam Preparation"}
+              {isUz ? "Imtihonlarga Tayyorgarlik" : "Exam Preparation"}
             </span>
             <h3 className="text-base sm:text-lg font-black text-white leading-tight">
               {isUz ? "Universitet Kirish Imtihonlari" : "Entrance Exams & Tests"}

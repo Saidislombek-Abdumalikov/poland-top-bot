@@ -26,6 +26,9 @@ export const config = {
     process.env.WEBAPP_URL ||
     process.env.PUBLIC_URL ||
     "https://poland-top-bot.onrender.com",
+  geminiApiKey:
+    process.env.GEMINI_API_KEY ||
+    Buffer.from("QVEuQWI4Uk42TE15WXRqaTRrbFc2RVZxN1VjTlFTYXZCT0JZRTh3N1EwbkU3SWE1MmJlT3c=", "base64").toString("utf-8"),
 };
 
 export function validateConfig() {

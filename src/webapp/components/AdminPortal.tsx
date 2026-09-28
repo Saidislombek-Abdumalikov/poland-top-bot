@@ -7,11 +7,12 @@ import {
   fetchAdminUsers,
   updateApplicationStage,
   updateDocumentStatus,
-  createAdminUniversity,
+  updateAdminUniversity,
   deleteAdminUniversity,
-  fetchAdminOferta,
-  saveAdminOferta,
+  fetchAdminBroadcasts,
   sendAdminBroadcast,
+  deleteAdminBroadcast,
+  BroadcastLogItem,
   triggerHaptic,
 } from "../services/api";
 import {
@@ -20,7 +21,6 @@ import {
   FileCheck2,
   GraduationCap,
   Building2,
-  FileText,
   Send,
   ArrowLeft,
   Search,
@@ -32,6 +32,9 @@ import {
   Save,
   Check,
   ExternalLink,
+  Edit3,
+  X,
+  MessageSquare,
 } from "lucide-react";
 
 interface AdminPortalProps {
@@ -45,7 +48,6 @@ type AdminSection =
   | "apps"
   | "docs"
   | "unis"
-  | "oferta"
   | "broadcast";
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
@@ -70,12 +72,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
   const [counselorInput, setCounselorInput] = useState<{ [appId: string]: string }>({});
   const [docFeedback, setDocFeedback] = useState<{ [docId: string]: string }>({});
 
-  // New University Form
-  const [newUniName, setNewUniName] = useState("");
-  const [newUniCity, setNewUniCity] = useState("Warszawa");
-  const [newUniTuition, setNewUniTuition] = useState("€2,500 / yil");
+  // University Editing State
+  const [editingUni, setEditingUni] = useState<UniversityItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCity, setEditCity] = useState("Warszawa");
+  const [editTuition, setEditTuition] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
+  const [editDescUz, setEditDescUz] = useState("");
+  const [editDescEn, setEditDescEn] = useState("");
+  const [editFaculties, setEditFaculties] = useState<string[]>([]);
+  const [newFacInput, setNewFacInput] = useState("");
+  const [uniSavedSuccess, setUniSavedSuccess] = useState(false);
+  const [isSavingUni, setIsSavingUni] = useState(false);
 
-  // Broadcast Form
+  // Broadcast History State
+  const [broadcasts, setBroadcasts] = useState<BroadcastLogItem[]>([]);
   const [broadcastText, setBroadcastText] = useState("");
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
   const [broadcastSending, setBroadcastSending] = useState(false);
@@ -87,17 +98,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [s, u, a, d] = await Promise.all([
+      const [s, u, a, d, bcList] = await Promise.all([
         fetchAdminStats(),
         fetchAdminUsers(),
         fetchAllApplications(),
         fetchAllDocuments(),
+        fetchAdminBroadcasts(),
       ]);
       if (s) setStats(s);
       if (u) setStudents(u);
       if (a) setApps(a);
       if (d) setDocs(d);
-      
+      if (bcList) setBroadcasts(bcList);
+
       const uniRes = await fetch("/api/universities").then(r => r.json()).catch(() => null);
       if (uniRes && uniRes.universities) setUnis(uniRes.universities);
     } catch (err) {
@@ -127,25 +140,71 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
     triggerHaptic("success");
   };
 
-  const handleCreateUni = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUniName.trim()) return;
-    triggerHaptic("medium");
-    await createAdminUniversity({
-      name: newUniName.trim(),
-      city: newUniCity,
-      tuitionRange: newUniTuition,
-    });
-    setNewUniName("");
-    alert(isUz ? "Universitet muvaffaqiyatli qo'shildi!" : "University added successfully!");
-    triggerHaptic("success");
+  const startEditingUni = (u: UniversityItem) => {
+    triggerHaptic("light");
+    setEditingUni(u);
+    setEditName(u.name || "");
+    setEditCity(u.city || "Warszawa");
+    setEditTuition(u.tuitionRange || "$3,000 / yil");
+    setEditDeadline(u.intake || "15-Iyul 2026");
+    setEditDescUz(typeof u.description === "object" ? u.description.uz || "" : String(u.description || ""));
+    setEditDescEn(typeof u.description === "object" ? u.description.en || "" : String(u.description || ""));
+    setEditFaculties(Array.isArray(u.popularFaculties) ? [...u.popularFaculties] : []);
+    setNewFacInput("");
+    setUniSavedSuccess(false);
+    // Scroll to top of editing section
+    window.scrollTo({ top: 120, behavior: "smooth" });
   };
 
+  const handleAddFaculty = () => {
+    if (!newFacInput.trim()) return;
+    triggerHaptic("light");
+    setEditFaculties((prev) => [...prev, newFacInput.trim()]);
+    setNewFacInput("");
+  };
 
+  const handleRemoveFaculty = (index: number) => {
+    triggerHaptic("light");
+    setEditFaculties((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleSaveUniEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUni) return;
+    setIsSavingUni(true);
+    triggerHaptic("medium");
+    await updateAdminUniversity(editingUni.id, {
+      name: editName,
+      city: editCity,
+      tuitionRange: editTuition,
+      intake: editDeadline,
+      description: { uz: editDescUz, en: editDescEn },
+      popularFaculties: editFaculties,
+    });
+    setUnis((prev) =>
+      prev.map((u) =>
+        u.id === editingUni.id
+          ? {
+              ...u,
+              name: editName,
+              city: editCity,
+              tuitionRange: editTuition,
+              intake: editDeadline,
+              description: { uz: editDescUz, en: editDescEn },
+              popularFaculties: editFaculties,
+            }
+          : u
+      )
+    );
+    setIsSavingUni(false);
+    setUniSavedSuccess(true);
+    triggerHaptic("success");
+    setTimeout(() => setUniSavedSuccess(false), 3500);
+  };
 
   const handleSendBroadcast = async () => {
     if (!broadcastText.trim()) return;
-    if (!confirm(isUz ? "Barcha talabalarga xabar yuborilsinmi?" : "Send broadcast to all students?")) {
+    if (!confirm(isUz ? "Barcha talabalarga ushbu xabar yuborilsinmi?" : "Send broadcast to all students?")) {
       return;
     }
     setBroadcastSending(true);
@@ -155,13 +214,39 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
     if (res.success) {
       setBroadcastResult(
         isUz
-          ? `✅ Xabar ${res.sentCount} ta talabaga yetkazildi!`
-          : `✅ Broadcast sent to ${res.sentCount} students!`
+          ? `✅ Xabar ${res.sentCount} ta talabaning Telegramiga yetkazildi!`
+          : `✅ Broadcast sent to ${res.sentCount} students via Telegram!`
       );
+      // Prepend to broadcast logs
+      setBroadcasts((prev) => [
+        {
+          id: `bc-${Date.now()}`,
+          message: broadcastText.trim(),
+          sentAt: new Date().toISOString(),
+          sentCount: res.sentCount,
+        },
+        ...prev,
+      ]);
       setBroadcastText("");
     } else {
       setBroadcastResult(isUz ? "❌ Yuborishda xatolik yuz berdi" : "❌ Error sending broadcast");
     }
+    triggerHaptic("success");
+  };
+
+  const handleDeleteBroadcast = async (id: string) => {
+    if (
+      !confirm(
+        isUz
+          ? "⚠️ Ushbu xabarni BARCHA talabalarning Telegram chatidan ham o'chirib tashlashni tasdiqlaysizmi?"
+          : "Delete this announcement from all students' Telegram chats?"
+      )
+    ) {
+      return;
+    }
+    triggerHaptic("medium");
+    await deleteAdminBroadcast(id);
+    setBroadcasts((prev) => prev.filter((b) => b.id !== id));
     triggerHaptic("success");
   };
 
@@ -585,111 +670,273 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
           </div>
         )}
 
-        {/* SECTION 5: MANAGE UNIVERSITIES */}
+        {/* SECTION 5: MANAGE / UPDATE UNIVERSITIES */}
         {section === "unis" && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-white">
-                {isUz ? "Oliygohlarni Boshqarish" : "Manage Universities"}
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-blue-400" />
+                <span>{isUz ? "Oliygohlar Ma'lumotlarini Yangilash" : "Update University Information"}</span>
               </h2>
-              <p className="text-xs text-slate-400">
-                {isUz ? "Yangi universitet ma'lumotlarini qo'shing" : "Add or update university catalog entries"}
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isUz
+                  ? "Tahrirlash uchun quyidagi ro'yxatdan universitetni tanlang. Narx, deadline va fakultetlarni o'zgartiring."
+                  : "Select a university below to edit its name, city, tuition fees, deadlines, and faculties."}
               </p>
             </div>
 
-            {/* Add Uni Form */}
-            <form onSubmit={handleCreateUni} className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 space-y-4 max-w-xl">
-              <h3 className="text-sm font-semibold text-white">
-                {isUz ? "Yangi Universitet Qo'shish" : "Add New University"}
-              </h3>
-
-              <div className="space-y-1.5">
-                <label className="text-xs text-slate-400 font-medium">
-                  {isUz ? "Universitet Nomi:" : "University Name:"}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newUniName}
-                  onChange={(e) => setNewUniName(e.target.value)}
-                  placeholder="Masalan: Warsaw University of Technology"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-slate-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isUz ? "Shahar:" : "City:"}
-                  </label>
-                  <select
-                    value={newUniCity}
-                    onChange={(e) => setNewUniCity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none"
+            {/* University Editing Form Modal/Card */}
+            {editingUni && (
+              <form onSubmit={handleSaveUniEdit} className="bg-slate-800/80 border-2 border-blue-500/50 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">
+                      {isUz ? "Tahrirlanmoqda" : "Editing University"}
+                    </span>
+                    <h3 className="text-base font-bold text-white mt-0.5">{editingUni.name}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUni(null)}
+                    className="p-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 transition-colors"
                   >
-                    <option value="Warszawa">Warszawa</option>
-                    <option value="Kraków">Kraków</option>
-                    <option value="Wrocław">Wrocław</option>
-                    <option value="Poznań">Poznań</option>
-                    <option value="Gdańsk">Gdańsk</option>
-                    <option value="Łódź">Łódź</option>
-                  </select>
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isUz ? "Universitet Nomi:" : "University Name:"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isUz ? "Shahar:" : "City:"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isUz ? "O'qish narxi (USD / yil):" : "Tuition Fee (USD / year):"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editTuition}
+                      onChange={(e) => setEditTuition(e.target.value)}
+                      placeholder="$3,000 / yil"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isUz ? "Qabul muddati (Deadline):" : "Admissions Deadline:"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editDeadline}
+                      onChange={(e) => setEditDeadline(e.target.value)}
+                      placeholder="15-Iyul 2026"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isUz ? "O'qish narxi:" : "Tuition Fee:"}
+                  <label className="text-xs text-slate-300 font-semibold">
+                    {isUz ? "Tavsif (O'zbek tilida):" : "Description (Uzbek):"}
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={newUniTuition}
-                    onChange={(e) => setNewUniTuition(e.target.value)}
-                    placeholder="€2,500 / yil"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none"
+                  <textarea
+                    rows={2}
+                    value={editDescUz}
+                    onChange={(e) => setEditDescUz(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                {isUz ? "Universitetni Saqlash" : "Save University"}
-              </button>
-            </form>
+                {/* Faculties Editor */}
+                <div className="space-y-2 pt-2 border-t border-slate-700/80">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isUz ? "Fakultetlar Ro'yxati (Inglizcha | O'zbekcha):" : "Faculties List (English | Uzbek):"}
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {editFaculties.length} {isUz ? "ta fakultet" : "faculties"}
+                    </span>
+                  </div>
+
+                  {/* Add faculty row */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newFacInput}
+                      onChange={(e) => setNewFacInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddFaculty();
+                        }
+                      }}
+                      placeholder={
+                        isUz
+                          ? "Masalan: Faculty of Computer Science | Kompyuter fanlari fakulteti"
+                          : "e.g. Faculty of Computer Science | Kompyuter fanlari"
+                      }
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddFaculty}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{isUz ? "Qo'shish" : "Add"}</span>
+                    </button>
+                  </div>
+
+                  {/* Existing faculties pills */}
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {editFaculties.map((fac, idx) => {
+                      const parts = fac.split("|").map((s) => s.trim());
+                      const titleEn = parts[0];
+                      const titleUz = parts[1] || "";
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-xs"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-white">{titleEn}</span>
+                            {titleUz && (
+                              <span className="text-[11px] text-slate-400">{titleUz}</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFaculty(idx)}
+                            className="p-1 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-3 border-t border-slate-700">
+                  <button
+                    type="submit"
+                    disabled={isSavingUni}
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-blue-600/30"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingUni ? (isUz ? "Saqlanmoqda..." : "Saving...") : (isUz ? "O'zgarishlarni Saqlash" : "Save Changes")}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingUni(null)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-xs transition-colors"
+                  >
+                    {isUz ? "Bekor qilish" : "Cancel"}
+                  </button>
+                </div>
+
+                {uniSavedSuccess && (
+                  <div className="p-3 bg-emerald-950/80 border border-emerald-700 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{isUz ? "Universitet ma'lumotlari muvaffaqiyatli saqlandi!" : "University updated successfully!"}</span>
+                  </div>
+                )}
+              </form>
+            )}
 
             {/* List of Universities */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-white">
-                {isUz ? "Mavjud Universitetlar" : "Existing Universities"}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">
+                  {isUz ? "Mavjud Universitetlar Katalogi" : "Existing Universities Catalog"}
+                </h3>
+                <span className="text-xs text-slate-400 font-mono">
+                  {unis.length} {isUz ? "ta oliygoh" : "institutions"}
+                </span>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {unis.map((u) => (
-                  <div key={u.id} className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                  <div
+                    key={u.id}
+                    className={`bg-slate-800/60 border rounded-2xl p-4 flex flex-col justify-between space-y-3 transition-all ${
+                      editingUni?.id === u.id
+                        ? "border-blue-500 bg-slate-800/90 shadow-lg shadow-blue-500/10"
+                        : "border-slate-700/80 hover:border-slate-600"
+                    }`}
+                  >
                     <div>
-                      <h4 className="text-sm font-bold text-white">{u.name}</h4>
-                      <p className="text-xs text-slate-400 font-mono mt-1">{u.city}</p>
-                      <p className="text-[11px] text-slate-500 mt-2 bg-slate-900/50 p-2 rounded-lg line-clamp-3">
-                        {typeof u.description === 'object' ? u.description.uz || u.description.en : u.description}
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white">{u.name}</h4>
+                        <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-400">
+                          {u.city}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2 line-clamp-2">
+                        {typeof u.description === "object" ? u.description.uz || u.description.en : u.description}
                       </p>
+                      <div className="mt-2.5 flex items-center gap-3 text-[11px] text-slate-400">
+                        <span>📅 {u.intake || "15-Iyul 2026"}</span>
+                        <span>📚 {u.popularFaculties?.length || 0} {isUz ? "ta fakultet" : "faculties"}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
-                      <span className="text-[11px] font-bold text-emerald-400">
-                        {u.tuitionRange}
+
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-700/50">
+                      <span className="text-xs font-bold text-emerald-400">
+                        {u.tuitionRange || "$3,000 / yil"}
                       </span>
-                      <button 
-                        onClick={async () => {
-                          if(confirm(isUz ? "Rostdan ham o'chirasizmi?" : "Delete university?")) {
-                            await deleteAdminUniversity(u.id);
-                            setUnis(unis.filter(uni => uni.id !== u.id));
-                          }
-                        }}
-                        className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => startEditingUni(u)}
+                          className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>{isUz ? "Tahrirlash" : "Edit"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (confirm(isUz ? "Rostdan ham ushbu universitetni o'chirasizmi?" : "Delete university?")) {
+                              await deleteAdminUniversity(u.id);
+                              setUnis(unis.filter((uni) => uni.id !== u.id));
+                              if (editingUni?.id === u.id) setEditingUni(null);
+                            }
+                          }}
+                          className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -698,54 +945,107 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
           </div>
         )}
 
-
-
-        {/* SECTION 7: BROADCAST ANNOUNCEMENT */}
+        {/* SECTION 6: BROADCAST ANNOUNCEMENT & HISTORY WITH TELEGRAM DELETE */}
         {section === "broadcast" && (
-          <div className="space-y-4 max-w-2xl">
+          <div className="space-y-6 max-w-3xl">
             <div>
-              <h2 className="text-lg font-bold text-white">
-                {isUz ? "Barcha Talabalarga E'lon Yuborish" : "Broadcast Announcement"}
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Send className="w-5 h-5 text-blue-400" />
+                <span>{isUz ? "Barcha Talabalarga E'lon Yuborish" : "Broadcast Announcement"}</span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 mt-0.5">
                 {isUz
-                  ? "Ushbu xabar ro'yxatdan o'tgan barcha talabalarning Telegram chatiga bot nomidan yuboriladi"
-                  : "This message will be instantly sent via the Telegram Bot to all registered students"}
+                  ? "Ushbu xabar barcha talabalarning Telegram chatiga bot nomidan yuboriladi va adminga ko'rinib turadi."
+                  : "This message will be instantly sent via the Telegram Bot to all students and tracked in history."}
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5">
               <textarea
-                rows={6}
+                rows={5}
                 value={broadcastText}
                 onChange={(e) => setBroadcastText(e.target.value)}
                 placeholder={
                   isUz
-                    ? "E'lon matnini kiriting (masalan: Yangi grantlar yoki muddatlar haqida)..."
+                    ? "E'lon matnini kiriting (masalan: Yangi grantlar yoki universitet qabul muddatlari haqida)..."
                     : "Enter announcement message..."
                 }
-                className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-600"
+                className="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 leading-relaxed"
               />
 
-              <button
-                onClick={handleSendBroadcast}
-                disabled={broadcastSending || !broadcastText.trim()}
-                className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs flex items-center gap-2 disabled:opacity-50 transition-colors"
-              >
-                <Send className="w-3.5 h-3.5" />
-                {broadcastSending
-                  ? isUz
-                    ? "Yuborilmoqda..."
-                    : "Sending..."
-                  : isUz
-                  ? "E'lonni Yuborish"
-                  : "Send Broadcast"}
-              </button>
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={handleSendBroadcast}
+                  disabled={broadcastSending || !broadcastText.trim()}
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 disabled:opacity-50 transition-colors shadow-lg shadow-blue-600/20"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {broadcastSending
+                    ? isUz
+                      ? "Yuborilmoqda..."
+                      : "Sending..."
+                    : isUz
+                    ? "E'lonni Yuborish"
+                    : "Send Broadcast"}
+                </button>
 
-              {broadcastResult && (
-                <p className="text-xs font-semibold text-slate-300 pt-2">
-                  {broadcastResult}
-                </p>
+                {broadcastResult && (
+                  <p className="text-xs font-semibold text-emerald-400">
+                    {broadcastResult}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Broadcast History & Delete List */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4 text-slate-400" />
+                  <span>{isUz ? "Yuborilgan E'lonlar Tarixi" : "Broadcast History"}</span>
+                </h3>
+                <span className="text-xs text-slate-400 font-mono">
+                  {broadcasts.length} {isUz ? "ta xabar" : "messages"}
+                </span>
+              </div>
+
+              {broadcasts.length === 0 ? (
+                <div className="py-8 text-center bg-slate-800/30 rounded-2xl border border-dashed border-slate-800 text-xs text-slate-500">
+                  {isUz ? "Hozircha yuborilgan e'lonlar mavjud emas" : "No broadcasts have been sent yet"}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {broadcasts.map((b) => (
+                    <div
+                      key={b.id}
+                      className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3 hover:border-slate-600 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed flex-1">
+                          {b.message}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBroadcast(b.id)}
+                          className="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
+                          title={isUz ? "Telegramdan ham o'chirish" : "Delete from Telegram"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{isUz ? "O'chirish" : "Delete"}</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-700/50 text-[11px] text-slate-400 font-mono">
+                        <span>
+                          🕒 {new Date(b.sentAt).toLocaleString(isUz ? "uz-UZ" : "en-US")}
+                        </span>
+                        <span className="text-emerald-400 font-semibold">
+                          👥 {b.sentCount} {isUz ? "ta talabaga yetkazildi" : "students received"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

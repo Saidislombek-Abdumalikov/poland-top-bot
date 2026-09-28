@@ -27,6 +27,7 @@ export interface UserProfile {
   hasSat?: string;
   interests?: string;
   targetIntake?: string;
+  aiAnalysis?: any;
 }
 
 export interface UniversityItem {

@@ -36,7 +36,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
   const displayName = user?.fullName || user?.firstName || "Student";
   const phone = user?.phone || "+998 90 123 45 67";
-  const preferredLevel = user?.preferredLevel === "master" ? "Magistratura" : "Bakalavriat";
+  const preferredLevel = isUz
+    ? user?.preferredLevel?.toLowerCase().includes("master")
+      ? "Magistratura"
+      : user?.preferredLevel?.toLowerCase().includes("phd")
+      ? "Doktorantura"
+      : "Bakalavriat"
+    : user?.preferredLevel?.toLowerCase().includes("master")
+    ? "Master's Degree"
+    : user?.preferredLevel?.toLowerCase().includes("phd")
+    ? "PhD"
+    : "Bachelor's Degree";
 
   const handleSendReview = async () => {
     if (!comment.trim() || !user) return;
@@ -101,6 +111,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <CheckCircle2 className="w-4 h-4" />
               {isUz ? "Qabul qilingan" : "Accepted"}
             </span>
+            {user?.acceptedOfertaAt && (
+              <span className="text-[10px] text-slate-400 block mt-1 font-mono">
+                {new Date(user.acceptedOfertaAt).toLocaleDateString(isUz ? "uz-UZ" : "en-US")}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -136,7 +151,27 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     <p className="text-[13px] text-slate-500 font-medium mt-0.5">{app.universityName}</p>
                   </div>
                   <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-slate-900 text-white uppercase tracking-wider shadow-sm flex-shrink-0">
-                    {app.stage.replace(/_/g, " ")}
+                    {(() => {
+                      if (isUz) {
+                        switch (app.stage) {
+                          case "submitted":
+                            return "Yuborilgan";
+                          case "documents_pending":
+                            return "Hujjatlar kutilmoqda";
+                          case "reviewing":
+                            return "Ko'rib chiqilmoqda";
+                          case "university_review":
+                            return "Universitet tekshiruvida";
+                          case "accepted":
+                            return "Qabul qilindi";
+                          case "rejected":
+                            return "Rad etildi";
+                          default:
+                            return String(app.stage).replace(/_/g, " ");
+                        }
+                      }
+                      return String(app.stage).replace(/_/g, " ");
+                    })()}
                   </span>
                 </div>
 

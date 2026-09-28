@@ -2,7 +2,6 @@ import { Bot, Context } from "grammy";
 import { db } from "../services/db";
 import {
   getMainMenuKeyboard,
-  getOnboardingDegreeKeyboard,
   getPhoneRequestKeyboard,
   getOfertaKeyboard,
 } from "../keyboards/menuKeyboards";
@@ -56,20 +55,39 @@ export function setupTextInputHandler(bot: Bot) {
       }
 
       db.updateUser(userId, { phone: phoneNumber });
-      db.setWaitingFor(userId, "registration_level");
+      db.setWaitingFor(userId, "waiting_oferta_acceptance");
 
-      const levelPrompt =
-        user.lang === "uz"
-          ? `✅ <b>Telefon raqamingiz qabul qilindi:</b> <code>${escapeHtml(phoneNumber)}</code>\n\n` +
-            `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
-            `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-          : `✅ <b>Phone number received:</b> <code>${escapeHtml(phoneNumber)}</code>\n\n` +
-            `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
-            `Please choose the degree level you plan to study in Poland:`;
+      const isUz = user.lang === "uz";
+      const renderedOferta = db.getRenderedOferta();
+      const updatedUser = db.getUser(userId);
+      const levelLineUz = updatedUser.preferredLevel
+        ? `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(updatedUser.preferredLevel)}\n`
+        : "";
+      const levelLineEn = updatedUser.preferredLevel
+        ? `• 🎓 <b>Target Degree:</b> ${escapeHtml(updatedUser.preferredLevel)}\n`
+        : "";
 
-      const msg = await ctx.reply(levelPrompt, {
+      const ofertaMessage = isUz
+        ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
+          `• 👤 <b>Ism:</b> ${escapeHtml(updatedUser.fullName || user.fullName || "")}\n` +
+          `• 📞 <b>Telefon:</b> ${escapeHtml(phoneNumber)}\n` +
+          levelLineUz +
+          `\n━━━━━━━━━━━━━━━━━━━━\n` +
+          `${renderedOferta}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
+        : `📋 <b>Your Profile Summary:</b>\n` +
+          `• 👤 <b>Name:</b> ${escapeHtml(updatedUser.fullName || user.fullName || "")}\n` +
+          `• 📞 <b>Phone:</b> ${escapeHtml(phoneNumber)}\n` +
+          levelLineEn +
+          `\n━━━━━━━━━━━━━━━━━━━━\n` +
+          `${renderedOferta}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👇 <b>To unlock the bot and begin, please read the Terms above and tap "✅ I Agree":</b>`;
+
+      const msg = await ctx.reply(ofertaMessage, {
         parse_mode: "HTML",
-        reply_markup: getOnboardingDegreeKeyboard(user.lang),
+        reply_markup: getOfertaKeyboard(user.lang),
       });
       db.setLastPromptMsgId(userId, msg.message_id);
     }
@@ -197,20 +215,39 @@ export function setupTextInputHandler(bot: Bot) {
       }
 
       db.updateUser(userId, { phone: cleanPhone });
-      db.setWaitingFor(userId, "registration_level");
+      db.setWaitingFor(userId, "waiting_oferta_acceptance");
 
-      const levelPrompt =
-        user.lang === "uz"
-          ? `✅ <b>Telefon raqamingiz saqlandi:</b> <code>${escapeHtml(cleanPhone)}</code>\n\n` +
-            `🎓 <b>3-Qadam (3 tadan): Qaysi Bosqichda O'qimoqchisiz?</b>\n\n` +
-            `Polshada maqsad qilgan ta'lim darajangizni tanlang:`
-          : `✅ <b>Phone number saved:</b> <code>${escapeHtml(cleanPhone)}</code>\n\n` +
-            `🎓 <b>Step 3 of 3: Target Degree Level</b>\n\n` +
-            `Please choose the degree level you plan to study in Poland:`;
+      const isUz = user.lang === "uz";
+      const renderedOferta = db.getRenderedOferta();
+      const updatedUser = db.getUser(userId);
+      const levelLineUz = updatedUser.preferredLevel
+        ? `• 🎓 <b>Ta'lim Bosqichi:</b> ${escapeHtml(updatedUser.preferredLevel)}\n`
+        : "";
+      const levelLineEn = updatedUser.preferredLevel
+        ? `• 🎓 <b>Target Degree:</b> ${escapeHtml(updatedUser.preferredLevel)}\n`
+        : "";
 
-      const msg = await ctx.reply(levelPrompt, {
+      const ofertaMessage = isUz
+        ? `📋 <b>Sizning Ma'lumotlaringiz:</b>\n` +
+          `• 👤 <b>Ism:</b> ${escapeHtml(updatedUser.fullName || user.fullName || "")}\n` +
+          `• 📞 <b>Telefon:</b> ${escapeHtml(cleanPhone)}\n` +
+          levelLineUz +
+          `\n━━━━━━━━━━━━━━━━━━━━\n` +
+          `${renderedOferta}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👇 <b>Botdan to'liq foydalanishni boshlash uchun Ofertani qabul qiling va "✅ Roziman" tugmasini bosing:</b>`
+        : `📋 <b>Your Profile Summary:</b>\n` +
+          `• 👤 <b>Name:</b> ${escapeHtml(updatedUser.fullName || user.fullName || "")}\n` +
+          `• 📞 <b>Phone:</b> ${escapeHtml(cleanPhone)}\n` +
+          levelLineEn +
+          `\n━━━━━━━━━━━━━━━━━━━━\n` +
+          `${renderedOferta}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👇 <b>To unlock the bot and begin, please read the Terms above and tap "✅ I Agree":</b>`;
+
+      const msg = await ctx.reply(ofertaMessage, {
         parse_mode: "HTML",
-        reply_markup: getOnboardingDegreeKeyboard(user.lang),
+        reply_markup: getOfertaKeyboard(user.lang),
       });
       db.setLastPromptMsgId(userId, msg.message_id);
       return;

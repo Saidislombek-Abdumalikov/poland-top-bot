@@ -144,8 +144,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Polshaning eng yirik va nufuzli davlat universiteti. 1816-yilda tashkil etilgan. Xalqaro diplom, zamonaviy kampus va nufuzli IT, biznes hamda xalqaro munosabatlar yo'nalishlari.",
         en: "Poland's largest and most prestigious state university founded in 1816. Globally accredited diplomas and world-class programs in IT, Business, and International Relations.",
       },
-      tuitionRange: "€2,200 – €4,500 / yil",
-      popularFaculties: ["Computer Science", "International Relations", "Economics & Finance", "Data Science"],
+      tuitionRange: "$2,400 – $5,000 / yil",
+      popularFaculties: ["Kompyuter fanlari (Computer Science)", "Xalqaro munosabatlar (International Relations)", "Iqtisodiyot va Moliya (Economics & Finance)", "Ma'lumotlar tahlili (Data Science)"],
       intake: "Oktyabr 2026",
       websiteUrl: "https://en.uw.edu.pl",
       imageUrl: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600&auto=format&fit=crop&q=80",
@@ -159,8 +159,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Markaziy Yevropadagi ikkinchi eng qadimgi oliygoh (1364). Krakovning tarixiy markazida joylashgan. Tibbiyot, farmatsevtika, biznes va gumanitar sohalarda Yevropada yetakchi.",
         en: "The second oldest university in Central Europe (1364). World-renowned medicine, biotechnology, business, and humanities faculties.",
       },
-      tuitionRange: "€2,500 – €5,200 / yil",
-      popularFaculties: ["Medicine (MD)", "Biotechnology", "European Studies", "Business Administration"],
+      tuitionRange: "$2,800 – $5,700 / yil",
+      popularFaculties: ["Tibbiyot (Medicine MD)", "Biotexnologiya (Biotechnology)", "Yevropa tadqiqotlari (European Studies)", "Biznes boshqaruvi (Business Administration)"],
       intake: "Oktyabr 2026",
       websiteUrl: "https://en.uj.edu.pl",
       imageUrl: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=80",
@@ -174,8 +174,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Polshaning #1 Texnika universiteti. Muhandislik, dasturlash, aerokosmik va sun'iy intellekt yo'nalishlarida bitiruvchilari Google, Microsoft, Intel kabi gigantlarda ishlaydi.",
         en: "Leading engineering and technical university in Poland. Renowned for Software Engineering, AI, Robotics, and Civil Engineering.",
       },
-      tuitionRange: "€3,000 – €4,800 / yil",
-      popularFaculties: ["Computer Science & Software", "Robotics & AI", "Civil Engineering", "Aerospace"],
+      tuitionRange: "$3,300 – $5,300 / yil",
+      popularFaculties: ["Dasturlash va IT (Computer Science & Software)", "Robototexnika va AI (Robotics & AI)", "Qurilish muhandisligi (Civil Engineering)", "Aerokosmik muhandislik (Aerospace)"],
       intake: "Oktyabr / Fevral",
       websiteUrl: "https://www.pw.edu.pl",
       imageUrl: "https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop&q=80",
@@ -189,8 +189,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Polshaning Kremniy vodiysi deb ataluvchi Vrotslav shahrida joylashgan. IT kompaniyalar bilan kuchli aloqa va amaliyot imkoniyati.",
         en: "Located in Poland's Silicon Valley. Exceptional practical labs, partner internships with Amazon, Nokia, and Volvo.",
       },
-      tuitionRange: "€2,000 – €3,500 / yil",
-      popularFaculties: ["Cybersecurity", "Applied Computer Science", "Automotive Engineering", "Management"],
+      tuitionRange: "$2,200 – $3,800 / yil",
+      popularFaculties: ["Kiberxavfsizlik (Cybersecurity)", "Amaliy kompyuter fanlari (Applied CS)", "Avtomobilsozlik muhandisligi (Automotive Engineering)", "Menejment (Management)"],
       intake: "Oktyabr 2026",
       websiteUrl: "https://pwr.edu.pl",
       imageUrl: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=600&auto=format&fit=crop&q=80",
@@ -204,8 +204,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Polshadagi eng yirik iqtisodiyot va biznes universiteti. Xalqaro biznes, moliya, logistika va marketing sohasida mukammal ta'lim.",
         en: "Largest economic university in Poland. Exceptional business programs, ACCA accredited finance courses, and global exchange.",
       },
-      tuitionRange: "€1,900 – €3,200 / yil",
-      popularFaculties: ["International Business", "Corporate Finance", "Logistics & Supply Chain", "Digital Marketing"],
+      tuitionRange: "$2,100 – $3,500 / yil",
+      popularFaculties: ["Xalqaro biznes (International Business)", "Korporativ moliya (Corporate Finance)", "Logistika va ta'minot (Logistics & Supply Chain)", "Raqamli marketing (Digital Marketing)"],
       intake: "Oktyabr 2026",
       websiteUrl: "https://uek.krakow.pl",
       imageUrl: "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=600&auto=format&fit=crop&q=80",
@@ -219,8 +219,8 @@ export async function fetchUniversities(): Promise<UniversityItem[]> {
         uz: "Financial Times reytingi bo'yicha Markaziy Yevropadagi #1 Xususiy Biznes Maktabi. Dunyodagi biznes maktablarning faqat 1% ega bo'lgan uch karra xalqaro akkreditatsiyaga ega.",
         en: "#1 Private Business School in Central Europe (Financial Times). Prestigious Triple Crown accreditation.",
       },
-      tuitionRange: "€4,000 – €6,500 / yil",
-      popularFaculties: ["Management & AI", "Finance & Accounting", "International Business", "Law & Business"],
+      tuitionRange: "$4,400 – $7,200 / yil",
+      popularFaculties: ["Menejment va AI (Management & AI)", "Moliya va audit (Finance & Accounting)", "Xalqaro biznes (International Business)", "Huquq va biznes (Law & Business)"],
       intake: "Oktyabr / Fevral",
       websiteUrl: "https://www.kozminski.edu.pl",
       imageUrl: "https://images.unsplash.com/photo-1525921429624-479b6a26d84d?w=600&auto=format&fit=crop&q=80",
@@ -240,87 +240,87 @@ export async function fetchPrograms(): Promise<ProgramItem[]> {
   return [
     {
       id: "prog-cs-bachelor-uw",
-      name: "B.Sc. in Computer Science & Artificial Intelligence",
+      name: "Kompyuter fanlari va Sun'iy intellekt (B.Sc.)",
       degree: "bachelor",
       universityId: "uw",
       universityName: "University of Warsaw",
-      tuitionFee: "€3,200 / yil",
+      tuitionFee: "$3,500 / yil",
       durationYears: 3,
-      language: "Ingliz tili (English)",
-      faculty: "Informatika va Matematika",
-      description: "Algorithms, Machine Learning, Full-Stack Software Engineering, Cloud Computing.",
+      language: "Ingliz tili",
+      faculty: "Informatika va Axborot Texnologiyalari fakulteti",
+      description: "Algoritmlar, sun'iy intellekt (Machine Learning), full-stack dasturlash va bulutli texnologiyalar (Cloud Computing).",
     },
     {
       id: "prog-cs-pw",
-      name: "B.Sc. in Software Engineering & Data Systems",
+      name: "Dasturiy injiniring va Ma'lumotlar tizimlari (B.Sc.)",
       degree: "bachelor",
       universityId: "pw",
       universityName: "Warsaw University of Technology",
-      tuitionFee: "€3,500 / yil",
+      tuitionFee: "$3,800 / yil",
       durationYears: 3.5,
-      language: "Ingliz tili (English)",
-      faculty: "Elektronika va Axborot Texnologiyalari",
-      description: "Software Architecture, Distributed Systems, High Performance Computing.",
+      language: "Ingliz tili",
+      faculty: "Elektronika va Axborot Texnologiyalari fakulteti",
+      description: "Dasturiy arxitektura, taqsimlangan tizimlar va yuqori unumdorlikdagi hisoblash.",
     },
     {
       id: "prog-ib-uek",
-      name: "B.Sc. in International Business & Management",
+      name: "Xalqaro biznes va Menejment (B.Sc.)",
       degree: "bachelor",
       universityId: "uek",
       universityName: "Kraków University of Economics",
-      tuitionFee: "€2,200 / yil",
+      tuitionFee: "$2,400 / yil",
       durationYears: 3,
-      language: "Ingliz tili (English)",
-      faculty: "Xalqaro Iqtisodiyot",
-      description: "Global Trade, Marketing Strategy, Corporate Finance, Business Analytics.",
+      language: "Ingliz tili",
+      faculty: "Xalqaro Iqtisodiyot va Biznes fakulteti",
+      description: "Xalqaro savdo, marketing strategiyasi, korporativ moliya va biznes tahlili.",
     },
     {
       id: "prog-finance-kozminski",
-      name: "B.Sc. in Finance & Accounting (CFA / ACCA track)",
+      name: "Moliya va Buxgalteriya hisobi (B.Sc. CFA / ACCA)",
       degree: "bachelor",
       universityId: "kozminski",
       universityName: "Kozminski University",
-      tuitionFee: "€4,800 / yil",
+      tuitionFee: "$5,300 / yil",
       durationYears: 3,
-      language: "Ingliz tili (English)",
-      faculty: "Moliya va Bank",
-      description: "Financial Modeling, Investment Banking, Fintech, Risk Management.",
+      language: "Ingliz tili",
+      faculty: "Moliya va Bank ishi fakulteti",
+      description: "Moliyaviy modellashtirish, investitsiya banki, Fintex va risklarni boshqarish.",
     },
     {
       id: "prog-cyber-master-wut",
-      name: "M.Sc. in Advanced Cybersecurity & Networks",
+      name: "Kiberxavfsizlik va Tarmoqlar (M.Sc.)",
       degree: "master",
       universityId: "wut",
       universityName: "Wrocław University of Science and Tech",
-      tuitionFee: "€3,000 / yil",
+      tuitionFee: "$3,300 / yil",
       durationYears: 2,
-      language: "Ingliz tili (English)",
-      faculty: "Axborot Xavfsizligi",
-      description: "Ethical Hacking, Cryptography, Cloud Security, Threat Intelligence.",
+      language: "Ingliz tili",
+      faculty: "Axborot Xavfsizligi va Tizimlar fakulteti",
+      description: "Etik xakerlik, kriptografiya, bulut xavfsizligi va tahdidlarni tahlil qilish.",
     },
     {
       id: "prog-mba-master-kozminski",
-      name: "M.Sc. in Strategic Management & AI in Business",
+      name: "Strategik boshqaruv va Biznesda AI (M.Sc.)",
       degree: "master",
       universityId: "kozminski",
       universityName: "Kozminski University",
-      tuitionFee: "€5,200 / yil",
+      tuitionFee: "$5,700 / yil",
       durationYears: 2,
-      language: "Ingliz tili (English)",
-      faculty: "Boshqaruv va Biznes",
-      description: "Executive Leadership, AI Transformation, Product Strategy.",
+      language: "Ingliz tili",
+      faculty: "Strategik Boshqaruv va Biznes fakulteti",
+      description: "Yetakchilik ko'nikmalari, sun'iy intellekt transformatsiyasi va mahsulot strategiyasi.",
     },
     {
       id: "prog-data-master-uj",
-      name: "M.Sc. in Data Science & Quantitative Methods",
+      name: "Data Science va Miqdoriy usullar (M.Sc.)",
       degree: "master",
       universityId: "uj",
       universityName: "Jagiellonian University",
-      tuitionFee: "€3,400 / yil",
+      tuitionFee: "$3,700 / yil",
       durationYears: 2,
-      language: "Ingliz tili (English)",
-      faculty: "Matematika va Informatika",
-      description: "Deep Learning, Big Data Pipelines, Statistical Modeling, NLP.",
+      language: "Ingliz tili",
+      faculty: "Matematika va Informatika fakulteti",
+      description: "Chuqur o'rganish (Deep Learning), Big Data quvurlari, statistik modellashtirish va NLP.",
     },
   ];
 }
@@ -418,7 +418,7 @@ export async function fetchUserApplications(userId: number): Promise<Application
       id: "app-101",
       userId,
       programId: "prog-cs-bachelor-uw",
-      programName: "B.Sc. in Computer Science & AI",
+      programName: "Kompyuter fanlari va Sun'iy intellekt (B.Sc.)",
       universityName: "University of Warsaw",
       degree: "bachelor",
       stage: "university_review",
@@ -535,7 +535,7 @@ export async function fetchReviews(): Promise<ReviewItem[]> {
       studentName: "Shaxzod Aliyev",
       rating: 5,
       universityName: "University of Warsaw",
-      programName: "Computer Science",
+      programName: "Kompyuter fanlari va AI",
       comment: "Hujjatlarimni topshirish juda oson kechdi. Maslahatchilar vizagacha yordam berishdi. Hozir 2-kursdaman, ta'lim sifati Yevropa darajasida a'lo!",
       date: "2026-02-14",
       isVerified: true,
@@ -546,7 +546,7 @@ export async function fetchReviews(): Promise<ReviewItem[]> {
       studentName: "Madina Rustamova",
       rating: 5,
       universityName: "Kozminski University",
-      programName: "International Business",
+      programName: "Xalqaro biznes",
       comment: "Kozminski biznes bo'yicha haqiqatan kuchli. Xalqaro muhit, turli mamlakatlardan do'stlar orttirdim. Bot orqali ariza topshirganimdan xursandman.",
       date: "2026-03-01",
       isVerified: true,
@@ -557,7 +557,7 @@ export async function fetchReviews(): Promise<ReviewItem[]> {
       studentName: "Javohir Olimov",
       rating: 5,
       universityName: "Wrocław University of Tech",
-      programName: "Cybersecurity",
+      programName: "Kiberxavfsizlik",
       comment: "Vrotslav talabalar uchun qulay shahar. Dasturlash laboratoriyalari zamonaviy. Polsha vizasini birinchi urinishda oldim.",
       date: "2026-03-18",
       isVerified: true,
@@ -683,10 +683,34 @@ export async function createAdminUniversity(uni: {
   city: string;
   tuitionRange: string;
   popularFaculties?: string[];
+  intake?: string;
+  description?: any;
 }): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/admin/universities`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(uni),
+    });
+    return res.ok;
+  } catch (e) {}
+  return false;
+}
+
+export async function updateAdminUniversity(
+  id: string,
+  uni: {
+    name?: string;
+    city?: string;
+    tuitionRange?: string;
+    popularFaculties?: string[];
+    intake?: string;
+    description?: any;
+  }
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/universities/${id}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(uni),
     });
@@ -728,6 +752,24 @@ export async function saveAdminOferta(text: string, publisherName?: string): Pro
   return false;
 }
 
+export interface BroadcastLogItem {
+  id: string;
+  message: string;
+  sentAt: string;
+  sentCount: number;
+}
+
+export async function fetchAdminBroadcasts(): Promise<BroadcastLogItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/broadcasts`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.broadcasts || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
 export async function sendAdminBroadcast(message: string): Promise<{ success: boolean; sentCount: number; totalUsers: number }> {
   try {
     const res = await fetch(`${API_BASE}/api/admin/broadcast`, {
@@ -740,5 +782,30 @@ export async function sendAdminBroadcast(message: string): Promise<{ success: bo
     }
   } catch (e) {}
   return { success: false, sentCount: 0, totalUsers: 0 };
+}
+
+export async function deleteAdminBroadcast(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/broadcasts/${id}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch (e) {}
+  return false;
+}
+
+export async function requestRoadmapAIAnalysis(userId: number): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE}/api/user/analyze-roadmap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.aiAnalysis;
+    }
+  } catch (e) {}
+  return null;
 }
 

@@ -4,7 +4,7 @@ import { triggerHaptic, applyToProgram } from "../services/api";
 import {
   Search,
   GraduationCap,
-  Euro,
+  DollarSign,
   Clock,
   Send,
   CheckCircle2,
@@ -218,6 +218,19 @@ export const ProgramsTab: React.FC<ProgramsTabProps> = ({
                   <p className="text-[13px] font-medium text-slate-500 mt-1">
                     {prog.universityName}
                   </p>
+
+                  {prog.faculty && (
+                    <div className="mt-2 flex flex-col bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+                      <span className="text-[11px] font-bold text-slate-700 leading-snug">
+                        {prog.faculty.split("|")[0].trim()}
+                      </span>
+                      {prog.faculty.includes("|") && (
+                        <span className="text-[10px] text-slate-400 font-medium leading-snug">
+                          {prog.faculty.split("|")[1].trim()}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <button
@@ -237,7 +250,7 @@ export const ProgramsTab: React.FC<ProgramsTabProps> = ({
               {/* Meta Badges */}
               <div className="flex flex-wrap gap-2 text-[11px] pt-4 mt-4 border-t border-slate-100/80 relative z-10">
                 <span className="flex items-center gap-1.5 font-bold text-slate-700 bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg">
-                  <Euro className="w-3.5 h-3.5 text-slate-400" />
+                  <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                   {prog.tuitionFee}
                 </span>
                 <span className="flex items-center gap-1.5 font-bold text-slate-600 bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg">

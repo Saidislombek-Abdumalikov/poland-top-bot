@@ -11,6 +11,7 @@ import { AppStage, DocStatus } from "./types";
 import { escapeHtml } from "./utils/format";
 import { setupStartHandler } from "./handlers/startHandler";
 import { setupTextInputHandler } from "./handlers/textInputHandler";
+import { analyzeStudentProfile } from "./services/geminiService";
 
 let activeBotInstance: Bot | null = null;
 
@@ -105,11 +106,12 @@ export function createServerApp() {
         hasSat: user.hasSat,
         interests: user.interests,
         targetIntake: user.targetIntake,
+        aiAnalysis: user.aiAnalysis,
       },
     });
   });
 
-  app.post("/api/user/onboard", (req, res) => {
+  app.post("/api/user/onboard", async (req, res) => {
     const { userId, ...onboardingData } = req.body;
     if (!userId) {
       return res.status(400).json({ error: "Missing userId" });
@@ -121,15 +123,39 @@ export function createServerApp() {
     user.isRegistered = true; // Mark as registered upon completing onboarding
     if(!user.registeredAt) user.registeredAt = new Date().toISOString();
     
+    // Generate AI recommendations (only once!)
+    try {
+      const allUnis = db.getAllUniversities();
+      const analysis = await analyzeStudentProfile(user, allUnis);
+      user.aiAnalysis = analysis;
+    } catch (e) {
+      console.warn("AI onboarding analysis error:", e);
+    }
+
     db.saveDatabase();
     res.json({ success: true, user });
+  });
+
+  app.post("/api/user/analyze-roadmap", async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: "Missing userId" });
+    const user = db.getUser(Number(userId));
+    const allUnis = db.getAllUniversities();
+    const analysis = await analyzeStudentProfile(user, allUnis);
+    user.aiAnalysis = analysis;
+    db.saveDatabase();
+    res.json({ success: true, aiAnalysis: analysis });
   });
 
   app.get("/api/universities", (_req, res) => {
     const rawUnis = db.getAllUniversities();
     
-    // Sort from best to lowest based on a predefined order
-    const order = ["uw", "uj", "pw", "agh", "pwr", "amu", "sgh", "kozminski", "swps", "pg", "pjatk"];
+    // Sort from best to lowest based on comprehensive rankings
+    const order = [
+      "uw", "uj", "pw", "agh", "pwr", "put", "muw", "sgh", "kozminski",
+      "pjatk", "uek", "pg", "uwr", "amu", "tul", "polsl", "swps",
+      "vistula", "lazarski", "wsb", "collegiumcivitas"
+    ];
     rawUnis.sort((a, b) => {
       const idxA = order.indexOf(a.id);
       const idxB = order.indexOf(b.id);
@@ -147,10 +173,10 @@ export function createServerApp() {
       description: u.description || { uz: "", en: "" },
       tuitionRange:
         typeof u.tuition === "object"
-          ? u.tuition?.english || u.tuition?.nonEu || "€2,500 / yil"
-          : String(u.tuition || "€2,500 / yil"),
+          ? u.tuition?.english || u.tuition?.nonEu || "$3,000 / yil"
+          : String(u.tuition || "$3,000 / yil"),
       popularFaculties: Array.isArray(u.faculties) ? u.faculties : [],
-      intake: u.deadline || "Oktyabr 2026",
+      intake: u.deadline || "15-Iyul 2026",
       websiteUrl: u.website || "",
       imageUrl: u.logo || "",
     }));
@@ -358,32 +384,67 @@ export function createServerApp() {
   });
 
   app.post("/api/admin/universities", (req, res) => {
-    const { id, name, city, tuitionRange, popularFaculties } = req.body;
+    const { id, name, city, tuitionRange, popularFaculties, intake, deadline, description } = req.body;
     const uniId = id || `uni-${Date.now()}`;
+    const existing = db.getUniversity(uniId);
+    
     const saved = db.saveUniversity({
       id: uniId,
-      name,
-      city: city || "Warsaw",
+      name: name || existing?.name || "New University",
+      abbr: existing?.abbr || uniId.toUpperCase().slice(0, 4),
+      city: city || existing?.city || "Warsaw",
+      type: existing?.type || "Public",
+      founded: existing?.founded || 2000,
+      website: existing?.website || "https://polandstudy.org",
+      programsCount: existing?.programsCount || 15,
+      students: existing?.students || 5000,
+      internationalStudents: existing?.internationalStudents || 500,
+      ranking: existing?.ranking || "Accredited Polish University",
+      logo: existing?.logo || "PL",
+      description: typeof description === "object"
+        ? description
+        : { en: String(description || name), uz: String(description || name) },
+      faculties: Array.isArray(popularFaculties)
+        ? popularFaculties
+        : existing?.faculties || ["General Studies"],
       tuition: {
-        eu: tuitionRange || "€2,500 / yil",
-        nonEu: tuitionRange || "€2,500 / yil",
-        english: tuitionRange || "€2,500 / yil",
+        eu: tuitionRange || existing?.tuition?.eu || "$2,800 / year",
+        nonEu: tuitionRange || existing?.tuition?.nonEu || "$3,000 / year",
+        english: tuitionRange || existing?.tuition?.english || "$3,200 / year",
       },
-      faculties: Array.isArray(popularFaculties) ? popularFaculties : ["General Studies"],
-      ranking: "Accredited Polish University",
-      abbr: uniId.toUpperCase().slice(0, 4),
-      type: "Public",
-      founded: 2000,
-      website: "https://polandstudy.org",
-      programsCount: 10,
-      students: 3000,
-      internationalStudents: 400,
-      logo: "PL",
-      description: { en: name, uz: name },
-      requirements: ["High School Diploma", "Language Certificate"],
-      deadline: "Oktyabr 2026",
+      requirements: existing?.requirements || ["High School Diploma", "Language Certificate"],
+      deadline: deadline || intake || existing?.deadline || "15-Iyul 2026",
     });
     res.json({ success: true, university: saved });
+  });
+
+  app.put("/api/admin/universities/:id", (req, res) => {
+    const { name, city, tuitionRange, popularFaculties, intake, deadline, description } = req.body;
+    const uniId = req.params.id;
+    const existing = db.getUniversity(uniId);
+    if (!existing) {
+      return res.status(404).json({ error: "University not found" });
+    }
+
+    const updated = db.updateUniversity(uniId, {
+      ...(name ? { name } : {}),
+      ...(city ? { city } : {}),
+      ...(intake || deadline ? { deadline: intake || deadline } : {}),
+      ...(description ? {
+        description: typeof description === "object"
+          ? description
+          : { en: description, uz: description }
+      } : {}),
+      ...(popularFaculties ? { faculties: popularFaculties } : {}),
+      ...(tuitionRange ? {
+        tuition: {
+          eu: tuitionRange,
+          nonEu: tuitionRange,
+          english: tuitionRange,
+        }
+      } : {}),
+    });
+    res.json({ success: true, university: updated });
   });
 
   app.delete("/api/admin/universities/:id", (req, res) => {
@@ -402,7 +463,11 @@ export function createServerApp() {
     res.json({ success: true, oferta: updated });
   });
 
-  // Admin Broadcast Message to all students
+  // Admin Broadcast Message to all students with Telegram tracking & message deletion
+  app.get("/api/admin/broadcasts", (_req, res) => {
+    res.json({ broadcasts: db.getAllBroadcasts() });
+  });
+
   app.post("/api/admin/broadcast", async (req, res) => {
     const { message } = req.body;
     if (!message || !activeBotInstance) {
@@ -411,19 +476,53 @@ export function createServerApp() {
 
     const users = db.getAllUsers().filter((u) => u.userId);
     let sentCount = 0;
+    const trackedMessages: { chatId: number; messageId: number }[] = [];
+
     for (const u of users) {
       try {
-        await activeBotInstance.api.sendMessage(
+        const sentMsg = await activeBotInstance.api.sendMessage(
           u.userId,
           `📢 <b>E'LON / ANNOUNCEMENT:</b>\n\n${escapeHtml(message)}`,
           { parse_mode: "HTML" }
         );
         sentCount++;
+        trackedMessages.push({ chatId: u.userId, messageId: sentMsg.message_id });
       } catch (err) {
         // Ignore blocked
       }
     }
-    res.json({ success: true, sentCount, totalUsers: users.length });
+
+    const broadcast = db.saveBroadcast({
+      id: `bc-${Date.now()}`,
+      message,
+      sentAt: new Date().toISOString(),
+      sentCount,
+      messages: trackedMessages,
+    });
+
+    res.json({ success: true, sentCount, totalUsers: users.length, broadcast });
+  });
+
+  app.delete("/api/admin/broadcasts/:id", async (req, res) => {
+    const broadcasts = db.getAllBroadcasts();
+    const target = broadcasts.find((b) => b.id === req.params.id);
+    if (!target) {
+      return res.status(404).json({ error: "Broadcast not found" });
+    }
+
+    // Delete message from all recipients' Telegram chat
+    if (activeBotInstance && Array.isArray(target.messages)) {
+      for (const item of target.messages) {
+        try {
+          await activeBotInstance.api.deleteMessage(item.chatId, item.messageId);
+        } catch (e) {
+          // Ignore if message already deleted or expired
+        }
+      }
+    }
+
+    db.deleteBroadcast(req.params.id);
+    res.json({ success: true });
   });
 
   // Serve static assets from dist/ if built

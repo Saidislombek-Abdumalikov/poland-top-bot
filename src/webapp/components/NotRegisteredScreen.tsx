@@ -100,9 +100,9 @@ export const NotRegisteredScreen: React.FC<NotRegisteredScreenProps> = ({ lang, 
                 {isUz ? "Qaysi bosqichda o'qimoqchisiz?" : "What level of study are you aiming for?"}
               </h2>
               <div className="space-y-3 mt-8">
-                <OptionBtn field="preferredLevel" value="Bachelor" label={isUz ? "Bakalavriat (Bachelor's)" : "Bachelor's Degree"} />
-                <OptionBtn field="preferredLevel" value="Master" label={isUz ? "Magistratura (Master's)" : "Master's Degree"} />
-                <OptionBtn field="preferredLevel" value="PhD" label={isUz ? "Doktorantura (PhD)" : "PhD"} />
+                <OptionBtn field="preferredLevel" value="Bachelor" label={isUz ? "Bakalavriat" : "Bachelor's Degree"} />
+                <OptionBtn field="preferredLevel" value="Master" label={isUz ? "Magistratura" : "Master's Degree"} />
+                <OptionBtn field="preferredLevel" value="PhD" label={isUz ? "Doktorantura" : "PhD"} />
               </div>
             </div>
           )}
@@ -113,11 +113,11 @@ export const NotRegisteredScreen: React.FC<NotRegisteredScreenProps> = ({ lang, 
                 {isUz ? "Qaysi soha sizga qiziq?" : "Which field interests you?"}
               </h2>
               <div className="space-y-3 mt-6">
-                <OptionBtn field="preferredField" value="IT" label="IT & Computer Science" />
-                <OptionBtn field="preferredField" value="Business" label="Business, Economics & Finance" />
-                <OptionBtn field="preferredField" value="Engineering" label={isUz ? "Muhandislik (Engineering)" : "Engineering"} />
-                <OptionBtn field="preferredField" value="Medicine" label={isUz ? "Tibbiyot (Medicine)" : "Medicine"} />
-                <OptionBtn field="preferredField" value="Humanities" label={isUz ? "Gumanitar / Ijtimoiy fanlar" : "Humanities & Social Sciences"} />
+                <OptionBtn field="preferredField" value="IT" label={isUz ? "IT va Kompyuter fanlari" : "IT & Computer Science"} />
+                <OptionBtn field="preferredField" value="Business" label={isUz ? "Biznes, Iqtisodiyot va Moliya" : "Business, Economics & Finance"} />
+                <OptionBtn field="preferredField" value="Engineering" label={isUz ? "Muhandislik" : "Engineering"} />
+                <OptionBtn field="preferredField" value="Medicine" label={isUz ? "Tibbiyot" : "Medicine"} />
+                <OptionBtn field="preferredField" value="Humanities" label={isUz ? "Gumanitar va ijtimoiy fanlar" : "Humanities & Social Sciences"} />
                 <OptionBtn field="preferredField" value="Undecided" label={isUz ? "Hali tanlamadim" : "I don't know yet"} />
               </div>
             </div>
@@ -185,9 +185,9 @@ export const NotRegisteredScreen: React.FC<NotRegisteredScreenProps> = ({ lang, 
                 {isUz ? "Bu faqat shartnoma (kontrakt) narxi uchun, yashash xarajatlari kiritilmagan." : "Tuition fee only, excludes living expenses."}
               </p>
               <div className="space-y-3 mt-6">
-                <OptionBtn field="budget" value="< 2500" label={isUz ? "€2,500 gacha (Arzonroq)" : "Up to €2,500"} />
-                <OptionBtn field="budget" value="2500 - 4000" label={isUz ? "€2,500 – €4,000 (O'rtacha)" : "€2,500 – €4,000"} />
-                <OptionBtn field="budget" value="> 4000" label={isUz ? "€4,000 dan yuqori (Top universitetlar)" : "Above €4,000 (Top-tier)"} />
+                <OptionBtn field="budget" value="< 2800" label={isUz ? "$2,800 gacha (Arzonroq)" : "Up to $2,800"} />
+                <OptionBtn field="budget" value="2800 - 4400" label={isUz ? "$2,800 – $4,400 (O'rtacha)" : "$2,800 – $4,400"} />
+                <OptionBtn field="budget" value="> 4400" label={isUz ? "$4,400 dan yuqori (Top universitetlar)" : "Above $4,400 (Top-tier)"} />
               </div>
             </div>
           )}
@@ -244,7 +244,7 @@ export const NotRegisteredScreen: React.FC<NotRegisteredScreenProps> = ({ lang, 
                     type="text"
                     value={formData.fullName || ""}
                     onChange={e => updateForm("fullName", e.target.value)}
-                    placeholder="E.g. Alisher Navoiy"
+                    placeholder={isUz ? "Masalan: Alisher Navoiy" : "E.g. Alisher Navoiy"}
                     className="w-full p-3.5 bg-white border-2 border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:outline-none transition-colors"
                   />
                 </div>
