@@ -352,4 +352,39 @@ export const universities: University[] = [
     requirements: ["High school diploma + Apostille", "English B2 certificate"],
     deadline: "July 1, 2025",
   },
+  {
+    id: "pjatk",
+    name: "Polish-Japanese Academy of Information Technology",
+    abbr: "PJATK",
+    city: "Warsaw",
+    type: "Private",
+    founded: 1994,
+    website: "https://pja.edu.pl/en",
+    programsCount: 15,
+    students: 6000,
+    internationalStudents: 1500,
+    ranking: "#1 Private IT University in Poland",
+    logo: "PJATK",
+    description: {
+      en: "One of the best IT and Computer Science academies in Poland, established in cooperation with the Japanese government, offering cutting-edge tech and design degrees.",
+      uz: "Polshadagi eng yaxshi IT va Kompyuter fanlari akademiyasi bo'lib, Yaponiya hukumati bilan hamkorlikda tashkil etilgan. Eng zamonaviy texnologiya va dizayn dasturlarini taklif etadi.",
+    },
+    faculties: [
+      "Faculty of Information Management",
+      "Faculty of Computer Science",
+      "Faculty of New Media Arts",
+      "Faculty of Japanese Culture"
+    ],
+    tuition: {
+      eu: "3,500 – 4,500 EUR / year",
+      nonEu: "4,000 – 5,000 EUR / year",
+      english: "4,200 – 5,500 EUR / year"
+    },
+    requirements: [
+      "High School Diploma with Math emphasis",
+      "English B2 level (IELTS 6.0 or TOEFL 80)",
+      "Online Interview"
+    ],
+    deadline: "July 20, 2025"
+  }
 ];

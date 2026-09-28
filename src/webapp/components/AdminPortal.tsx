@@ -63,8 +63,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
   const [students, setStudents] = useState<any[]>([]);
   const [apps, setApps] = useState<ApplicationItem[]>([]);
   const [docs, setDocs] = useState<DocumentItem[]>([]);
-  const [ofertaText, setOfertaText] = useState("");
-  const [ofertaSaved, setOfertaSaved] = useState(false);
+  const [unis, setUnis] = useState<UniversityItem[]>([]);
 
   // Search & Inputs
   const [studentSearch, setStudentSearch] = useState("");
@@ -88,18 +87,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [s, u, a, d, o] = await Promise.all([
+      const [s, u, a, d] = await Promise.all([
         fetchAdminStats(),
         fetchAdminUsers(),
         fetchAllApplications(),
         fetchAllDocuments(),
-        fetchAdminOferta(),
       ]);
       if (s) setStats(s);
       if (u) setStudents(u);
       if (a) setApps(a);
       if (d) setDocs(d);
-      if (o) setOfertaText(o);
+      
+      const uniRes = await fetch("/api/universities").then(r => r.json()).catch(() => null);
+      if (uniRes && uniRes.universities) setUnis(uniRes.universities);
     } catch (err) {
       console.error("Admin load error:", err);
     } finally {
@@ -217,7 +217,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
             { id: "apps", label: isUz ? "Arizalar" : "Applications", icon: GraduationCap },
             { id: "docs", label: isUz ? "Hujjatlar" : "Documents", icon: FileCheck2 },
             { id: "unis", label: isUz ? "Oliygohlar" : "Universities", icon: Building2 },
-            { id: "oferta", label: isUz ? "Oferta" : "Terms", icon: FileText },
             { id: "broadcast", label: isUz ? "E'lon Yuborish" : "Broadcast", icon: Send },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -513,9 +512,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                       <span className="text-[11px] uppercase font-bold text-slate-400 block font-mono">
                         {doc.docType}
                       </span>
-                      <h4 className="text-sm font-bold text-white mt-0.5">
-                        Talaba ID: {doc.userId}
-                      </h4>
+                      {(() => {
+                        const s = students.find((st) => st.userId === doc.userId);
+                        return (
+                          <>
+                            <h4 className="text-sm font-bold text-white mt-0.5">
+                              {s?.fullName || doc.studentName || `User ID: ${doc.userId}`}
+                            </h4>
+                            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                              {s?.phone || "Telefon raqam yo'q"}
+                            </p>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <span
@@ -657,46 +666,46 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                 {isUz ? "Universitetni Saqlash" : "Save University"}
               </button>
             </form>
-          </div>
-        )}
 
-        {/* SECTION 6: OFERTA EDITOR */}
-        {section === "oferta" && (
-          <div className="space-y-4 max-w-3xl">
-            <div>
-              <h2 className="text-lg font-bold text-white">
-                {isUz ? "Ommaviy Oferta Matni" : "Terms & Public Oferta"}
-              </h2>
-              <p className="text-xs text-slate-400">
-                {isUz ? "Botda va portalda ko'rinadigan rasmiy oferta shartlarini tahrirlang" : "Edit the legal terms and agreement presented to new students"}
-              </p>
-            </div>
-
-            <textarea
-              rows={12}
-              value={ofertaText}
-              onChange={(e) => setOfertaText(e.target.value)}
-              className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 focus:outline-none focus:border-slate-600 leading-relaxed"
-            />
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleSaveOferta}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                {isUz ? "Ofertani Saqlash" : "Save Terms"}
-              </button>
-
-              {ofertaSaved && (
-                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                  <Check className="w-4 h-4" />
-                  {isUz ? "Muvaffaqiyatli yangilandi!" : "Saved successfully!"}
-                </span>
-              )}
+            {/* List of Universities */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">
+                {isUz ? "Mavjud Universitetlar" : "Existing Universities"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {unis.map((u) => (
+                  <div key={u.id} className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{u.name}</h4>
+                      <p className="text-xs text-slate-400 font-mono mt-1">{u.city}</p>
+                      <p className="text-[11px] text-slate-500 mt-2 bg-slate-900/50 p-2 rounded-lg line-clamp-3">
+                        {typeof u.description === 'object' ? u.description.uz || u.description.en : u.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                      <span className="text-[11px] font-bold text-emerald-400">
+                        {u.tuitionRange}
+                      </span>
+                      <button 
+                        onClick={async () => {
+                          if(confirm(isUz ? "Rostdan ham o'chirasizmi?" : "Delete university?")) {
+                            await deleteAdminUniversity(u.id);
+                            setUnis(unis.filter(uni => uni.id !== u.id));
+                          }
+                        }}
+                        className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
+
+
 
         {/* SECTION 7: BROADCAST ANNOUNCEMENT */}
         {section === "broadcast" && (

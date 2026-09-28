@@ -322,21 +322,39 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-700">
-                      {isUz ? "Hujjat fayl havolasi (Google Drive / Telegram / URL):" : "File URL or Cloud link:"}
+                  <div className="space-y-3">
+                    <label className="text-[13px] font-black text-slate-700">
+                      {isUz ? "Hujjatni tanlang (PDF, JPG, PNG):" : "Select document (PDF, JPG, PNG):"}
                     </label>
-                    <input
-                      type="url"
-                      value={fileUrlInput}
-                      onChange={(e) => setFileUrlInput(e.target.value)}
-                      placeholder="https://drive.google.com/file/d/..."
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <p className="text-[11px] text-slate-400">
+                    
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFileUrlInput(file.name);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="w-full px-4 py-4 bg-slate-50 border-2 border-dashed border-slate-300 rounded-[1.25rem] text-center flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
+                        <UploadCloud className="w-6 h-6 text-slate-400" />
+                        <span className="text-[13px] font-bold text-slate-600">
+                          {fileUrlInput
+                            ? fileUrlInput
+                            : isUz
+                            ? "Faylni tanlash uchun bosing"
+                            : "Tap to select a file"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-[11px] text-slate-400 font-medium">
                       {isUz
-                        ? "Agar havolangiz bo'lmasa, pastdagi tugmani bosing — namunaviy hujjat yuklanadi."
-                        : "Or tap submit below to attach directly for advisor review."}
+                        ? "Eslatma: Yuklangan fayl xavfsiz tarzda saqlanadi va maslahatchiga yuboriladi."
+                        : "Note: Uploaded file will be securely stored and sent to the advisor."}
                     </p>
                   </div>
 
@@ -355,9 +373,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
             {!uploadSuccess && (
               <div className="p-4 border-t border-slate-100 bg-white">
                 <button
-                  disabled={isUploading}
+                  disabled={isUploading || !fileUrlInput}
                   onClick={handleUploadSubmit}
-                  className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-[1.25rem] font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                 >
                   {isUploading ? (
                     <span>{isUz ? "Yuklanmoqda..." : "Uploading..."}</span>

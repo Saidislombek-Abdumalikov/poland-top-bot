@@ -170,15 +170,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             </h3>
           </div>
 
-          <button
-            onClick={() => {
-              triggerHaptic("light");
-              setShowReviewModal(true);
-            }}
-            className="text-xs font-semibold text-slate-900 hover:text-blue-600 transition-colors"
-          >
-            + {isUz ? "Fikr bildirish" : "Write Review"}
-          </button>
+          {applications.some(a => a.stage === "accepted") && (
+            <button
+              onClick={() => {
+                triggerHaptic("light");
+                setShowReviewModal(true);
+              }}
+              className="text-xs font-semibold text-slate-900 hover:text-blue-600 transition-colors"
+            >
+              + {isUz ? "Fikr bildirish" : "Write Review"}
+            </button>
+          )}
         </div>
 
         <div className="space-y-2.5">

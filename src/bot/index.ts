@@ -101,6 +101,18 @@ export function createServerApp() {
 
   app.get("/api/universities", (_req, res) => {
     const rawUnis = db.getAllUniversities();
+    
+    // Sort from best to lowest based on a predefined order
+    const order = ["uw", "uj", "pw", "agh", "pwr", "amu", "sgh", "kozminski", "swps", "pg", "pjatk"];
+    rawUnis.sort((a, b) => {
+      const idxA = order.indexOf(a.id);
+      const idxB = order.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
+
     const mappedUnis = rawUnis.map((u) => ({
       id: u.id,
       name: u.name,

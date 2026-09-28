@@ -355,6 +355,37 @@
       ],
       "programsCount": 28,
       "internationalStudents": 2800
+    },
+    "pjatk": {
+      "id": "pjatk",
+      "name": "Polish-Japanese Academy of Information Technology",
+      "abbr": "PJATK",
+      "city": "Warsaw",
+      "type": "Private",
+      "founded": 1994,
+      "website": "https://pja.edu.pl/en",
+      "programsCount": 15,
+      "students": 6000,
+      "internationalStudents": 1500,
+      "ranking": "#1 Private IT University in Poland",
+      "logo": "PJATK",
+      "description": {
+        "en": "One of the best IT and Computer Science academies in Poland",
+        "uz": "Polshadagi eng yaxshi IT va Kompyuter fanlari akademiyasi"
+      },
+      "faculties": [
+        "IT",
+        "Design"
+      ],
+      "tuition": {
+        "eu": "4,000 EUR",
+        "nonEu": "4,500 EUR",
+        "english": "4,500 EUR"
+      },
+      "requirements": [
+        "Math"
+      ],
+      "deadline": "July"
     }
   },
   "documentDefinitions": {
