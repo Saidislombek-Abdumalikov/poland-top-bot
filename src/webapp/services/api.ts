@@ -106,6 +106,24 @@ export async function fetchCurrentUser(userId?: number): Promise<UserProfile | n
   };
 }
 
+export async function submitOnboarding(data: Partial<UserProfile>): Promise<boolean> {
+  const tgUser = getTelegramUser();
+  const userId = data.userId || tgUser?.id;
+  if (!userId) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/onboard`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, ...data }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("Failed to submit onboarding", e);
+  }
+  return true;
+}
+
 export async function fetchUniversities(): Promise<UniversityItem[]> {
   try {
     const res = await fetch(`${API_BASE}/api/universities`);

@@ -181,6 +181,18 @@ export interface UserSessionData {
   email?: string;
   preferredLevel?: DegreeLevel;
   preferredCity?: string;
+
+  // Onboarding
+  age?: number;
+  hasPassport?: string;
+  budget?: string;
+  preferredField?: string;
+  englishLevel?: string;
+  polishLevel?: string;
+  mathLevel?: string;
+  hasSat?: string;
+  interests?: string;
+  targetIntake?: string;
   isRegistered: boolean;
   isAdmin: boolean;
   adminRole?: AdminRole;

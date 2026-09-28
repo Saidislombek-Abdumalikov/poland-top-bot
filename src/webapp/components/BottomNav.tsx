@@ -7,6 +7,7 @@ import {
   FileCheck2,
   BookOpenCheck,
   User,
+  MapPin,
 } from "lucide-react";
 
 interface BottomNavProps {
@@ -31,6 +32,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     badge?: number;
   }[] = [
     {
+      id: "roadmap",
+      label: isUz ? "Xarita" : "Roadmap",
+      icon: MapPin,
+    },
+    {
       id: "unis",
       label: isUz ? "Oliygohlar" : "Universities",
       icon: Building2,
@@ -47,13 +53,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       badge: docsPendingCount > 0 ? docsPendingCount : undefined,
     },
     {
-      id: "tests",
-      label: isUz ? "Imtihonlar" : "Tests",
-      icon: BookOpenCheck,
-    },
-    {
       id: "profile",
-      label: isUz ? "Kabinet" : "Cabinet",
+      label: isUz ? "Profil" : "Profile",
       icon: User,
     },
   ];

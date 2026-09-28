@@ -28,9 +28,10 @@ import { TestsTab } from "./components/TestsTab";
 import { ProfileTab } from "./components/ProfileTab";
 import { AdminPortal } from "./components/AdminPortal";
 import { NotRegisteredScreen } from "./components/NotRegisteredScreen";
+import { RoadmapTab } from "./components/RoadmapTab";
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>("unis");
+  const [activeTab, setActiveTab] = useState<TabType>("roadmap");
   const [lang, setLang] = useState<Language>("uz");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,19 +161,22 @@ export const App: React.FC = () => {
   }
 
   // Gatekeeping: if not registered or no accepted terms
-  const isRegisteredAndAgreed =
-    Boolean(user?.isRegistered) || Boolean(user?.acceptedOfertaAt) || Boolean(user?.isAdmin);
+  const isRegisteredAndAgreed = Boolean(user?.isRegistered);
 
   if (!isRegisteredAndAgreed) {
     return (
       <div className="app-container w-full min-h-screen bg-slate-50 flex flex-col">
-        <Header
-          user={user}
-          lang={lang}
-          onLanguageChange={setLang}
-        />
-        <main className="flex-1 max-w-lg mx-auto w-full px-4 flex items-center justify-center">
-          <NotRegisteredScreen lang={lang} />
+        <main className="flex-1 max-w-lg mx-auto w-full flex items-center justify-center">
+          <NotRegisteredScreen 
+            lang={lang} 
+            userId={user?.id}
+            onComplete={(data) => {
+              if (user) {
+                setUser({ ...user, ...data, isRegistered: true });
+                setActiveTab("roadmap"); // Show roadmap right after onboarding
+              }
+            }} 
+          />
         </main>
       </div>
     );
@@ -189,6 +193,10 @@ export const App: React.FC = () => {
 
       {/* Main Tab Content - Full screen width with responsive container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-24 space-y-4 overflow-y-auto">
+        {activeTab === "roadmap" && user && (
+          <RoadmapTab user={user} universities={universities} lang={lang} />
+        )}
+
         {activeTab === "unis" && (
           <UniversitiesTab
             universities={universities}

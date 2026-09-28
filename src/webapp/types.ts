@@ -1,9 +1,10 @@
 export type Language = "uz" | "en";
 
-export type TabType = "unis" | "programs" | "docs" | "tests" | "profile";
+export type TabType = "roadmap" | "unis" | "programs" | "docs" | "tests" | "profile";
 
 export interface UserProfile {
   id: number;
+  userId?: number;
   username?: string;
   firstName?: string;
   lastName?: string;
@@ -14,6 +15,18 @@ export interface UserProfile {
   isAdmin: boolean;
   preferredLevel?: string;
   acceptedOfertaAt?: number;
+  
+  // Onboarding
+  age?: number;
+  hasPassport?: string;
+  budget?: string;
+  preferredField?: string;
+  englishLevel?: string;
+  polishLevel?: string;
+  mathLevel?: string;
+  hasSat?: string;
+  interests?: string;
+  targetIntake?: string;
 }
 
 export interface UniversityItem {

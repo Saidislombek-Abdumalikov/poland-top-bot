@@ -95,8 +95,34 @@ export function createServerApp() {
         acceptedOfertaAt: user.acceptedOfertaAt
           ? new Date(user.acceptedOfertaAt).getTime()
           : undefined,
+        age: user.age,
+        hasPassport: user.hasPassport,
+        budget: user.budget,
+        preferredField: user.preferredField,
+        englishLevel: user.englishLevel,
+        polishLevel: user.polishLevel,
+        mathLevel: user.mathLevel,
+        hasSat: user.hasSat,
+        interests: user.interests,
+        targetIntake: user.targetIntake,
       },
     });
+  });
+
+  app.post("/api/user/onboard", (req, res) => {
+    const { userId, ...onboardingData } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+    const user = db.getUser(Number(userId));
+    
+    // Save onboarding data
+    Object.assign(user, onboardingData);
+    user.isRegistered = true; // Mark as registered upon completing onboarding
+    if(!user.registeredAt) user.registeredAt = new Date().toISOString();
+    
+    db.saveDatabase();
+    res.json({ success: true, user });
   });
 
   app.get("/api/universities", (_req, res) => {
