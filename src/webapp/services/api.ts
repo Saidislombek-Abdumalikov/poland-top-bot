@@ -312,7 +312,16 @@ export async function fetchUserDocuments(userId: number): Promise<DocumentItem[]
     const res = await fetch(`${API_BASE}/api/documents?userId=${userId}`);
     if (res.ok) {
       const data = await res.json();
-      return data.documents;
+      const docs = Array.isArray(data.documents) ? data.documents : [];
+      return docs.map((d: any) => ({
+        id: d.id || d.docType || "unknown",
+        userId: d.userId || userId,
+        docType: d.docType || d.id || "unknown",
+        status: d.status || "pending",
+        fileUrl: d.fileUrl || d.link || "",
+        feedback: d.feedback || d.feedbackNote || "",
+        updatedAt: d.updatedAt || "",
+      }));
     }
   } catch (e) {}
 

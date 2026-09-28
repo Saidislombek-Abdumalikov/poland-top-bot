@@ -146,13 +146,31 @@ export function createServerApp() {
     const userId = Number(req.query.userId);
     if (userId) {
       const userDocs = db.getUserDocuments(userId);
-      res.json({ documents: Object.values(userDocs) });
+      const mapped = Object.entries(userDocs).map(([key, d]) => ({
+        id: d.id || key,
+        userId,
+        docType: key,
+        status: d.status || "pending",
+        fileUrl: d.link || d.fileId || "",
+        feedback: d.feedbackNote || "",
+        updatedAt: d.updatedAt || "",
+      }));
+      res.json({ documents: mapped });
     } else {
       const allDocs: any[] = [];
       db.getAllUsers().forEach((u) => {
         if (u.documents) {
-          Object.values(u.documents).forEach((d) => {
-            allDocs.push({ ...d, userId: u.userId, studentName: u.fullName });
+          Object.entries(u.documents).forEach(([key, d]) => {
+            allDocs.push({
+              id: d.id || key,
+              userId: u.userId,
+              docType: key,
+              status: d.status || "pending",
+              fileUrl: d.link || d.fileId || "",
+              feedback: d.feedbackNote || "",
+              updatedAt: d.updatedAt || "",
+              studentName: u.fullName,
+            });
           });
         }
       });
@@ -169,7 +187,18 @@ export function createServerApp() {
       link: fileUrl || `https://storage.polandtop.uz/docs/${userId}_${docType}.pdf`,
       fileType: "link",
     });
-    res.json({ success: true, document: saved });
+    res.json({
+      success: true,
+      document: {
+        id: saved.id || docType,
+        userId: Number(userId),
+        docType,
+        status: saved.status || "reviewing",
+        fileUrl: saved.link || fileUrl || "",
+        feedback: saved.feedbackNote || "",
+        updatedAt: saved.updatedAt || new Date().toISOString(),
+      },
+    });
   });
 
   app.get("/api/applications", (req, res) => {
