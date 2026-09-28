@@ -141,14 +141,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
     triggerHaptic("success");
   };
 
-  const handleSaveOferta = async () => {
-    if (!ofertaText.trim()) return;
-    triggerHaptic("medium");
-    await saveAdminOferta(ofertaText.trim(), "SuperAdmin");
-    setOfertaSaved(true);
-    setTimeout(() => setOfertaSaved(false), 3000);
-    triggerHaptic("success");
-  };
+
 
   const handleSendBroadcast = async () => {
     if (!broadcastText.trim()) return;
@@ -517,7 +510,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                         return (
                           <>
                             <h4 className="text-sm font-bold text-white mt-0.5">
-                              {s?.fullName || doc.studentName || `User ID: ${doc.userId}`}
+                              {s?.fullName || (doc as any).studentName || `User ID: ${doc.userId}`}
                             </h4>
                             <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                               {s?.phone || "Telefon raqam yo'q"}
