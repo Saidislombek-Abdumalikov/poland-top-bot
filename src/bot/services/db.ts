@@ -14,8 +14,16 @@ import {
   DocStatus,
   OfertaRecord,
   TestMaterial,
+  UniversityEntity,
+  FacultyEntity,
+  ProgramEntity,
 } from "../types";
 import { universities as defaultUniversities } from "../data/universities";
+import {
+  relationalUniversities,
+  relationalFaculties,
+  relationalPrograms,
+} from "../data/polandRelationalData";
 import { aiValidator } from "./aiValidation";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
@@ -185,6 +193,9 @@ interface DatabaseSchema {
   oferta: OfertaRecord;
   reviews: StudentReview[];
   broadcasts: BroadcastRecord[];
+  relationalUniversities: UniversityEntity[];
+  relationalFaculties: FacultyEntity[];
+  relationalPrograms: ProgramEntity[];
 }
 
 export class DatabaseService {
@@ -195,6 +206,9 @@ export class DatabaseService {
     documentDefinitions: {},
     tests: { ...defaultTestMaterials },
     broadcasts: [],
+    relationalUniversities: [...relationalUniversities],
+    relationalFaculties: [...relationalFaculties],
+    relationalPrograms: [...relationalPrograms],
     oferta: {
       version: 1,
       text: defaultOfertaTemplate,
@@ -256,10 +270,24 @@ export class DatabaseService {
           },
           reviews: parsed.reviews || [],
           broadcasts: parsed.broadcasts || [],
+          relationalUniversities: parsed.relationalUniversities || [...relationalUniversities],
+          relationalFaculties: parsed.relationalFaculties || [...relationalFaculties],
+          relationalPrograms: parsed.relationalPrograms || [...relationalPrograms],
         };
       }
     } catch (e) {
       // Ignore
+    }
+
+    // Seed relational tables if empty
+    if (!this.data.relationalUniversities || this.data.relationalUniversities.length === 0) {
+      this.data.relationalUniversities = [...relationalUniversities];
+    }
+    if (!this.data.relationalFaculties || this.data.relationalFaculties.length === 0) {
+      this.data.relationalFaculties = [...relationalFaculties];
+    }
+    if (!this.data.relationalPrograms || this.data.relationalPrograms.length === 0) {
+      this.data.relationalPrograms = [...relationalPrograms];
     }
 
     // Seed/merge default universities
@@ -364,6 +392,135 @@ export class DatabaseService {
   public deleteUniversity(id: string): boolean {
     if (!this.data.universities || !this.data.universities[id]) return false;
     delete this.data.universities[id];
+    this.saveDatabase();
+    return true;
+  }
+
+  // ================= 3-TABLE RELATIONAL DATA CRUD =================
+  // Universities CRUD
+  public getRelationalUniversities(): UniversityEntity[] {
+    return this.data.relationalUniversities || [];
+  }
+
+  public getRelationalUniversity(id: string): UniversityEntity | undefined {
+    return (this.data.relationalUniversities || []).find((u) => u.id === id);
+  }
+
+  public saveRelationalUniversity(uni: UniversityEntity): UniversityEntity {
+    if (!this.data.relationalUniversities) this.data.relationalUniversities = [];
+    const idx = this.data.relationalUniversities.findIndex((u) => u.id === uni.id);
+    if (idx !== -1) {
+      this.data.relationalUniversities[idx] = uni;
+    } else {
+      this.data.relationalUniversities.push(uni);
+    }
+    this.saveDatabase();
+    return uni;
+  }
+
+  public updateRelationalUniversity(id: string, updates: Partial<UniversityEntity>): UniversityEntity | null {
+    if (!this.data.relationalUniversities) return null;
+    const target = this.data.relationalUniversities.find((u) => u.id === id);
+    if (!target) return null;
+    Object.assign(target, updates);
+    this.saveDatabase();
+    return target;
+  }
+
+  public deleteRelationalUniversity(id: string): boolean {
+    if (!this.data.relationalUniversities) return false;
+    const idx = this.data.relationalUniversities.findIndex((u) => u.id === id);
+    if (idx === -1) return false;
+    this.data.relationalUniversities.splice(idx, 1);
+    this.saveDatabase();
+    return true;
+  }
+
+  // Faculties CRUD
+  public getRelationalFaculties(uniId?: string): FacultyEntity[] {
+    let list = this.data.relationalFaculties || [];
+    if (uniId) {
+      list = list.filter((f) => f.university_id === uniId);
+    }
+    return list;
+  }
+
+  public getRelationalFaculty(id: string): FacultyEntity | undefined {
+    return (this.data.relationalFaculties || []).find((f) => f.id === id);
+  }
+
+  public saveRelationalFaculty(fac: FacultyEntity): FacultyEntity {
+    if (!this.data.relationalFaculties) this.data.relationalFaculties = [];
+    const idx = this.data.relationalFaculties.findIndex((f) => f.id === fac.id);
+    if (idx !== -1) {
+      this.data.relationalFaculties[idx] = fac;
+    } else {
+      this.data.relationalFaculties.push(fac);
+    }
+    this.saveDatabase();
+    return fac;
+  }
+
+  public updateRelationalFaculty(id: string, updates: Partial<FacultyEntity>): FacultyEntity | null {
+    if (!this.data.relationalFaculties) return null;
+    const target = this.data.relationalFaculties.find((f) => f.id === id);
+    if (!target) return null;
+    Object.assign(target, updates);
+    this.saveDatabase();
+    return target;
+  }
+
+  public deleteRelationalFaculty(id: string): boolean {
+    if (!this.data.relationalFaculties) return false;
+    const idx = this.data.relationalFaculties.findIndex((f) => f.id === id);
+    if (idx === -1) return false;
+    this.data.relationalFaculties.splice(idx, 1);
+    this.saveDatabase();
+    return true;
+  }
+
+  // Programs CRUD
+  public getRelationalPrograms(filter?: { uniId?: string; facultyId?: string; level?: string; verified?: boolean }): ProgramEntity[] {
+    let list = this.data.relationalPrograms || [];
+    if (filter) {
+      if (filter.uniId) list = list.filter((p) => p.university_id === filter.uniId);
+      if (filter.facultyId) list = list.filter((p) => p.faculty_id === filter.facultyId);
+      if (filter.level) list = list.filter((p) => p.level.toLowerCase() === filter.level!.toLowerCase());
+      if (filter.verified !== undefined) list = list.filter((p) => p.verified === filter.verified);
+    }
+    return list;
+  }
+
+  public getRelationalProgram(id: string): ProgramEntity | undefined {
+    return (this.data.relationalPrograms || []).find((p) => p.id === id);
+  }
+
+  public saveRelationalProgram(prog: ProgramEntity): ProgramEntity {
+    if (!this.data.relationalPrograms) this.data.relationalPrograms = [];
+    const idx = this.data.relationalPrograms.findIndex((p) => p.id === prog.id);
+    if (idx !== -1) {
+      this.data.relationalPrograms[idx] = prog;
+    } else {
+      this.data.relationalPrograms.push(prog);
+    }
+    this.saveDatabase();
+    return prog;
+  }
+
+  public updateRelationalProgram(id: string, updates: Partial<ProgramEntity>): ProgramEntity | null {
+    if (!this.data.relationalPrograms) return null;
+    const target = this.data.relationalPrograms.find((p) => p.id === id);
+    if (!target) return null;
+    Object.assign(target, updates);
+    this.saveDatabase();
+    return target;
+  }
+
+  public deleteRelationalProgram(id: string): boolean {
+    if (!this.data.relationalPrograms) return false;
+    const idx = this.data.relationalPrograms.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    this.data.relationalPrograms.splice(idx, 1);
     this.saveDatabase();
     return true;
   }

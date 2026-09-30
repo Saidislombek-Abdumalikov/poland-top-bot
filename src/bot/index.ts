@@ -203,38 +203,42 @@ export function createServerApp() {
 
   // Relational Tables Endpoints (3-table schema)
   app.get("/api/relational/universities", (_req, res) => {
-    res.json({ universities: relationalUniversities });
+    res.json({ universities: db.getRelationalUniversities() });
   });
 
   app.get("/api/faculties", (req, res) => {
     const uniId = req.query.university_id as string;
-    if (uniId) {
-      const filtered = relationalFaculties.filter((f) => f.university_id === uniId);
-      return res.json({ faculties: filtered });
-    }
-    res.json({ faculties: relationalFaculties });
+    res.json({ faculties: db.getRelationalFaculties(uniId) });
   });
 
   app.get("/api/relational/schema", (_req, res) => {
+    const unis = db.getRelationalUniversities();
+    const facs = db.getRelationalFaculties();
+    const progs = db.getRelationalPrograms();
     res.json({
       schema_version: "1.0",
-      universities: relationalUniversities,
-      faculties: relationalFaculties,
-      programs: relationalPrograms,
+      universities: unis,
+      faculties: facs,
+      programs: progs,
       stats: {
-        universities_count: relationalUniversities.length,
-        faculties_count: relationalFaculties.length,
-        programs_count: relationalPrograms.length,
+        universities_count: unis.length,
+        faculties_count: facs.length,
+        programs_count: progs.length,
+        verified_programs_count: progs.filter((p) => p.verified).length,
       },
     });
   });
 
   app.get("/api/programs", (_req, res) => {
+    const unis = db.getRelationalUniversities();
+    const facs = db.getRelationalFaculties();
+    const progs = db.getRelationalPrograms();
+
     // Map relational programs with rich verified metadata (33 AGH programs, 51 UW programs, etc.)
-    const mappedRelational = relationalPrograms.map((p) => {
+    const mappedRelational = progs.map((p) => {
       const isMaster = ["msc", "ma", "mba"].includes(p.level.toLowerCase());
-      const u = relationalUniversities.find((uni) => uni.id === p.university_id);
-      const fac = relationalFaculties.find((f) => f.id === p.faculty_id);
+      const u = unis.find((uni) => uni.id === p.university_id);
+      const fac = facs.find((f) => f.id === p.faculty_id);
 
       const match = p.duration ? p.duration.match(/^(\d+(?:\.\d+)?)/) : null;
       let durationNum = match ? parseFloat(match[1]) : (isMaster ? 2 : 3);
