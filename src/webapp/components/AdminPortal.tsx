@@ -88,6 +88,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
   // Broadcast History State
   const [broadcasts, setBroadcasts] = useState<BroadcastLogItem[]>([]);
   const [broadcastText, setBroadcastText] = useState("");
+  const [selectedBroadcastTarget, setSelectedBroadcastTarget] = useState<string>("all");
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
   const [broadcastSending, setBroadcastSending] = useState(false);
 
@@ -204,29 +205,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
 
   const handleSendBroadcast = async () => {
     if (!broadcastText.trim()) return;
-    if (!confirm(isUz ? "Barcha talabalarga ushbu xabar yuborilsinmi?" : "Send broadcast to all students?")) {
+    const targetUserId = selectedBroadcastTarget === "all" ? undefined : Number(selectedBroadcastTarget);
+    const targetStudent = targetUserId ? students.find((s) => s.userId === targetUserId) : null;
+    const targetName = targetStudent
+      ? (targetStudent.fullName || `Talaba #${targetUserId}`)
+      : (isUz ? "Barcha talabalar" : "All students");
+
+    if (!confirm(isUz ? `${targetName}ga Telegram orqali xabar yuborilsinmi?` : `Send Telegram message to ${targetName}?`)) {
       return;
     }
     setBroadcastSending(true);
     triggerHaptic("medium");
-    const res = await sendAdminBroadcast(broadcastText.trim());
+    const res = await sendAdminBroadcast(broadcastText.trim(), targetUserId);
     setBroadcastSending(false);
     if (res.success) {
       setBroadcastResult(
         isUz
-          ? `✅ Xabar ${res.sentCount} ta talabaning Telegramiga yetkazildi!`
-          : `✅ Broadcast sent to ${res.sentCount} students via Telegram!`
+          ? `✅ Xabar ${targetName}ga Telegram orqali muvaffaqiyatli yetkazildi!`
+          : `✅ Message delivered to ${targetName} via Telegram!`
       );
-      // Prepend to broadcast logs
-      setBroadcasts((prev) => [
-        {
-          id: `bc-${Date.now()}`,
-          message: broadcastText.trim(),
-          sentAt: new Date().toISOString(),
-          sentCount: res.sentCount,
-        },
-        ...prev,
-      ]);
+      // Prepend exact server record with real ID from database
+      if (res.broadcast) {
+        setBroadcasts((prev) => [res.broadcast!, ...prev]);
+      } else {
+        const fresh = await fetchAdminBroadcasts();
+        setBroadcasts(fresh);
+      }
       setBroadcastText("");
     } else {
       setBroadcastResult(isUz ? "❌ Yuborishda xatolik yuz berdi" : "❌ Error sending broadcast");
@@ -238,16 +242,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
     if (
       !confirm(
         isUz
-          ? "⚠️ Ushbu xabarni BARCHA talabalarning Telegram chatidan ham o'chirib tashlashni tasdiqlaysizmi?"
-          : "Delete this announcement from all students' Telegram chats?"
+          ? "⚠️ Ushbu xabarni talabalarning Telegram chatidan ham butunlay o'chirib tashlashni tasdiqlaysizmi?"
+          : "Delete this announcement from students' Telegram chats?"
       )
     ) {
       return;
     }
     triggerHaptic("medium");
-    await deleteAdminBroadcast(id);
-    setBroadcasts((prev) => prev.filter((b) => b.id !== id));
-    triggerHaptic("success");
+    const ok = await deleteAdminBroadcast(id);
+    if (ok) {
+      setBroadcasts((prev) => prev.filter((b) => b.id !== id));
+      triggerHaptic("success");
+    } else {
+      alert(isUz ? "Xabarni o'chirishda xatolik yuz berdi" : "Failed to delete broadcast");
+    }
   };
 
   const filteredStudents = students.filter((s) => {
@@ -492,26 +500,58 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {apps.map((app) => (
-                <div
-                  key={app.id}
-                  className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[11px] uppercase font-bold text-slate-400 block">
-                        {app.degree?.toUpperCase() || "DEGREE"}
-                      </span>
-                      <h4 className="text-sm font-bold text-white mt-0.5">
-                        {app.programName}
-                      </h4>
-                      <p className="text-xs text-slate-400">{app.universityName}</p>
+              {apps.map((app) => {
+                const s = students.find((st) => st.userId === app.userId);
+                const studentName = s?.fullName || app.studentName || `Talaba #${app.userId}`;
+                const studentPhone = s?.phone || app.studentPhone;
+                const studentUsername = s?.username || app.studentUsername;
+
+                return (
+                  <div
+                    key={app.id}
+                    className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3 hover:border-slate-600 transition-colors"
+                  >
+                    {/* Student Info Banner */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-white/5 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-400">
+                          👤
+                        </span>
+                        <div>
+                          <span className="text-xs font-bold text-white/95 block leading-tight">
+                            {studentName}
+                          </span>
+                          {studentPhone && (
+                            <span className="text-[11px] text-white/70 font-mono">
+                              📞 {studentPhone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        {studentUsername && (
+                          <span className="text-blue-400 font-mono bg-blue-950/50 px-2 py-0.5 rounded border border-blue-800/40">
+                            @{studentUsername}
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                          ID: {app.userId}
+                        </span>
+                      </div>
                     </div>
 
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-700 text-slate-200">
-                      ID: {app.userId}
-                    </span>
-                  </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 inline-block mb-1">
+                          {app.degree?.toUpperCase() || "DEGREE"}
+                        </span>
+                        <h4 className="text-sm font-bold text-white">
+                          {app.programName}
+                        </h4>
+                        <p className="text-xs text-slate-400">{app.universityName}</p>
+                      </div>
+                    </div>
 
                   {/* Stage Switcher */}
                   <div className="space-y-1.5 pt-2 border-t border-slate-700/60">
@@ -556,7 +596,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
 
               {apps.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-800">
@@ -580,30 +621,53 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {docs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[11px] uppercase font-bold text-slate-400 block font-mono">
-                        {doc.docType}
-                      </span>
-                      {(() => {
-                        const s = students.find((st) => st.userId === doc.userId);
-                        return (
-                          <>
-                            <h4 className="text-sm font-bold text-white mt-0.5">
-                              {s?.fullName || (doc as any).studentName || `User ID: ${doc.userId}`}
-                            </h4>
-                            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                              {s?.phone || "Telefon raqam yo'q"}
-                            </p>
-                          </>
-                        );
-                      })()}
+              {docs.map((doc) => {
+                const s = students.find((st) => st.userId === doc.userId);
+                const studentName = s?.fullName || (doc as any).studentName || `Talaba #${doc.userId}`;
+                const studentPhone = s?.phone || (doc as any).studentPhone;
+                const studentUsername = s?.username || (doc as any).studentUsername;
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3 hover:border-slate-600 transition-colors"
+                  >
+                    {/* Student Info Banner */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-white/5 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">
+                          👤
+                        </span>
+                        <div>
+                          <span className="text-xs font-bold text-white/95 block leading-tight">
+                            {studentName}
+                          </span>
+                          {studentPhone && (
+                            <span className="text-[11px] text-white/70 font-mono">
+                              📞 {studentPhone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        {studentUsername && (
+                          <span className="text-blue-400 font-mono bg-blue-950/50 px-2 py-0.5 rounded border border-blue-800/40">
+                            @{studentUsername}
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                          ID: {doc.userId}
+                        </span>
+                      </div>
                     </div>
+
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[11px] uppercase font-bold text-slate-400 block font-mono">
+                          {doc.docType}
+                        </span>
+                      </div>
 
                     <span
                       className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
@@ -659,7 +723,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
 
               {docs.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-800">
@@ -960,14 +1025,36 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
               </p>
             </div>
 
-            <div className="space-y-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5">
+            <div className="space-y-4 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5">
+              {/* Recipient Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-white/90 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <span>{isUz ? "Xabar qabul qiluvchi (Kimga):" : "Recipient:"}</span>
+                </label>
+                <select
+                  value={selectedBroadcastTarget}
+                  onChange={(e) => setSelectedBroadcastTarget(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="all">
+                    📢 {isUz ? `Barcha talabalar (${students.length} ta)` : `All students (${students.length})`}
+                  </option>
+                  {students.map((s) => (
+                    <option key={s.userId} value={String(s.userId)}>
+                      👤 {s.fullName || `Talaba #${s.userId}`} {s.phone ? `(${s.phone})` : ""} {s.username ? `@${s.username}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <textarea
                 rows={5}
                 value={broadcastText}
                 onChange={(e) => setBroadcastText(e.target.value)}
                 placeholder={
                   isUz
-                    ? "E'lon matnini kiriting (masalan: Yangi grantlar yoki universitet qabul muddatlari haqida)..."
+                    ? "Xabar matnini kiriting (talabaning Telegram botiga to'g'ridan-to'g'ri boradi)..."
                     : "Enter announcement message..."
                 }
                 className="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 leading-relaxed"
@@ -985,8 +1072,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                       ? "Yuborilmoqda..."
                       : "Sending..."
                     : isUz
-                    ? "E'lonni Yuborish"
-                    : "Send Broadcast"}
+                    ? "Xabarni Yuborish"
+                    : "Send Message"}
                 </button>
 
                 {broadcastResult && (
@@ -1002,7 +1089,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-1.5">
                   <MessageSquare className="w-4 h-4 text-slate-400" />
-                  <span>{isUz ? "Yuborilgan E'lonlar Tarixi" : "Broadcast History"}</span>
+                  <span>{isUz ? "Yuborilgan Xabarlar Tarixi" : "Broadcast History"}</span>
                 </h3>
                 <span className="text-xs text-slate-400 font-mono">
                   {broadcasts.length} {isUz ? "ta xabar" : "messages"}
@@ -1011,7 +1098,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
 
               {broadcasts.length === 0 ? (
                 <div className="py-8 text-center bg-slate-800/30 rounded-2xl border border-dashed border-slate-800 text-xs text-slate-500">
-                  {isUz ? "Hozircha yuborilgan e'lonlar mavjud emas" : "No broadcasts have been sent yet"}
+                  {isUz ? "Hozircha yuborilgan xabarlar mavjud emas" : "No messages have been sent yet"}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1020,6 +1107,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                       key={b.id}
                       className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3 hover:border-slate-600 transition-colors"
                     >
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-700/50 pb-2">
+                        <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                          👤 {b.targetName || (isUz ? "Barcha talabalar" : "All students")}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          🕒 {new Date(b.sentAt).toLocaleString(isUz ? "uz-UZ" : "en-US")}
+                        </span>
+                      </div>
+
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed flex-1">
                           {b.message}
@@ -1036,9 +1132,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBack, lang }) => {
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-700/50 text-[11px] text-slate-400 font-mono">
-                        <span>
-                          🕒 {new Date(b.sentAt).toLocaleString(isUz ? "uz-UZ" : "en-US")}
-                        </span>
                         <span className="text-emerald-400 font-semibold">
                           👥 {b.sentCount} {isUz ? "ta talabaga yetkazildi" : "students received"}
                         </span>

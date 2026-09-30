@@ -66,6 +66,49 @@ export interface Program {
   mode: "Full-time" | "Part-time";
 }
 
+// ================= 3-TABLE RELATIONAL SCHEMA =================
+export interface UniversityEntity {
+  id: string;
+  name_en: string;
+  name_pl: string;
+  city: string;
+  type: "public" | "private";
+  founded: number | null;
+  website: string;
+  ranking_note: string;
+  ielts_min: number | null;
+  tuition_min_eur: number | null;
+  tuition_max_eur: number | null;
+  source_url: string;
+  verified: boolean;
+}
+
+export interface FacultyEntity {
+  id: string;
+  university_id: string;
+  name: string;
+  difficulty: number; // 1-4
+  difficulty_note?: string;
+  notes?: string;
+}
+
+export interface ProgramEntity {
+  id: string;
+  faculty_id: string;
+  university_id: string;
+  name: string;
+  level: "BSc" | "MSc" | "BA" | "MA" | "MBA" | "PhD";
+  language: "EN" | "PL";
+  duration: string;
+  tuition_eur_per_year: number | null;
+  tuition_note?: string;
+  ielts_min: number | null;
+  admission_method: "documents" | "interview" | "exam" | null;
+  deadline: string | null;
+  source_url: string;
+  verified: boolean;
+}
+
 export interface TestMaterial {
   id: string; // e.g. "test-math-01", "test-pol-b1"
   title: {

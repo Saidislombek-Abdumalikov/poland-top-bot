@@ -60,11 +60,21 @@ export interface ProgramItem {
   language: string;
   faculty: string;
   description?: string;
+  level?: string;
+  difficulty?: number;
+  admissionMethod?: string;
+  ieltsMin?: number;
+  sourceUrl?: string;
+  verified?: boolean;
+  deadline?: string;
 }
 
 export interface DocumentItem {
   id: string;
   userId: number;
+  studentName?: string;
+  studentPhone?: string;
+  studentUsername?: string;
   docType: string;
   status: "pending" | "reviewing" | "approved" | "needs_correction";
   fileUrl?: string;
@@ -75,6 +85,9 @@ export interface DocumentItem {
 export interface ApplicationItem {
   id: string;
   userId: number;
+  studentName?: string;
+  studentPhone?: string;
+  studentUsername?: string;
   programId: string;
   programName: string;
   universityName: string;

@@ -171,6 +171,8 @@ export interface BroadcastRecord {
   message: string;
   sentAt: string;
   sentCount: number;
+  targetName?: string;
+  targetUserId?: number;
   messages: { chatId: number; messageId: number }[];
 }
 

@@ -685,6 +685,8 @@ export interface BroadcastLogItem {
   message: string;
   sentAt: string;
   sentCount: number;
+  targetName?: string;
+  targetUserId?: number;
 }
 
 export async function fetchAdminBroadcasts(): Promise<BroadcastLogItem[]> {
@@ -698,12 +700,15 @@ export async function fetchAdminBroadcasts(): Promise<BroadcastLogItem[]> {
   return [];
 }
 
-export async function sendAdminBroadcast(message: string): Promise<{ success: boolean; sentCount: number; totalUsers: number }> {
+export async function sendAdminBroadcast(
+  message: string,
+  targetUserId?: number
+): Promise<{ success: boolean; sentCount: number; totalUsers: number; broadcast?: BroadcastLogItem }> {
   try {
     const res = await fetch(`${API_BASE}/api/admin/broadcast`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, targetUserId }),
     });
     if (res.ok) {
       return await res.json();

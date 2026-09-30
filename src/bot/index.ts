@@ -7,6 +7,7 @@ import { config, validateConfig } from "./config";
 import { db } from "./services/db";
 import { isAuthorizedAdmin, authenticatePasscode, startAdminSession } from "./services/auth";
 import { programs } from "./data/programs";
+import { relationalUniversities, relationalFaculties, relationalPrograms } from "./data/polandRelationalData";
 import { AppStage, DocStatus } from "./types";
 import { escapeHtml } from "./utils/format";
 import { setupStartHandler } from "./handlers/startHandler";
@@ -14,6 +15,20 @@ import { setupTextInputHandler } from "./handlers/textInputHandler";
 import { analyzeStudentProfile } from "./services/geminiService";
 
 let activeBotInstance: Bot | null = null;
+
+export function getTelegramBot(): Bot | null {
+  if (activeBotInstance) return activeBotInstance;
+  const token = config.botToken;
+  if (token) {
+    try {
+      activeBotInstance = new Bot(token);
+      return activeBotInstance;
+    } catch (e) {
+      console.error("Failed to initialize Telegram Bot instance:", e);
+    }
+  }
+  return null;
+}
 
 export function createBot(token?: string) {
   const activeToken = token || config.botToken;
@@ -186,32 +201,79 @@ export function createServerApp() {
     res.json({ universities: mappedUnis });
   });
 
+  // Relational Tables Endpoints (3-table schema)
+  app.get("/api/relational/universities", (_req, res) => {
+    res.json({ universities: relationalUniversities });
+  });
+
+  app.get("/api/faculties", (req, res) => {
+    const uniId = req.query.university_id as string;
+    if (uniId) {
+      const filtered = relationalFaculties.filter((f) => f.university_id === uniId);
+      return res.json({ faculties: filtered });
+    }
+    res.json({ faculties: relationalFaculties });
+  });
+
+  app.get("/api/relational/schema", (_req, res) => {
+    res.json({
+      schema_version: "1.0",
+      universities: relationalUniversities,
+      faculties: relationalFaculties,
+      programs: relationalPrograms,
+      stats: {
+        universities_count: relationalUniversities.length,
+        faculties_count: relationalFaculties.length,
+        programs_count: relationalPrograms.length,
+      },
+    });
+  });
+
   app.get("/api/programs", (_req, res) => {
-    const mappedPrograms = programs.map((p) => {
-      const isMaster = (p.level || "").toLowerCase().includes("master");
-      const durationNum = p.duration ? parseInt(p.duration.replace(/\D/g, ""), 10) || 3 : 3;
+    // Map relational programs with rich verified metadata (33 AGH programs, 51 UW programs, etc.)
+    const mappedRelational = relationalPrograms.map((p) => {
+      const isMaster = ["msc", "ma", "mba"].includes(p.level.toLowerCase());
+      const u = relationalUniversities.find((uni) => uni.id === p.university_id);
+      const fac = relationalFaculties.find((f) => f.id === p.faculty_id);
+
+      const match = p.duration ? p.duration.match(/^(\d+(?:\.\d+)?)/) : null;
+      let durationNum = match ? parseFloat(match[1]) : (isMaster ? 2 : 3);
+      if (isNaN(durationNum) || durationNum <= 0 || durationNum > 10) {
+        durationNum = isMaster ? 2 : 3;
+      }
+
+      const tuitionUsd = p.tuition_eur_per_year
+        ? `$${Math.round(p.tuition_eur_per_year * 1.09).toLocaleString()} / yil`
+        : "$2,600 / yil";
+
       return {
         id: p.id,
         name: p.name,
         degree: isMaster ? "master" : "bachelor",
-        universityId: p.uniId || "uw",
-        universityName: p.university || "Poland University",
-        tuitionFee: p.tuition || "€2,500 / yil",
+        level: p.level,
+        universityId: p.university_id,
+        universityName: u ? u.name_en : "Poland University",
+        tuitionFee: tuitionUsd,
         durationYears: durationNum,
-        language: p.lang || "English",
-        faculty: p.field || "General Studies",
-        description:
-          typeof p.about === "object"
-            ? p.about?.uz || p.about?.en || ""
-            : String(p.about || ""),
+        language: p.language === "EN" ? "English" : "Polish",
+        faculty: fac ? fac.name : "General Studies",
+        difficulty: fac ? fac.difficulty : 2,
+        admissionMethod: p.admission_method,
+        ieltsMin: p.ielts_min,
+        sourceUrl: p.source_url,
+        verified: p.verified,
+        deadline: p.deadline || "15-Iyul 2026",
+        description: `${p.level} in ${p.name} at ${u ? u.name_en : "Poland"}. Instruction: ${p.language}. ${p.tuition_note || ""}`,
       };
     });
-    res.json({ programs: mappedPrograms });
+
+    res.json({ programs: mappedRelational });
   });
 
   app.get("/api/documents", (req, res) => {
     const userId = Number(req.query.userId);
     if (userId) {
+      const user = db.getUser(userId);
       const userDocs = db.getUserDocuments(userId);
       const mapped = Object.entries(userDocs).map(([key, d]) => ({
         id: d.id || key,
@@ -221,6 +283,9 @@ export function createServerApp() {
         fileUrl: d.link || d.fileId || "",
         feedback: d.feedbackNote || "",
         updatedAt: d.updatedAt || "",
+        studentName: user.fullName || user.firstName || `Talaba #${userId}`,
+        studentPhone: user.phone || "",
+        studentUsername: user.username || "",
       }));
       res.json({ documents: mapped });
     } else {
@@ -236,7 +301,9 @@ export function createServerApp() {
               fileUrl: d.link || d.fileId || "",
               feedback: d.feedbackNote || "",
               updatedAt: d.updatedAt || "",
-              studentName: u.fullName,
+              studentName: u.fullName || u.firstName || `Talaba #${u.userId}`,
+              studentPhone: u.phone || "",
+              studentUsername: u.username || "",
             });
           });
         }
@@ -271,7 +338,24 @@ export function createServerApp() {
   app.get("/api/applications", (req, res) => {
     const userId = Number(req.query.userId);
     const applications = userId ? db.getUserApplications(userId) : db.getAllApplications();
-    res.json({ applications });
+    const mapped = applications.map((a) => {
+      const u = db.getUser(a.userId);
+      return {
+        id: a.id,
+        userId: a.userId,
+        programId: a.programId,
+        programName: a.programName,
+        universityName: a.university,
+        degree: "bachelor",
+        stage: a.stage ? a.stage.toLowerCase() : "submitted",
+        counselorNotes: a.counselorNote || "",
+        createdAt: a.submittedAt || new Date().toISOString(),
+        studentName: a.studentName || u.fullName || u.firstName || `Talaba #${a.userId}`,
+        studentPhone: u.phone || "",
+        studentUsername: a.studentUsername || u.username || "",
+      };
+    });
+    res.json({ applications: mapped });
   });
 
   app.post("/api/applications/apply", (req, res) => {
@@ -472,38 +556,56 @@ export function createServerApp() {
   });
 
   app.post("/api/admin/broadcast", async (req, res) => {
-    const { message } = req.body;
-    if (!message || !activeBotInstance) {
-      return res.status(400).json({ error: "Missing message or bot not ready" });
+    const { message, targetUserId } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: "Missing message" });
     }
 
-    const users = db.getAllUsers().filter((u) => u.userId);
+    const bot = getTelegramBot();
+    if (!bot) {
+      return res.status(400).json({ error: "Telegram bot not initialized or missing token" });
+    }
+
+    const allUsers = db.getAllUsers().filter((u) => u.userId);
+    let targetUsers = allUsers;
+    let targetName = "Barcha talabalar";
+
+    if (targetUserId) {
+      const single = allUsers.find((u) => u.userId === Number(targetUserId));
+      if (single) {
+        targetUsers = [single];
+        targetName = single.fullName || single.username || `Talaba #${single.userId}`;
+      }
+    }
+
     let sentCount = 0;
     const trackedMessages: { chatId: number; messageId: number }[] = [];
 
-    for (const u of users) {
+    for (const u of targetUsers) {
       try {
-        const sentMsg = await activeBotInstance.api.sendMessage(
+        const sentMsg = await bot.api.sendMessage(
           u.userId,
-          `📢 <b>E'LON / ANNOUNCEMENT:</b>\n\n${escapeHtml(message)}`,
+          `📢 <b>E'LON / XABAR:</b>\n\n${escapeHtml(message.trim())}`,
           { parse_mode: "HTML" }
         );
         sentCount++;
         trackedMessages.push({ chatId: u.userId, messageId: sentMsg.message_id });
-      } catch (err) {
-        // Ignore blocked
+      } catch (err: any) {
+        console.warn(`Could not deliver Telegram broadcast to user ${u.userId}:`, err?.message);
       }
     }
 
     const broadcast = db.saveBroadcast({
-      id: `bc-${Date.now()}`,
-      message,
+      id: `bc-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      message: message.trim(),
       sentAt: new Date().toISOString(),
       sentCount,
+      targetName,
+      targetUserId: targetUserId ? Number(targetUserId) : undefined,
       messages: trackedMessages,
     });
 
-    res.json({ success: true, sentCount, totalUsers: users.length, broadcast });
+    res.json({ success: true, sentCount, totalUsers: targetUsers.length, broadcast });
   });
 
   app.delete("/api/admin/broadcasts/:id", async (req, res) => {
@@ -513,19 +615,27 @@ export function createServerApp() {
       return res.status(404).json({ error: "Broadcast not found" });
     }
 
+    const bot = getTelegramBot();
+    let deletedTelegramCount = 0;
+
     // Delete message from all recipients' Telegram chat
-    if (activeBotInstance && Array.isArray(target.messages)) {
+    if (bot && Array.isArray(target.messages)) {
       for (const item of target.messages) {
         try {
-          await activeBotInstance.api.deleteMessage(item.chatId, item.messageId);
-        } catch (e) {
-          // Ignore if message already deleted or expired
+          const chatId = Number(item.chatId);
+          const messageId = Number(item.messageId);
+          if (chatId && messageId) {
+            await bot.api.deleteMessage(chatId, messageId);
+            deletedTelegramCount++;
+          }
+        } catch (e: any) {
+          console.warn(`Could not delete Telegram message for chat ${item.chatId}, msg ${item.messageId}:`, e?.message);
         }
       }
     }
 
     db.deleteBroadcast(req.params.id);
-    res.json({ success: true });
+    res.json({ success: true, deletedTelegramCount });
   });
 
   // Serve static assets from dist/ if built

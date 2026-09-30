@@ -13,6 +13,7 @@ import {
   Sparkles,
   AlertCircle,
   ArrowRight,
+  ExternalLink,
 } from "lucide-react";
 
 interface ProgramsTabProps {
@@ -248,24 +249,53 @@ export const ProgramsTab: React.FC<ProgramsTabProps> = ({
               </div>
 
               {/* Meta Badges */}
-              <div className="flex flex-wrap gap-2 text-[11px] pt-4 mt-4 border-t border-white/10 relative z-10">
-                <span className="flex items-center gap-1.5 font-bold text-white/85 bg-slate-800/80 border border-white/5 px-2.5 py-1 rounded-xl">
+              <div className="flex flex-wrap gap-1.5 text-[11px] pt-3.5 mt-3.5 border-t border-white/10 relative z-10">
+                <span className="flex items-center gap-1 font-bold text-white/90 bg-slate-800/90 border border-white/5 px-2.5 py-1 rounded-xl">
                   <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                   {prog.tuitionFee}
                 </span>
-                <span className="flex items-center gap-1.5 font-bold text-white/75 bg-slate-800/80 border border-white/5 px-2.5 py-1 rounded-xl">
+                <span className="flex items-center gap-1 font-bold text-white/75 bg-slate-800/90 border border-white/5 px-2.5 py-1 rounded-xl">
                   🌐 {prog.language}
                 </span>
+                {prog.admissionMethod && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-blue-300 bg-blue-950/60 border border-blue-800/40 px-2 py-0.5 rounded-lg">
+                    📋 {prog.admissionMethod}
+                  </span>
+                )}
+                {prog.ieltsMin && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded-lg">
+                    IELTS {prog.ieltsMin}+
+                  </span>
+                )}
+                {prog.verified && (
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-lg">
+                    ✅ Verified
+                  </span>
+                )}
               </div>
 
-              {/* Action Apply Button */}
-              <button
-                onClick={() => handleApplyClick(prog)}
-                className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 text-white/95 rounded-[1.25rem] font-bold text-[13px] shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                {isUz ? "Ariza topshirish" : "Apply for Admission"}
-                <ArrowRight className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-              </button>
+              {/* Source Link & Action Apply Button */}
+              <div className="mt-3.5 flex items-center gap-2">
+                {prog.sourceUrl && (
+                  <a
+                    href={prog.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-3 bg-slate-800 hover:bg-slate-700 text-white/80 hover:text-white rounded-[1.25rem] border border-white/10 transition-colors shrink-0"
+                    title={isUz ? "Rasmiy sayt sahifasi" : "Official source link"}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                <button
+                  onClick={() => handleApplyClick(prog)}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white/95 rounded-[1.25rem] font-bold text-[13px] shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {isUz ? "Ariza topshirish" : "Apply for Admission"}
+                  <ArrowRight className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </button>
+              </div>
             </div>
           );
         })}
